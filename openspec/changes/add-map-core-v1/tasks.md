@@ -29,7 +29,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 1.1
   - Accept: a zod schema and exported types for the map document and all five feature types; cross-field checks for required geometry per type, `parentId` naming an existing folder, duplicate ids, and `visibilityRange` with 0 ≤ min ≤ max ≤ 1; errors carry JSON paths; tests cover each map-file spec scenario
   - Verify: auto
-- [ ] 2.3 Parse and migrate (`core/parse.ts`)
+- [x] 2.3 Parse and migrate (`core/parse.ts`)
   - Depends: 2.2
   - Accept: `parseMap(text)` returns `{ok, map}` or `{ok: false, kind: 'json' | 'not-mythical' | 'future-version' | 'invalid', issues}`; `migrate()` is a v1 pass-through; tests cover each failure kind
   - Verify: auto
