@@ -84,6 +84,7 @@ import { parseMap, type ParseResult } from "../core/parse";
 import { FEATURE_TYPES, type FeatureType, type LatLng, type MapDocument, type Viewport } from "../core/schema";
 import { stringifyMap } from "../core/serialize";
 import { mountBaseMap, type BaseMapHandle, type MountBaseMap } from "../ui/baseMap";
+import { FeaturePanel } from "../ui/featurePanel";
 import { obsidianIcons } from "../ui/obsidianIcons";
 import type { RenderView } from "../ui/featureRenderer";
 import { createToolbar, creationKindFor, EDIT_MODES, type EditMode, type ToolbarHandle } from "../ui/toolbar";
@@ -205,6 +206,20 @@ export class MapView extends TextFileView {
   selectFeature = (featureId: string): void => this.setSelected(featureId);
   // --- end bead 6.2 ---
 
+  // --- Bead 5.4: selection and the feature panel (see ui/featurePanel.ts) ---
+  private panel: FeaturePanel | null = null;
+
+  /** The selected feature's id, or null. Dropped automatically when the feature is deleted. */
+  get selection(): string | null {
+    return this.selected;
+  }
+
+  /** Set or clear the selection and bring the feature panel in line. */
+  setSelection(featureId: string | null): void {
+    this.setSelected(featureId);
+  }
+  // --- end bead 5.4 ---
+
   constructor(leaf: WorkspaceLeaf) {
     super(leaf);
     // `requestSave` is the base class's debounced function property: wrap it so
@@ -264,6 +279,7 @@ export class MapView extends TextFileView {
     const next = id !== null && map?.features.some((f) => f.id === id) ? id : null;
     if (next === this.selected) return;
     this.selected = next;
+    this.panel?.setSelected(next);
     if (this.statusEl && map) this.fillStatus(this.statusEl, map);
     for (const listener of [...this.selectionListeners]) listener(next);
   }
@@ -366,6 +382,7 @@ export class MapView extends TextFileView {
   override clear(): void {
     this.destroyMap();
     this.viewState = { kind: "empty" };
+    this.setSelected(null);
     this.setStore(null);
     this.contentEl.empty();
   }
@@ -612,9 +629,18 @@ export class MapView extends TextFileView {
     }
     baseMap.render(map, this.renderView());
     if (this.statusEl) this.fillStatus(this.statusEl, map);
+    this.syncPanel(map);
+  }
+
+  /** Drop a selection whose feature is gone, then refresh the feature panel. */
+  private syncPanel(map: MapDocument): void {
+    if (this.selected !== null && !map.features.some((f) => f.id === this.selected)) this.setSelected(null);
+    this.panel?.update(map);
   }
 
   private destroyMap(): void {
+    this.panel?.destroy();
+    this.panel = null;
     this.baseMap?.destroy();
     this.baseMap = null;
     this.toolbar = null;
@@ -683,6 +709,13 @@ export class MapView extends TextFileView {
     if (!imageUrl) this.renderMissingImage(el, map.image.path);
     this.statusEl = el.createDiv({ cls: "mythical-map-status" });
     this.fillStatus(this.statusEl, map);
+    this.panel = new FeaturePanel(el, {
+      edit: (op) => this.edit(op),
+      select: (id) => this.selectFeature(id),
+      notify: (message) => this.notify(message),
+    });
+    this.panel.setSelected(this.selected);
+    this.syncPanel(map);
   }
 
   private fillStatus(status: HTMLElement, map: MapDocument): void {
