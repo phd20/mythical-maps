@@ -160,7 +160,7 @@ Bead conventions (for loop + beads implementation)
 
 ## 7. Frontmatter style overrides
 
-- [ ] 7.1 Apply style overrides in the renderer
+- [x] 7.1 Apply style overrides in the renderer
   - Depends: 4.3, 3.1, 2.9
   - Accept: the renderer resolves styles with the frontmatter of linked notes when overrides are enabled and configured; re-renders affected pins on `metadataCache.on('changed')`; never writes overrides to the file
   - Verify: manual: the colour-override, overrides-disabled and frontmatter-changes scenarios
