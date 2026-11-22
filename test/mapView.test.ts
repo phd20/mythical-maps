@@ -9,6 +9,15 @@ import { MAP_EXTENSION, VIEW_TYPE_MAP } from "../src/obsidian/constants";
 import { featureSummary, MapView } from "../src/obsidian/mapView";
 import { parseMap } from "../src/core/parse";
 import { stringifyMap } from "../src/core/serialize";
+import type { BaseMapHandle, BaseMapOptions } from "../src/ui/baseMap";
+
+/** A fake base map mount: records what MapView asked for, and refresh/destroy calls. */
+interface FakeMount {
+  parent: unknown;
+  options: BaseMapOptions;
+  refreshes: number;
+  destroyed: number;
+}
 
 const MAPS_DIR = fileURLToPath(new URL("../test-vault/Maps/", import.meta.url));
 const fixture = (name: string) => readFileSync(MAPS_DIR + name, "utf8");
@@ -18,16 +27,22 @@ interface Harness {
   view: MapView;
   load: (data: string) => void;
   content: MockElement;
+  mounts: FakeMount[];
 }
 
-function open(name = "Maps/test.map", data?: string): Harness {
-  const app = new App();
+function open(name = "Maps/test.map", data?: string, app = new App()): Harness {
   const view = new MapView(new WorkspaceLeaf(app) as never);
+  const mounts: FakeMount[] = [];
+  view.mountMap = (parent, options) => {
+    const m: FakeMount = { parent, options, refreshes: 0, destroyed: 0 };
+    mounts.push(m);
+    return { refresh: () => m.refreshes++, destroy: () => m.destroyed++ } as unknown as BaseMapHandle;
+  };
   const mock = view as unknown as { loadFile(file: TFile, data: string): void };
   const file = new TFile(name);
   const load = (text: string) => mock.loadFile(file, text);
   if (data !== undefined) load(data);
-  return { app, view, load, content: view.contentEl as unknown as MockElement };
+  return { app, view, load, content: view.contentEl as unknown as MockElement, mounts };
 }
 
 const INVALID_SCHEMA = JSON.stringify({
@@ -182,5 +197,58 @@ describe("transitions", () => {
     expect(content.children).toEqual([]);
     await view.save();
     expect(app.vault.modified).toEqual([]);
+  });
+});
+
+describe("base map lifecycle", () => {
+  it("mounts the base map into contentEl with the image size; a missing image has no URL", () => {
+    const { view, mounts } = open("Maps/all-types.map", fixture("all-types.map"));
+    expect(mounts).toHaveLength(1);
+    expect(mounts[0]?.parent).toBe(view.contentEl);
+    expect(mounts[0]?.options).toEqual({ imageUrl: null, width: 4096, height: 3072 });
+    expect(view.mapHandle).not.toBeNull();
+  });
+
+  it("resolves the image through the vault to a resource URL", () => {
+    const app = new App();
+    const image = new TFile("Maps/fixture-4k.png");
+    const vault = app.vault as unknown as {
+      getFileByPath(p: string): TFile | null;
+      getResourcePath(f: TFile): string;
+    };
+    vault.getFileByPath = (p) => (p === image.path ? image : null);
+    vault.getResourcePath = (f) => `app://local/${f.path}`;
+    const { mounts } = open("Maps/all-types.map", fixture("all-types.map"), app);
+    expect(mounts[0]?.options.imageUrl).toBe("app://local/Maps/fixture-4k.png");
+  });
+
+  it("does not mount a map in an error state", () => {
+    const { view, mounts } = open("Maps/bad.map", INVALID_SCHEMA);
+    expect(mounts).toEqual([]);
+    expect(view.mapHandle).toBeNull();
+  });
+
+  it("onResize refreshes the mounted map", () => {
+    const { view, mounts } = open("Maps/all-types.map", fixture("all-types.map"));
+    view.onResize();
+    view.onResize();
+    expect(mounts[0]?.refreshes).toBe(2);
+  });
+
+  it("tears down the previous map on re-render, error, clear and unload", () => {
+    const { view, load, mounts } = open("Maps/x.map", fixture("all-types.map"));
+    load(fixture("all-types.map"));
+    expect(mounts.map((m) => m.destroyed)).toEqual([1, 0]);
+    load(fixture("not-mythical.map"));
+    expect(mounts.map((m) => m.destroyed)).toEqual([1, 1]);
+    expect(view.mapHandle).toBeNull();
+    load(fixture("all-types.map"));
+    view.clear();
+    expect(mounts.map((m) => m.destroyed)).toEqual([1, 1, 1]);
+    load(fixture("all-types.map"));
+    view.unload();
+    expect(mounts.map((m) => m.destroyed)).toEqual([1, 1, 1, 1]);
+    view.onResize();
+    expect(mounts[3]?.refreshes).toBe(0);
   });
 });

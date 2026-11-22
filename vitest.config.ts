@@ -5,6 +5,8 @@ export default defineConfig({
   resolve: {
     alias: {
       obsidian: fileURLToPath(new URL("./test/mocks/obsidian.ts", import.meta.url)),
+      // Leaflet needs a browser `window` at import time; tests use a recording stub.
+      leaflet: fileURLToPath(new URL("./test/mocks/leaflet.ts", import.meta.url)),
     },
   },
   test: {

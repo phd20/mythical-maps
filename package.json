@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "check": "npm run typecheck && npm run lint && npm run test && npm run build",
-    "fixtures": "node scripts/make-fixture-images.mjs"
+    "fixtures": "node scripts/make-fixture-images.mjs",
+    "css": "node scripts/scope-leaflet-css.mjs"
   },
   "license": "MIT",
   "dependencies": {

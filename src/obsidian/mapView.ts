@@ -2,15 +2,19 @@
  * `TextFileView` for `.map` files (design D4, spec map-view "Map files open in
  * a map view" and map-file "Invalid files are never overwritten").
  *
- * The view keeps the last parse in memory. A valid map renders (for now) as a
- * placeholder summary; any parse failure renders an error state, and from an
- * error state nothing is ever written: `getViewData()` hands back the raw text
+ * The view keeps the last parse in memory. A valid map renders as a Leaflet
+ * base map (the image on the frame bounds, see `ui/baseMap.ts`) with a small
+ * status line; any parse failure renders an error state, and from an error
+ * state nothing is ever written: `getViewData()` hands back the raw text
  * unchanged, and `save()` / `requestSave()` return early.
+ *
+ * The Leaflet map is torn down on every re-render, on `clear()` and on unload.
  */
 import { TextFileView, type WorkspaceLeaf } from "obsidian";
 import { parseMap, type ParseResult } from "../core/parse";
 import { FEATURE_TYPES, type FeatureType, type MapDocument } from "../core/schema";
 import { stringifyMap } from "../core/serialize";
+import { mountBaseMap, type BaseMapHandle, type MountBaseMap } from "../ui/baseMap";
 import { VIEW_TYPE_MAP } from "./constants";
 
 export type ParseFailure = Extract<ParseResult, { ok: false }>;
@@ -61,6 +65,10 @@ export function featureSummary(map: MapDocument): string {
 
 export class MapView extends TextFileView {
   private viewState: MapViewState = { kind: "empty" };
+  private baseMap: BaseMapHandle | null = null;
+
+  /** Creates the Leaflet base map. Replaceable so tests can run without a DOM. */
+  mountMap: MountBaseMap = mountBaseMap;
 
   constructor(leaf: WorkspaceLeaf) {
     super(leaf);
@@ -71,6 +79,11 @@ export class MapView extends TextFileView {
       if (this.viewState.kind !== "ok") return;
       baseRequestSave();
     };
+  }
+
+  /** The mounted Leaflet base map, if the view currently shows one. */
+  get mapHandle(): BaseMapHandle | null {
+    return this.baseMap;
   }
 
   /** Current parse state (read-only; for tests and later beads). */
@@ -108,8 +121,19 @@ export class MapView extends TextFileView {
   }
 
   override clear(): void {
+    this.destroyMap();
     this.viewState = { kind: "empty" };
     this.contentEl.empty();
+  }
+
+  override onunload(): void {
+    this.destroyMap();
+    super.onunload();
+  }
+
+  /** Obsidian calls this when the pane changes size (split drag, sidebar toggle). */
+  override onResize(): void {
+    this.baseMap?.refresh();
   }
 
   /** Never write from an error (or empty) state: the file must stay untouched. */
@@ -118,20 +142,34 @@ export class MapView extends TextFileView {
     await super.save(clear);
   }
 
+  private destroyMap(): void {
+    this.baseMap?.destroy();
+    this.baseMap = null;
+  }
+
   private render(): void {
+    this.destroyMap();
     const el = this.contentEl;
     el.empty();
     el.addClass("mythical-map-view");
     const state = this.viewState;
-    if (state.kind === "ok") this.renderSummary(el, state.map);
+    if (state.kind === "ok") this.renderMap(el, state.map);
     else if (state.kind === "error") this.renderError(el, state.failure);
   }
 
-  private renderSummary(el: HTMLElement, map: MapDocument): void {
-    const box = el.createDiv({ cls: "mythical-map-summary" });
-    box.createEl("h3", { text: this.getDisplayText() });
-    box.createEl("p", { cls: "mythical-map-image", text: `Image: ${map.image.path} (${map.image.width} × ${map.image.height})` });
-    box.createEl("p", { cls: "mythical-map-counts", text: featureSummary(map) });
+  /** Vault resource URL of the map image, or null when the file is missing. */
+  private imageUrl(map: MapDocument): string | null {
+    const file = this.app.vault.getFileByPath(map.image.path);
+    return file ? this.app.vault.getResourcePath(file) : null;
+  }
+
+  private renderMap(el: HTMLElement, map: MapDocument): void {
+    // Bead 4.2 replaces a missing image with a "Image not found" notice; for now the map shows without an overlay.
+    this.baseMap = this.mountMap(el, { imageUrl: this.imageUrl(map), width: map.image.width, height: map.image.height });
+    const status = el.createDiv({ cls: "mythical-map-status" });
+    status.createSpan({ cls: "mythical-map-image", text: `${map.image.path} (${map.image.width} × ${map.image.height})` });
+    status.createSpan({ text: " · " });
+    status.createSpan({ cls: "mythical-map-counts", text: featureSummary(map) });
   }
 
   private renderError(el: HTMLElement, failure: ParseFailure): void {
