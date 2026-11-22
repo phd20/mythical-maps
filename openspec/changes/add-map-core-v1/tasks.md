@@ -14,7 +14,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: none
   - Accept: `package.json`, `tsconfig.json` (strict), `esbuild.config.mjs`, `manifest.json` (id `mythical-maps`, `isDesktopOnly: false`), eslint config, and vitest with `obsidian` aliased to `test/mocks/obsidian.ts`; `src/main.ts` loads and unloads cleanly; `npm run check` and `npm run dev` exist; a trivial test passes
   - Verify: auto
-- [ ] 1.2 Create the test vault and fixtures
+- [x] 1.2 Create the test vault and fixtures
   - Depends: 1.1
   - Accept: `test-vault/` with `npm run dev` building into `.obsidian/plugins/mythical-maps/`; a script generates 4096×3072 and 8192×6144 fixture images; fixture `.map` files (valid with all five feature types, invalid JSON, missing type marker, future version, broken links, missing image); notes including one with a `maps:` list
   - Verify: auto (the script runs and the fixtures exist), plus a manual check that the plugin enables with no console errors
