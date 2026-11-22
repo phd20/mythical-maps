@@ -137,7 +137,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 4.3
   - Accept: hovering a linked pin triggers the `hover-link` page preview; clicking opens the note with Obsidian's modifier semantics; in edit modes a click selects instead
   - Verify: manual: the hover and Mod-click scenarios
-- [ ] 6.3 Drill-down into a note's maps
+- [x] 6.3 Drill-down into a note's maps
   - Depends: 6.2, 3.1
   - Accept: reads the configured maps property from the linked note; shows a "has map" indicator; popup and context menu list "Open map: <name>" for each entry that resolves; unresolved entries are ignored
   - Verify: manual: the drill-into-city-map scenario, also after renaming the property in settings
