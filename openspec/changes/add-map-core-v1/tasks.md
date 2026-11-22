@@ -68,7 +68,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 2.3, 2.4
   - Accept: `.map` registered with a `TextFileView`; valid files show a placeholder summary (feature counts); invalid, not-mythical and future-version files show the error states; saving is impossible from an error state; adapter test with the mock confirms `getViewData` returns canonical JSON and no write happens when invalid
   - Verify: auto, plus a manual check that the fixture files show the right states
-- [ ] 3.3 "New map from image" command
+- [x] 3.3 "New map from image" command
   - Depends: 3.2, 2.1
   - Accept: a command and file-menu item on images; reads the pixel size; creates `<basename>.map` next to the image, with a numeric suffix when the name is taken; opens it; adapter test covers the naming and the generated document
   - Verify: auto, plus a manual check on the 8k fixture
