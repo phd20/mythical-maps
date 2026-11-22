@@ -29,6 +29,10 @@ interface FakeEl {
   removed: boolean;
   ownerDocument: { defaultView: { ResizeObserver: typeof FakeResizeObserver } };
   remove(): void;
+  /** Event listeners currently attached, as [type, options]. */
+  listeners: [string, unknown][];
+  addEventListener(type: string, fn: unknown, options?: unknown): void;
+  removeEventListener(type: string, fn: unknown): void;
 }
 
 function fakeParent(width: number, height: number) {
@@ -45,6 +49,13 @@ function fakeParent(width: number, height: number) {
         ownerDocument,
         remove() {
           this.removed = true;
+        },
+        listeners: [],
+        addEventListener(type, _fn, options) {
+          this.listeners.push([type, options]);
+        },
+        removeEventListener(type) {
+          this.listeners = this.listeners.filter(([t]) => t !== type);
         },
       };
       children.push(el);
@@ -151,6 +162,16 @@ describe("zoom limits and opening viewport", () => {
     mountBaseMap(parent, { imageUrl: "x", width: 4096, height: 3072 });
     expect(lastMap().options).toMatchObject({ maxZoom: 6, zoomSnap: ZOOM_SNAP, zoomDelta: ZOOM_DELTA });
     expect(lastMap().options.minZoom).toBe(fitZoom(4096, 3072, 800, 600));
+  });
+
+  it("turns off Leaflet's wheel zoom and attaches the smooth wheel handler to the container", () => {
+    const { parent, children } = fakeParent(800, 600);
+    const handle = mountBaseMap(parent, { imageUrl: "x", width: 4096, height: 3072 });
+    expect(lastMap().options.scrollWheelZoom).toBe(false);
+    const el = children[0] as FakeEl;
+    expect(el.listeners).toEqual([["wheel", { passive: false }]]);
+    handle.destroy();
+    expect(el.listeners).toEqual([]);
   });
 
   it("has no limits and no viewport until the container has a size", () => {

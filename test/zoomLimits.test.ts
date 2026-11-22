@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clampZoom, fitZoom, maxZoomFor, viewportFrom, zoomLimits } from "../src/ui/zoomLimits";
+import { clampZoom, fitZoom, maxZoomFor, viewportFrom, ZOOM_SNAP, zoomLimits } from "../src/ui/zoomLimits";
 
 describe("fitZoom", () => {
   it("is native zoom when the container matches the image", () => {
@@ -15,9 +15,14 @@ describe("fitZoom", () => {
 
   it("floors to the zoom snap so the whole image fits", () => {
     // log2(800 / 4096) ≈ -2.356, log2(600 / 3072) ≈ -2.356 → 4 - 2.356 = 1.644 → 1.5
-    expect(fitZoom(4096, 3072, 800, 600)).toBe(1.5);
+    expect(fitZoom(4096, 3072, 800, 600, 0.25)).toBe(1.5);
     expect(fitZoom(4096, 3072, 800, 600, 1)).toBe(1);
     expect(fitZoom(4096, 3072, 800, 600, 0)).toBeCloseTo(4 + Math.log2(800 / 4096), 10);
+  });
+
+  it("is unsnapped by default (ZOOM_SNAP is 0)", () => {
+    expect(ZOOM_SNAP).toBe(0);
+    expect(fitZoom(4096, 3072, 800, 600)).toBeCloseTo(4 + Math.log2(800 / 4096), 10);
   });
 
   it("can go below zoom 0 for small panes, and above native for big ones", () => {

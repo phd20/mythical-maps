@@ -12,6 +12,7 @@
  * - Zoom limits (bead 4.2, `zoomLimits.ts`): `maxZoom` is `z + 2`; `minZoom` is
  *   the zoom that fits the whole image, set once the container has a size and
  *   recomputed on every resize.
+ * - Wheel and pinch zoom are continuous (bead 4.6, `smoothWheelZoom.ts`).
  * - The first view is the saved `viewport` (zoom clamped to the limits), or a
  *   fit of the whole image when there is none.
  *
@@ -28,6 +29,7 @@ import type { MapDocument, Viewport } from "../core/schema";
 import { createFeatureRenderer, type IconProvider, type RenderView } from "./featureRenderer";
 import { installPopoutShim, type ShimLeaflet } from "./popoutShim";
 import { SizeGate } from "./sizeGate";
+import { attachSmoothWheelZoom } from "./smoothWheelZoom";
 import { clampZoom, maxZoomFor, viewportFrom, ZOOM_DELTA, ZOOM_SNAP, zoomLimits, type ZoomLimits } from "./zoomLimits";
 
 export interface BaseMapOptions {
@@ -82,9 +84,12 @@ export const mountBaseMap: MountBaseMap = (parent, options) => {
     maxZoom: maxZoomFor(width, height),
     zoomSnap: ZOOM_SNAP,
     zoomDelta: ZOOM_DELTA,
+    // Replaced by the smooth wheel handler below (bead 4.6, `smoothWheelZoom.ts`).
+    scrollWheelZoom: false,
     // The ResizeObserver below replaces Leaflet's global window resize listener.
     trackResize: false,
   });
+  const wheelZoom = attachSmoothWheelZoom(map, container);
   if (options.imageUrl) L.imageOverlay(options.imageUrl, bounds, { interactive: false }).addTo(map);
 
   const renderer = createFeatureRenderer(map, {
@@ -138,6 +143,7 @@ export const mountBaseMap: MountBaseMap = (parent, options) => {
       destroyed = true;
       observer?.disconnect();
       renderer.destroy();
+      wheelZoom.destroy();
       map.remove();
       container.remove();
     },

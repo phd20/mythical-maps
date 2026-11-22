@@ -13,10 +13,12 @@ import { zoomFor, type LatLng } from "../core/frame";
 import type { Viewport } from "../core/schema";
 
 /**
- * Every Leaflet zoom option lives here. Bead 4.6 sets `zoomSnap: 0` and
- * replaces the wheel handler for smooth zoom; until then zoom steps modestly.
+ * Every Leaflet zoom option lives here. `zoomSnap: 0` (bead 4.6): zoom is
+ * continuous, so any fractional zoom can be reached and saved. The wheel is
+ * handled by `smoothWheelZoom.ts`; `ZOOM_DELTA` is the step for the zoom
+ * buttons and double-click, which keep Leaflet's animated zoom.
  */
-export const ZOOM_SNAP = 0.25;
+export const ZOOM_SNAP = 0;
 export const ZOOM_DELTA = 0.5;
 
 /** How far above native zoom `z` the user may zoom in. */
