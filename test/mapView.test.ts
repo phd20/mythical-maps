@@ -229,6 +229,7 @@ describe("base map lifecycle", () => {
       width: 4096,
       height: 3072,
       icons: obsidianIcons,
+      interactions: expect.any(Object),
       viewport: { center: [-96, 128], zoom: 2 },
     });
     expect(view.mapHandle).not.toBeNull();
@@ -302,7 +303,13 @@ const savedViewport = (view: MapView): Viewport | undefined => {
 describe("opening viewport", () => {
   it("passes no viewport when the map has none (the base map fits the image)", () => {
     const { mounts } = open("Maps/x.map", NO_VIEWPORT);
-    expect(mounts[0]?.options).toEqual({ imageUrl: null, width: 4096, height: 3072, icons: obsidianIcons });
+    expect(mounts[0]?.options).toEqual({
+      imageUrl: null,
+      width: 4096,
+      height: 3072,
+      icons: obsidianIcons,
+      interactions: expect.any(Object),
+    });
   });
 });
 
@@ -642,5 +649,38 @@ describe("live reload on external change (bead 4.5)", () => {
     const { load, mounts } = open("Maps/all-types.map", fixture("all-types.map"));
     load(withNewPin());
     expect(mounts).toHaveLength(2);
+  });
+});
+
+describe("hover preview and opening notes (bead 6.2)", () => {
+  const LINKED = JSON.stringify({
+    type: "mythical-map",
+    version: 1,
+    image: { path: "Maps/x.png", width: 10, height: 10 },
+    features: [{ id: "ppin0001", type: "pin", rank: "a0", pos: [0, 0], link: "Rusty Flagon" }],
+  });
+
+  it("wires link interactions that resolve and open from the map file, and select in edit modes", () => {
+    const app = new App();
+    const note = new TFile("Places/Rusty Flagon.md");
+    app.metadataCache.getFirstLinkpathDest = (p: string) => (p === "Rusty Flagon" ? note : null);
+    const hovers: unknown[] = [];
+    app.workspace.on("hover-link", (payload: unknown) => hovers.push(payload));
+    const { view, mounts } = open("Maps/linked.map", LINKED, app);
+    const hooks = mounts[0]?.options.interactions;
+    const state = view.mapState;
+    if (!hooks || state.kind !== "ok") throw new Error("no interactions");
+    const feature = state.map.features[0]!;
+    const evt = { ctrlKey: true } as MouseEvent;
+    hooks.onHover?.(feature, evt, null);
+    expect(hovers).toMatchObject([{ hoverParent: view, linktext: "Rusty Flagon", sourcePath: "Maps/linked.map" }]);
+    hooks.onClick?.(feature, evt);
+    expect(app.workspace.openedLinks).toEqual([{ linktext: "Rusty Flagon", sourcePath: "Maps/linked.map", newLeaf: "tab" }]);
+    const selected: string[] = [];
+    view.isEditing = () => true;
+    view.selectFeature = (id) => selected.push(id);
+    hooks.onClick?.(feature, evt);
+    expect(selected).toEqual(["ppin0001"]);
+    expect(app.workspace.openedLinks).toHaveLength(1);
   });
 });

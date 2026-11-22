@@ -355,3 +355,63 @@ describe("all-types fixture", () => {
     }
   });
 });
+
+describe("interaction hooks (bead 6.2)", () => {
+  function withHooks() {
+    const hovers: Array<[Feature, unknown, unknown]> = [];
+    const clicks: Array<[Feature, unknown]> = [];
+    const r = createFeatureRenderer(fakeMap, {
+      icons,
+      ownerDocument: doc as unknown as Document,
+      interactions: {
+        onHover: (f, e, el) => hovers.push([f, e, el]),
+        onClick: (f, e) => clicks.push([f, e]),
+      },
+    });
+    return { r, hovers, clicks };
+  }
+  const linkOf = (f: Feature | undefined) => (f as { link?: string } | undefined)?.link;
+
+  it("passes the current feature after a re-render (layer reused)", () => {
+    const { r, hovers, clicks } = withHooks();
+    r.render(model([pin({ link: "Old" })]));
+    const layer = asMock(r.layerFor("ppin0001"));
+    layer.element = { tag: "marker-el" };
+    r.render(model([pin({ link: "New" })]));
+    expect(asMock(r.layerFor("ppin0001"))).toBe(layer);
+    const originalEvent = { type: "mouseover" };
+    layer.fire("mouseover", { originalEvent });
+    layer.fire("click", { originalEvent: { type: "click" } });
+    expect(hovers).toHaveLength(1);
+    expect(linkOf(hovers[0]?.[0])).toBe("New");
+    expect(hovers[0]?.[1]).toBe(originalEvent);
+    expect(hovers[0]?.[2]).toEqual({ tag: "marker-el" });
+    expect(clicks.map(([f]) => linkOf(f))).toEqual(["New"]);
+  });
+
+  it("attaches handlers once per layer", () => {
+    const { r, clicks } = withHooks();
+    r.render(model([pin()]));
+    r.render(model([pin({ name: "again" })]));
+    asMock(r.layerFor("ppin0001")).fire("click", { originalEvent: {} });
+    expect(clicks).toHaveLength(1);
+  });
+
+  it("hooks regions too, and ignores layers of removed features", () => {
+    const { r, clicks } = withHooks();
+    const region: Feature = { id: "rreg0001", type: "region", rank: "a0", polygon: [[0, 0], [0, 1], [1, 1]] };
+    r.render(model([region, pin()]));
+    const rl = asMock(r.layerFor("rreg0001"));
+    const pl = asMock(r.layerFor("ppin0001"));
+    rl.fire("click", { originalEvent: {} });
+    r.render(model([region]));
+    pl.fire("click", { originalEvent: {} });
+    expect(clicks.map(([f]) => f.id)).toEqual(["rreg0001"]);
+  });
+
+  it("attaches nothing without hooks", () => {
+    const r = setup();
+    r.render(model([pin()]));
+    expect(asMock(r.layerFor("ppin0001")).handlers).toEqual({});
+  });
+});

@@ -205,6 +205,22 @@ export class MockFeatureLayer {
   get callNames(): string[] {
     return this.calls.map((c) => c.name);
   }
+  // Bead 6.2: layer events (hover and click hooks).
+  handlers: Record<string, Array<(e: unknown) => void>> = {};
+  /** What `getElement()` returns; tests set it. */
+  element: unknown = undefined;
+  on(type: string, fn: (e: unknown) => void): this {
+    (this.handlers[type] ??= []).push(fn);
+    return this;
+  }
+  getElement(): unknown {
+    return this.element;
+  }
+  /** Fire a Leaflet event on this layer, e.g. `fire("click", { originalEvent })`. */
+  fire(type: string, e: unknown = {}): this {
+    for (const fn of [...(this.handlers[type] ?? [])]) fn(e);
+    return this;
+  }
 }
 
 export class MockDivIcon {

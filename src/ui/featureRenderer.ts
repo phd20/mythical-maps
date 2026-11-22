@@ -20,6 +20,11 @@
  * are created in the map container's own document (pop-out windows).
  * Visibility (hidden folders, zoom ranges) is decided by `view.isVisible`,
  * supplied by bead 4.4; by default everything is visible.
+ *
+ * Interactions (bead 6.2): optional `deps.interactions` hooks are attached once
+ * per layer (`mouseover` → `onHover`, `click` → `onClick`). Layers are reused
+ * across renders, so a handler looks the feature up by id at event time and
+ * always passes the feature from the latest `render`.
  */
 import * as L from "leaflet";
 import type { Feature, LabelFeature, LatLng, MapDocument, PathFeature, PinFeature, RegionFeature } from "../core/schema";
@@ -49,8 +54,18 @@ export interface RenderView {
   isVisible?: (feature: Feature) => boolean;
 }
 
+/** Pointer hooks on drawn features (bead 6.2). Each receives the feature as of the latest render. */
+export interface FeatureInteractions {
+  /** Pointer entered a feature's layer; `targetEl` is the layer's DOM element (for `hover-link`). */
+  onHover?(feature: Feature, event: MouseEvent, targetEl: HTMLElement | null): void;
+  /** A feature's layer was clicked. */
+  onClick?(feature: Feature, event: MouseEvent): void;
+}
+
 export interface FeatureRendererDeps {
   icons: IconProvider;
+  /** Hover and click hooks (bead 6.2); none by default. */
+  interactions?: FeatureInteractions;
   /** Document to build DOM in; defaults to the map container's `ownerDocument`. */
   ownerDocument?: Document;
 }
@@ -129,6 +144,8 @@ const defaultResolve = (feature: Feature): ResolvedStyle => resolveStyle(feature
 
 export function createFeatureRenderer(map: L.Map, deps: FeatureRendererDeps): FeatureRenderer {
   const entries = new Map<string, Entry>();
+  /** The feature each drawn layer belongs to, as of the latest render (read by event handlers). */
+  const current = new Map<string, Feature>();
   let destroyed = false;
 
   const doc = (): Document => deps.ownerDocument ?? map.getContainer().ownerDocument;
@@ -280,6 +297,25 @@ export function createFeatureRenderer(map: L.Map, deps: FeatureRendererDeps): Fe
   function removeEntry(id: string): void {
     entries.get(id)?.layer.remove();
     entries.delete(id);
+    current.delete(id);
+  }
+
+  /** Attach the interaction hooks to a new layer; handlers read the feature by id at event time. */
+  function attachInteractions(id: string, layer: Entry["layer"]): void {
+    const hooks = deps.interactions;
+    if (!hooks) return;
+    layer.on("mouseover", (e: L.LeafletEvent) => {
+      const f = current.get(id);
+      const event = (e as L.LeafletMouseEvent).originalEvent;
+      if (!f || !hooks.onHover || !event) return;
+      const target = (layer.getElement?.() as HTMLElement | undefined) ?? (event.target as HTMLElement | null);
+      hooks.onHover(f, event, target ?? null);
+    });
+    layer.on("click", (e: L.LeafletEvent) => {
+      const f = current.get(id);
+      const event = (e as L.LeafletMouseEvent).originalEvent;
+      if (f && hooks.onClick && event) hooks.onClick(f, event);
+    });
   }
 
   return {
@@ -291,10 +327,12 @@ export function createFeatureRenderer(map: L.Map, deps: FeatureRendererDeps): Fe
       for (const f of model.features) {
         if (f.type === "folder" || !isVisible(f)) continue;
         keep.add(f.id);
+        current.set(f.id, f);
         const prev = entries.get(f.id);
         const entry = draw(f, resolve(f), prev);
         if (entry !== prev) {
           prev?.layer.remove();
+          attachInteractions(f.id, entry.layer);
           entry.layer.addTo(map);
           entries.set(f.id, entry);
         }

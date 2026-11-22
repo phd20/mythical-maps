@@ -126,6 +126,12 @@ export class Workspace extends MockEvents {
   getLeavesOfType(type: string): WorkspaceLeaf[] {
     return this.leaves.filter((leaf) => leaf.view?.getViewType() === type);
   }
+  /** Bead 6.2: every `openLinkText` call, in order. */
+  openedLinks: Array<{ linktext: string; sourcePath: string; newLeaf: unknown }> = [];
+  openLinkText(linktext: string, sourcePath: string, newLeaf?: unknown): Promise<void> {
+    this.openedLinks.push({ linktext, sourcePath, newLeaf });
+    return Promise.resolve();
+  }
 }
 
 export class App {
@@ -190,6 +196,12 @@ export class Plugin extends Component {
   events: EventRef[] = [];
   registerEvent(ref: EventRef): void {
     this.events.push(ref);
+  }
+
+  /** Bead 6.2: hover link sources by id. */
+  hoverLinkSources: Record<string, HoverLinkSource> = {};
+  registerHoverLinkSource(id: string, info: HoverLinkSource): void {
+    this.hoverLinkSources[id] = info;
   }
 }
 
@@ -459,4 +471,28 @@ export abstract class FuzzySuggestModal<T> extends Modal {
     this.close();
     this.onChooseItem(item, {});
   }
+}
+
+// --- Bead 6.2: hover link sources, openLinkText and Keymap ---
+
+export interface HoverLinkSource {
+  display: string;
+  defaultMod: boolean;
+}
+
+/** Obsidian's modifier semantics: middle click or Mod → tab, Mod+Alt → split, Mod+Alt+Shift → window. */
+export class Keymap {
+  static isModEvent(
+    evt?: { ctrlKey?: boolean; metaKey?: boolean; altKey?: boolean; shiftKey?: boolean; button?: number } | null,
+  ): string | boolean {
+    if (!evt) return false;
+    if (evt.button === 1) return "tab";
+    if (!(evt.ctrlKey || evt.metaKey)) return false;
+    if (evt.altKey) return evt.shiftKey ? "window" : "split";
+    return "tab";
+  }
+}
+
+export interface HoverPopover {
+  hoverEl: unknown;
 }

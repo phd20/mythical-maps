@@ -35,7 +35,7 @@
  *   (last write wins, design "Risks").
  * `save()` marks the store saved once the write finishes, if nothing changed meanwhile.
  */
-import { Notice, TextFileView, type Menu, type TFile, type WorkspaceLeaf } from "obsidian";
+import { Notice, TextFileView, type HoverPopover, type Menu, type TFile, type WorkspaceLeaf } from "obsidian";
 import { MapStore, type Op } from "../core/document";
 import { parseMap, type ParseResult } from "../core/parse";
 import { FEATURE_TYPES, type FeatureType, type MapDocument, type Viewport } from "../core/schema";
@@ -45,6 +45,7 @@ import { obsidianIcons } from "../ui/obsidianIcons";
 import type { RenderView } from "../ui/featureRenderer";
 import { VIEW_TYPE_MAP } from "./constants";
 import { ImageSuggestModal, vaultImageFiles } from "./imageSuggestModal";
+import { createLinkInteractions } from "./linkActions";
 import { readImageSizeFromVault, type ImageSize } from "./newMapCommand";
 
 export const SET_DEFAULT_VIEW_COMMAND_ID = "set-current-view-as-default";
@@ -121,6 +122,15 @@ export class MapView extends TextFileView {
   notify = (message: string): void => {
     new Notice(message);
   };
+
+  // --- Bead 6.2: hover preview and opening notes (see linkActions.ts) ---
+  /** HoverParent: the page preview popover owned by this view. */
+  hoverPopover: HoverPopover | null = null;
+  /** True in edit modes, where a click selects instead of opening (bead 5.2 sets this). Default: view mode. */
+  isEditing = (): boolean => false;
+  /** Select a feature (bead 5.2+); a no-op until selection exists. */
+  selectFeature = (_featureId: string): void => {};
+  // --- end bead 6.2 ---
 
   constructor(leaf: WorkspaceLeaf) {
     super(leaf);
@@ -368,6 +378,14 @@ export class MapView extends TextFileView {
       width,
       height,
       icons: obsidianIcons,
+      interactions: createLinkInteractions({
+        app: this.app,
+        hoverParent: this,
+        sourcePath: () => this.file?.path ?? null,
+        isEditing: () => this.isEditing(),
+        onSelect: (id) => this.selectFeature(id),
+        notify: (message) => this.notify(message),
+      }),
       ...(viewport ? { viewport } : {}),
     });
     this.mountedImageKey = this.imageKey(map);

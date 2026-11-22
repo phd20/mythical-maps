@@ -7,6 +7,7 @@ import { registerMapLinkMaintenance } from "./obsidian/renameListener";
 import type { VaultMapIndex } from "./obsidian/vaultMapIndex";
 import { registerNewMapFromImage } from "./obsidian/newMapCommand";
 import { registerStyleOverrides, type StyleOverrides } from "./obsidian/styleOverrides";
+import { registerLinkHoverSource } from "./obsidian/linkActions";
 
 /** Mythical Maps plugin entry point. Features are registered by later beads. */
 export default class MythicalMapsPlugin extends Plugin {
@@ -29,6 +30,7 @@ export default class MythicalMapsPlugin extends Plugin {
     this.registerExtensions([MAP_EXTENSION], VIEW_TYPE_MAP);
     this.mapIndex = registerMapLinkMaintenance(this, this.app);
     registerNewMapFromImage(this, this.app);
+    registerLinkHoverSource(this); // bead 6.2: page preview on pins
     this.addCommand({
       id: SET_DEFAULT_VIEW_COMMAND_ID,
       name: SET_DEFAULT_VIEW_COMMAND_NAME,

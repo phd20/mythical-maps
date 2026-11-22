@@ -29,7 +29,7 @@
 import * as L from "leaflet";
 import { boundsFor, type Bounds } from "../core/frame";
 import type { MapDocument, Viewport } from "../core/schema";
-import { createFeatureRenderer, type IconProvider, type RenderView } from "./featureRenderer";
+import { createFeatureRenderer, type FeatureInteractions, type IconProvider, type RenderView } from "./featureRenderer";
 import { installPopoutShim, type ShimLeaflet } from "./popoutShim";
 import { SizeGate } from "./sizeGate";
 import { attachSmoothWheelZoom } from "./smoothWheelZoom";
@@ -46,6 +46,8 @@ export interface BaseMapOptions {
   viewport?: Viewport;
   /** Pin glyphs (Obsidian's `setIcon` in the plugin). Without it every glyph falls back to a dot. */
   icons?: IconProvider;
+  /** Hover and click hooks on features (bead 6.2, see `featureRenderer.ts`). */
+  interactions?: FeatureInteractions;
 }
 
 /** Fallback icon provider: knows no icons, so pins draw the dot glyph. */
@@ -99,6 +101,7 @@ export const mountBaseMap: MountBaseMap = (parent, options) => {
   const renderer = createFeatureRenderer(map, {
     icons: options.icons ?? NO_ICONS,
     ownerDocument: container.ownerDocument,
+    ...(options.interactions ? { interactions: options.interactions } : {}),
   });
 
   let limits: ZoomLimits | null = null;
