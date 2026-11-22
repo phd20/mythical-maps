@@ -45,7 +45,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 2.2, 2.5
   - Accept: immutable `children`, `ancestors`, `effectiveHidden`, `visibleAtZoom(feature, zoom, minZoom, maxZoom)`, `insert`, `move` (refuses cycles), `update` and `deleteSubtree`; tests cover each map-editing tree scenario and the zoom-gating scenario
   - Verify: auto
-- [ ] 2.7 Map document store with lock and undo (`core/document.ts`)
+- [x] 2.7 Map document store with lock and undo (`core/document.ts`)
   - Depends: 2.6
   - Accept: a `MapDocument` with `apply(op)`, `subscribe`, `lock`/`unlock` (when locked, every mutating op is refused and returns an error), and `undo`/`redo`; tests cover the locked-drag refusal, undoing a delete (restores the same id), and redo
   - Verify: auto
