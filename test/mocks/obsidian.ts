@@ -30,7 +30,29 @@ export interface PluginManifest {
   isDesktopOnly?: boolean;
 }
 
-export class App {}
+/** Records every write so tests can assert that none happened. */
+export class Vault {
+  modified: Array<{ file: TFile; data: string }> = [];
+  async modify(file: TFile, data: string): Promise<void> {
+    this.modified.push({ file, data });
+  }
+}
+
+export class App {
+  vault = new Vault();
+}
+
+export class TFile {
+  basename: string;
+  extension: string;
+  name: string;
+  constructor(public path: string) {
+    this.name = path.split("/").pop() ?? path;
+    const dot = this.name.lastIndexOf(".");
+    this.basename = dot > 0 ? this.name.slice(0, dot) : this.name;
+    this.extension = dot > 0 ? this.name.slice(dot + 1) : "";
+  }
+}
 
 export class Plugin extends Component {
   app: App;
@@ -56,14 +78,112 @@ export class Plugin extends Component {
   addSettingTab(tab: PluginSettingTab): void {
     this.settingTabs.push(tab);
   }
+
+  views: Record<string, (leaf: WorkspaceLeaf) => View> = {};
+  registerView(type: string, factory: (leaf: WorkspaceLeaf) => View): void {
+    this.views[type] = factory;
+  }
+
+  extensions: Record<string, string> = {};
+  registerExtensions(extensions: string[], viewType: string): void {
+    for (const ext of extensions) this.extensions[ext] = viewType;
+  }
 }
 
-/** Stand-in for a container element: it only collects the Settings added to it. */
+export class WorkspaceLeaf {
+  constructor(public app: App = new App()) {}
+}
+
+interface MockElementInfo {
+  text?: string;
+  cls?: string | string[];
+}
+
+/**
+ * Stand-in for a container element. It collects the Settings added to it and
+ * supports Obsidian's DOM helpers (createEl/createDiv/createSpan/empty/addClass),
+ * recording tag, classes and text so tests can inspect what a view rendered.
+ */
 export class MockElement {
   settings: Setting[] = [];
+  children: MockElement[] = [];
+  classes = new Set<string>();
+  text = "";
+  constructor(public tag = "div") {}
   empty(): void {
     this.settings = [];
+    this.children = [];
+    this.text = "";
   }
+  addClass(...cls: string[]): void {
+    for (const c of cls) this.classes.add(c);
+  }
+  hasClass(cls: string): boolean {
+    return this.classes.has(cls);
+  }
+  createEl(tag: string, o?: MockElementInfo | string, callback?: (el: MockElement) => void): MockElement {
+    const el = new MockElement(tag);
+    const info = typeof o === "string" ? { cls: o } : (o ?? {});
+    if (info.cls) el.addClass(...(Array.isArray(info.cls) ? info.cls : info.cls.split(" ")));
+    if (info.text !== undefined) el.text = info.text;
+    this.children.push(el);
+    callback?.(el);
+    return el;
+  }
+  createDiv(o?: MockElementInfo | string, callback?: (el: MockElement) => void): MockElement {
+    return this.createEl("div", o, callback);
+  }
+  createSpan(o?: MockElementInfo | string, callback?: (el: MockElement) => void): MockElement {
+    return this.createEl("span", o, callback);
+  }
+  /** All text in this element and its descendants, depth first, space-joined. */
+  get textContent(): string {
+    return [this.text, ...this.children.map((c) => c.textContent)].filter(Boolean).join(" ");
+  }
+  /** Descendants, depth first, that match `pred`. */
+  findAll(pred: (el: MockElement) => boolean): MockElement[] {
+    return this.children.flatMap((c) => [...(pred(c) ? [c] : []), ...c.findAll(pred)]);
+  }
+}
+
+export abstract class View extends Component {
+  app: App;
+  contentEl = new MockElement() as unknown as HTMLElement;
+  constructor(public leaf: WorkspaceLeaf) {
+    super();
+    this.app = leaf.app;
+  }
+  abstract getViewType(): string;
+  abstract getDisplayText(): string;
+  getIcon(): string {
+    return "";
+  }
+}
+
+/**
+ * Minimal TextFileView: `requestSave` saves immediately (no debounce), and
+ * `save()` writes `getViewData()` through `vault.modify`, as Obsidian does.
+ */
+export abstract class TextFileView extends View {
+  data = "";
+  file: TFile | null = null;
+  requestSave: () => void = () => {
+    void this.save();
+  };
+  async save(_clear?: boolean): Promise<void> {
+    if (!this.file) return;
+    this.data = this.getViewData();
+    await this.app.vault.modify(this.file, this.data);
+  }
+  /** Test helper: simulate Obsidian opening `file` with contents `data`. */
+  loadFile(file: TFile, data: string): void {
+    this.file = file;
+    this.data = data;
+    this.setViewData(data, true);
+  }
+  abstract getViewData(): string;
+  abstract setViewData(data: string, clear: boolean): void;
+  abstract clear(): void;
 }
 
 export abstract class PluginSettingTab {

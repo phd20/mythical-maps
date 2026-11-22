@@ -1,2 +1,23 @@
 /* Mythical Maps styles. Every rule must be scoped under .mythical-map-view (see CLAUDE.md).
    Leaflet and Geoman CSS are bundled in here by bead 4.1. */
+
+.mythical-map-view .mythical-map-summary,
+.mythical-map-view .mythical-map-error {
+  max-width: 40em;
+  margin: 2em auto;
+  padding: 0 1em;
+}
+
+.mythical-map-view .mythical-map-counts,
+.mythical-map-view .mythical-map-image {
+  color: var(--text-muted);
+}
+
+.mythical-map-view .mythical-map-error h3 {
+  color: var(--text-error);
+}
+
+.mythical-map-view .mythical-map-issues {
+  font-family: var(--font-monospace);
+  font-size: var(--font-smaller);
+}
