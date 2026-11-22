@@ -118,7 +118,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 5.1, 4.4
   - Accept: an in-view side panel shows the tree ordered by `rank`; selection syncs between the panel and the map; eye toggle; create and rename folders; drag to reorder or reparent, with cycles refused
   - Verify: manual: the move-into-folder and no-cycles scenarios
-- [ ] 5.5 Properties form
+- [x] 5.5 Properties form
   - Depends: 5.4
   - Accept: per-type fields (name, style fields, `labelVisibility`, `isHidden`, `visibilityRange`); invalid input shows an error and keeps the stored value; changes apply live
   - Verify: manual: the rename-pin and invalid-colour scenarios
