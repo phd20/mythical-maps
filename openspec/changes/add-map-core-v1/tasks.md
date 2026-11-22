@@ -21,7 +21,7 @@ Bead conventions (for loop + beads implementation)
 
 ## 2. Core model (pure TypeScript, no obsidian or leaflet imports)
 
-- [ ] 2.1 Coordinate frame (`core/frame.ts`)
+- [x] 2.1 Coordinate frame (`core/frame.ts`)
   - Depends: 1.1
   - Accept: `zoomFor(w, h)`, `boundsFor(w, h)`, `pixelToPos` and `posToPixel` match the formulas in design D3; tests cover the 8192×6144 corner (`[-192, 256]`, z = 5), images smaller than 256 px (z = 0), and round-trip inverses to within 1e-9
   - Verify: auto
