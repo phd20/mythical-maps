@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
 // vitest aliases `leaflet` to this stub (see vitest.config.ts).
-import { created, CRS, Draggable, type MockMap } from "./mocks/leaflet";
+import { created, CRS, Draggable, featureLayers, type MockDivIcon, type MockFeatureLayer, type MockMap } from "./mocks/leaflet";
 import { mountBaseMap } from "../src/ui/baseMap";
 import { boundsFor } from "../src/core/frame";
+import type { Feature, MapDocument } from "../src/core/schema";
 import { fitZoom, ZOOM_DELTA, ZOOM_SNAP } from "../src/ui/zoomLimits";
 
 /** A ResizeObserver stand-in owned by a fake window, so the test can fire it. */
@@ -212,5 +213,94 @@ describe("zoom limits and opening viewport", () => {
     const handle = mountBaseMap(parent, { imageUrl: "x", width: 4096, height: 3072 });
     lastMap().setView([-95.123456789, 127.98765432], 3.14159);
     expect(handle.currentViewport()).toEqual({ center: [-95.1235, 127.9877], zoom: 3.142 });
+  });
+});
+
+describe("feature rendering (bead 4.3)", () => {
+  const model = (features: Feature[]): MapDocument => ({
+    type: "mythical-map",
+    version: 1,
+    image: { path: "x.png", width: 512, height: 512 },
+    features,
+  });
+  const region: Feature = { id: "rreg0001", type: "region", rank: "a0", polygon: [[0, 0], [0, 1], [1, 1]] };
+  const path: Feature = { id: "hpth0001", type: "path", rank: "a1", polyline: [[0, 0], [1, 1]] };
+
+  beforeEach(() => {
+    featureLayers.length = 0;
+  });
+
+  it("render draws features on the map, also when the image is missing", () => {
+    const { parent } = fakeParent(800, 600);
+    const handle = mountBaseMap(parent, { imageUrl: null, width: 512, height: 512 });
+    handle.render(model([region, path]));
+    expect(featureLayers.map((l) => [l.kind, l.map])).toEqual([
+      ["polygon", lastMap()],
+      ["polyline", lastMap()],
+    ]);
+    handle.render(model([region]));
+    expect(featureLayers[1]?.removed).toBe(true);
+  });
+
+  it("draws pin glyphs with the injected icons, in the container's document", () => {
+    const { parent } = fakeParent(800, 600);
+    const made: { className: string; icon?: string }[] = [];
+    const doc = (parent as unknown as { ownerDocument: Record<string, unknown> }).ownerDocument;
+    doc.createElement = () => {
+      const el = { className: "", textContent: "", icon: undefined as string | undefined, style: { setProperty() {} }, appendChild: (c: unknown) => c };
+      made.push(el);
+      return el;
+    };
+    const set: string[] = [];
+    const handle = mountBaseMap(parent, {
+      imageUrl: "x",
+      width: 512,
+      height: 512,
+      icons: { has: () => true, set: (_el, n) => set.push(n) },
+    });
+    handle.render(model([{ id: "ppin0001", type: "pin", rank: "a0", pos: [-1, 1], style: { iconGlyph: "castle" } }]));
+    expect(set).toEqual(["castle"]);
+    const icon = (featureLayers[0] as MockFeatureLayer).options.icon as MockDivIcon;
+    expect(made).toContain(icon.options.html);
+    delete doc.createElement;
+  });
+
+  it("without icons every glyph falls back to a dot", () => {
+    const { parent } = fakeParent(800, 600);
+    const classes: string[] = [];
+    const doc = (parent as unknown as { ownerDocument: Record<string, unknown> }).ownerDocument;
+    doc.createElement = () => {
+      const el = { className: "", style: { setProperty() {} }, appendChild: (c: unknown) => c };
+      return new Proxy(el, {
+        set(t, k, v) {
+          if (k === "className") classes.push(String(v));
+          return Reflect.set(t, k, v);
+        },
+      });
+    };
+    const handle = mountBaseMap(parent, { imageUrl: "x", width: 512, height: 512 });
+    handle.render(model([{ id: "ppin0001", type: "pin", rank: "a0", pos: [-1, 1] }]));
+    expect(classes).toContain("mythical-map-pin-dot");
+    delete doc.createElement;
+  });
+
+  it("destroy removes feature layers before the map, and later renders do nothing", () => {
+    const { parent } = fakeParent(800, 600);
+    const handle = mountBaseMap(parent, { imageUrl: "x", width: 512, height: 512 });
+    handle.render(model([region]));
+    const layer = featureLayers[0] as MockFeatureLayer;
+    const map = lastMap();
+    let mapRemovedFirst = false;
+    const remove = layer.remove.bind(layer);
+    layer.remove = () => {
+      mapRemovedFirst = map.removed;
+      return remove();
+    };
+    handle.destroy();
+    expect(layer.removed).toBe(true);
+    expect(mapRemovedFirst).toBe(false);
+    expect(map.removed).toBe(true);
+    handle.render(model([region, path]));
+    expect(featureLayers).toHaveLength(1);
   });
 });

@@ -15,13 +15,17 @@
  * - The first view is the saved `viewport` (zoom clamped to the limits), or a
  *   fit of the whole image when there is none.
  *
+ * - Features (bead 4.3, `featureRenderer.ts`) are drawn by `render(model, view?)`,
+ *   also when the image is missing; glyphs come from the injected `icons`.
+ *
  * The map model stays the only state: nothing is read back out of Leaflet into
  * the model. `currentViewport()` reads the live centre and zoom only so the
  * view can save them as `viewport` through the document model.
  */
 import * as L from "leaflet";
 import { boundsFor, type Bounds } from "../core/frame";
-import type { Viewport } from "../core/schema";
+import type { MapDocument, Viewport } from "../core/schema";
+import { createFeatureRenderer, type IconProvider, type RenderView } from "./featureRenderer";
 import { installPopoutShim, type ShimLeaflet } from "./popoutShim";
 import { SizeGate } from "./sizeGate";
 import { clampZoom, maxZoomFor, viewportFrom, ZOOM_DELTA, ZOOM_SNAP, zoomLimits, type ZoomLimits } from "./zoomLimits";
@@ -34,7 +38,12 @@ export interface BaseMapOptions {
   height: number;
   /** Saved opening view; when absent the whole image is fitted. */
   viewport?: Viewport;
+  /** Pin glyphs (Obsidian's `setIcon` in the plugin). Without it every glyph falls back to a dot. */
+  icons?: IconProvider;
 }
+
+/** Fallback icon provider: knows no icons, so pins draw the dot glyph. */
+export const NO_ICONS: IconProvider = { has: () => false, set: () => {} };
 
 export interface BaseMapHandle {
   readonly map: L.Map;
@@ -44,6 +53,8 @@ export interface BaseMapHandle {
   readonly limits: ZoomLimits | null;
   /** The live centre and zoom, rounded for saving; null until the first view is set. */
   currentViewport(): Viewport | null;
+  /** Draw the model's features, reusing layers by id (see `featureRenderer.ts`). No-op after destroy. */
+  render(model: MapDocument, view?: RenderView): void;
   /** Re-check the container size: `invalidateSize`, plus the deferred initial fit. */
   refresh(): void;
   /** Tear down the Leaflet map, the resize observer and the container. Idempotent. */
@@ -75,6 +86,11 @@ export const mountBaseMap: MountBaseMap = (parent, options) => {
     trackResize: false,
   });
   if (options.imageUrl) L.imageOverlay(options.imageUrl, bounds, { interactive: false }).addTo(map);
+
+  const renderer = createFeatureRenderer(map, {
+    icons: options.icons ?? NO_ICONS,
+    ownerDocument: container.ownerDocument,
+  });
 
   let limits: ZoomLimits | null = null;
   let viewSet = false;
@@ -111,6 +127,9 @@ export const mountBaseMap: MountBaseMap = (parent, options) => {
       const c = map.getCenter();
       return viewportFrom([c.lat, c.lng], map.getZoom());
     },
+    render: (model, view) => {
+      if (!destroyed) renderer.render(model, view);
+    },
     refresh: () => {
       if (!destroyed) gate.check(true);
     },
@@ -118,6 +137,7 @@ export const mountBaseMap: MountBaseMap = (parent, options) => {
       if (destroyed) return;
       destroyed = true;
       observer?.disconnect();
+      renderer.destroy();
       map.remove();
       container.remove();
     },

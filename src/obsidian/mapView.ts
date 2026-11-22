@@ -15,7 +15,10 @@
  * missing image shows an "Image not found" notice whose "Choose image…" picks
  * a vault image and updates `image`. Both edits go through a `MapStore` op
  * (`setViewport` / `setImage`, so the store's lock applies), then
- * `requestSave()`. Bead 5.1 takes over the store wiring (undo, lock toggle).
+ * `requestSave()`.
+ *
+ * Bead 4.3: features are drawn by the base map's renderer, once after mount and
+ * again on every store change (layers are reused by id). Bead 5.1 takes over the store wiring (undo, lock toggle).
  */
 import { Notice, TextFileView, type Menu, type TFile, type WorkspaceLeaf } from "obsidian";
 import { MapStore, type Op } from "../core/document";
@@ -23,6 +26,7 @@ import { parseMap, type ParseResult } from "../core/parse";
 import { FEATURE_TYPES, type FeatureType, type MapDocument } from "../core/schema";
 import { stringifyMap } from "../core/serialize";
 import { mountBaseMap, type BaseMapHandle, type MountBaseMap } from "../ui/baseMap";
+import { obsidianIcons } from "../ui/obsidianIcons";
 import { VIEW_TYPE_MAP } from "./constants";
 import { ImageSuggestModal, vaultImageFiles } from "./imageSuggestModal";
 import { readImageSizeFromVault, type ImageSize } from "./newMapCommand";
@@ -82,6 +86,8 @@ export class MapView extends TextFileView {
   private baseMap: BaseMapHandle | null = null;
   /** Applies edit ops to the ok-state map; null in any other state. */
   private store: MapStore | null = null;
+  /** Unsubscribes the re-render listener from the current store. */
+  private unsubscribe: (() => void) | null = null;
 
   /** Creates the Leaflet base map. Replaceable so tests can run without a DOM. */
   mountMap: MountBaseMap = mountBaseMap;
@@ -143,19 +149,20 @@ export class MapView extends TextFileView {
   override setViewData(data: string, _clear: boolean): void {
     const result = parseMap(data);
     this.viewState = result.ok ? { kind: "ok", map: result.map } : { kind: "error", failure: result, raw: data };
-    this.store = result.ok ? new MapStore(result.map) : null;
+    this.setStore(result.ok ? new MapStore(result.map) : null);
     this.render();
   }
 
   override clear(): void {
     this.destroyMap();
     this.viewState = { kind: "empty" };
-    this.store = null;
+    this.setStore(null);
     this.contentEl.empty();
   }
 
   override onunload(): void {
     this.destroyMap();
+    this.setStore(null);
     super.onunload();
   }
 
@@ -244,6 +251,14 @@ export class MapView extends TextFileView {
     return true;
   }
 
+  /** Swap the store, moving the re-render subscription to the new one. */
+  private setStore(store: MapStore | null): void {
+    this.unsubscribe?.();
+    this.unsubscribe = null;
+    this.store = store;
+    if (store) this.unsubscribe = store.subscribe((map) => this.baseMap?.render(map));
+  }
+
   private destroyMap(): void {
     this.baseMap?.destroy();
     this.baseMap = null;
@@ -269,7 +284,14 @@ export class MapView extends TextFileView {
     const imageUrl = this.imageUrl(map);
     const { width, height } = map.image;
     // A missing image still mounts the map (no overlay), so features keep their frame.
-    this.baseMap = this.mountMap(el, { imageUrl, width, height, ...(map.viewport ? { viewport: map.viewport } : {}) });
+    this.baseMap = this.mountMap(el, {
+      imageUrl,
+      width,
+      height,
+      icons: obsidianIcons,
+      ...(map.viewport ? { viewport: map.viewport } : {}),
+    });
+    this.baseMap.render(map);
     if (!imageUrl) this.renderMissingImage(el, map.image.path);
     const status = el.createDiv({ cls: "mythical-map-status" });
     status.createSpan({ cls: "mythical-map-image", text: `${map.image.path} (${map.image.width} × ${map.image.height})` });

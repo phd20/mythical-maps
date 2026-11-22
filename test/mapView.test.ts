@@ -15,7 +15,8 @@ import {
 } from "../src/obsidian/mapView";
 import { ImageSuggestModal } from "../src/obsidian/imageSuggestModal";
 import type { MapStore } from "../src/core/document";
-import type { Viewport } from "../src/core/schema";
+import type { MapDocument, Viewport } from "../src/core/schema";
+import { obsidianIcons } from "../src/ui/obsidianIcons";
 import { parseMap } from "../src/core/parse";
 import { stringifyMap } from "../src/core/serialize";
 import type { BaseMapHandle, BaseMapOptions } from "../src/ui/baseMap";
@@ -26,6 +27,8 @@ interface FakeMount {
   options: BaseMapOptions;
   refreshes: number;
   destroyed: number;
+  /** Models passed to `render`, in order. */
+  renders: MapDocument[];
   /** What the fake map reports as its live view; null = not sized yet. */
   viewport: Viewport | null;
 }
@@ -45,11 +48,12 @@ function open(name = "Maps/test.map", data?: string, app = new App()): Harness {
   const view = new MapView(new WorkspaceLeaf(app) as never);
   const mounts: FakeMount[] = [];
   view.mountMap = (parent, options) => {
-    const m: FakeMount = { parent, options, refreshes: 0, destroyed: 0, viewport: { center: [-50, 60.5], zoom: 2.25 } };
+    const m: FakeMount = { parent, options, refreshes: 0, destroyed: 0, renders: [], viewport: { center: [-50, 60.5], zoom: 2.25 } };
     mounts.push(m);
     return {
       refresh: () => m.refreshes++,
       destroy: () => m.destroyed++,
+      render: (model: MapDocument) => m.renders.push(model),
       currentViewport: () => m.viewport,
     } as unknown as BaseMapHandle;
   };
@@ -224,6 +228,7 @@ describe("base map lifecycle", () => {
       imageUrl: null,
       width: 4096,
       height: 3072,
+      icons: obsidianIcons,
       viewport: { center: [-96, 128], zoom: 2 },
     });
     expect(view.mapHandle).not.toBeNull();
@@ -297,7 +302,7 @@ const savedViewport = (view: MapView): Viewport | undefined => {
 describe("opening viewport", () => {
   it("passes no viewport when the map has none (the base map fits the image)", () => {
     const { mounts } = open("Maps/x.map", NO_VIEWPORT);
-    expect(mounts[0]?.options).toEqual({ imageUrl: null, width: 4096, height: 3072 });
+    expect(mounts[0]?.options).toEqual({ imageUrl: null, width: 4096, height: 3072, icons: obsidianIcons });
   });
 });
 
@@ -477,5 +482,47 @@ describe("missing image", () => {
     view.chooseImage();
     expect(picked).toBe(false);
     expect(app.vault.modified).toEqual([]);
+  });
+});
+
+describe("feature rendering (bead 4.3)", () => {
+  it("passes Obsidian icons and renders the store's map right after mount", () => {
+    const { view, mounts } = open("Maps/all-types.map", fixture("all-types.map"));
+    expect(mounts[0]?.options.icons).toBe(obsidianIcons);
+    expect(mounts[0]?.renders).toHaveLength(1);
+    const state = view.mapState;
+    if (state.kind !== "ok") throw new Error("expected ok state");
+    expect(mounts[0]?.renders[0]).toBe(state.map);
+  });
+
+  it("renders features on a map whose image is missing", () => {
+    const { mounts } = open("Maps/missing-image.map", fixture("missing-image.map"));
+    expect(mounts[0]?.options.imageUrl).toBeNull();
+    expect(mounts[0]?.renders).toHaveLength(1);
+  });
+
+  it("re-renders on a store change", () => {
+    const { view, mounts } = open("Maps/all-types.map", fixture("all-types.map"));
+    expect(view.setCurrentViewAsDefault()).toBe(true);
+    const renders = mounts[0]?.renders ?? [];
+    expect(renders).toHaveLength(2);
+    expect(renders[1]?.viewport).toEqual({ center: [-50, 60.5], zoom: 2.25 });
+    expect(mounts).toHaveLength(1);
+  });
+
+  it("drops the old store's subscription on reload, clear and unload", () => {
+    const { view, load, mounts } = open("Maps/x.map", fixture("all-types.map"));
+    const oldStore = (view as unknown as { store: MapStore }).store;
+    load(fixture("all-types.map"));
+    oldStore.apply({ type: "setViewport", viewport: { center: [0, 0], zoom: 1 } });
+    expect(mounts.map((m) => m.renders.length)).toEqual([1, 1]);
+    view.clear();
+    expect(mounts[1]?.destroyed).toBe(1);
+    load(fixture("all-types.map"));
+    const store = (view as unknown as { store: MapStore }).store;
+    view.unload();
+    store.apply({ type: "setViewport", viewport: { center: [0, 0], zoom: 1 } });
+    expect(mounts[2]?.renders).toHaveLength(1);
+    expect(mounts[2]?.destroyed).toBe(1);
   });
 });

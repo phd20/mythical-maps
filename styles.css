@@ -662,3 +662,167 @@
   color: var(--text-error);
   overflow-wrap: anywhere;
 }
+
+/* 4.3 feature renderer */
+.mythical-map-view .mythical-map-marker {
+  background: none;
+  border: none;
+}
+
+.mythical-map-view .mythical-map-pin {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  --mythical-map-pin-color: #a7a7a7;
+}
+
+.mythical-map-view .mythical-map-pin-shape {
+  position: absolute;
+  inset: 0;
+  background: var(--mythical-map-pin-color);
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  box-sizing: border-box;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
+.mythical-map-view .mythical-map-pin-pin .mythical-map-pin-shape {
+  inset: 8%;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+}
+
+.mythical-map-view .mythical-map-pin-circle .mythical-map-pin-shape {
+  border-radius: 50%;
+}
+
+.mythical-map-view .mythical-map-pin-diamond .mythical-map-pin-shape {
+  inset: 14%;
+  transform: rotate(45deg);
+  border-radius: 3px;
+}
+
+.mythical-map-view .mythical-map-pin-marker .mythical-map-pin-shape {
+  border: none;
+  clip-path: polygon(0 0, 100% 0, 100% 75%, 60% 75%, 50% 100%, 40% 75%, 0 75%);
+}
+
+.mythical-map-view .mythical-map-pin-shield .mythical-map-pin-shape {
+  border: none;
+  clip-path: polygon(0 0, 100% 0, 100% 55%, 50% 100%, 0 55%);
+}
+
+.mythical-map-view .mythical-map-pin-flag .mythical-map-pin-shape {
+  border: none;
+  clip-path: polygon(0 0, 100% 0, 80% 40%, 100% 80%, 12% 80%, 12% 100%, 0 100%);
+}
+
+.mythical-map-view .mythical-map-pin-banner .mythical-map-pin-shape {
+  border: none;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%);
+}
+
+.mythical-map-view .mythical-map-pin-arch .mythical-map-pin-shape {
+  border-radius: 50% 50% 0 0;
+}
+
+.mythical-map-view .mythical-map-pin-glyph {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  pointer-events: none;
+}
+
+.mythical-map-view .mythical-map-pin-pin .mythical-map-pin-glyph,
+.mythical-map-view .mythical-map-pin-shield .mythical-map-pin-glyph,
+.mythical-map-view .mythical-map-pin-marker .mythical-map-pin-glyph,
+.mythical-map-view .mythical-map-pin-banner .mythical-map-pin-glyph,
+.mythical-map-view .mythical-map-pin-flag .mythical-map-pin-glyph {
+  bottom: 22%;
+}
+
+.mythical-map-view .mythical-map-pin-none .mythical-map-pin-glyph {
+  color: var(--mythical-map-pin-color);
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.8));
+}
+
+.mythical-map-view .mythical-map-pin-glyph svg {
+  width: 55%;
+  height: 55%;
+}
+
+.mythical-map-view .mythical-map-pin-dot {
+  width: 30%;
+  height: 30%;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.mythical-map-view .mythical-map-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  pointer-events: auto;
+}
+
+.mythical-map-view .mythical-map-label,
+.mythical-map-view .mythical-map-name {
+  color: var(--mythical-map-text-color, #ffffff);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.mythical-map-view .mythical-map-text-effect-outline {
+  text-shadow:
+    -1px -1px 0 var(--mythical-map-text-effect-color, #000000),
+    1px -1px 0 var(--mythical-map-text-effect-color, #000000),
+    -1px 1px 0 var(--mythical-map-text-effect-color, #000000),
+    1px 1px 0 var(--mythical-map-text-effect-color, #000000);
+}
+
+.mythical-map-view .mythical-map-text-effect-background {
+  padding: 1px 6px;
+  border-radius: var(--radius-s);
+  background: var(--mythical-map-text-effect-color, #000000);
+}
+
+.mythical-map-view .mythical-map-text-xs {
+  font-size: 10px;
+}
+
+.mythical-map-view .mythical-map-text-sm {
+  font-size: 12px;
+}
+
+.mythical-map-view .mythical-map-text-md {
+  font-size: 14px;
+}
+
+.mythical-map-view .mythical-map-text-lg {
+  font-size: 18px;
+}
+
+.mythical-map-view .mythical-map-text-xl {
+  font-size: 22px;
+}
+
+.mythical-map-view .mythical-map-text-2xl {
+  font-size: 28px;
+}
+
+.mythical-map-view .mythical-map-text-3xl {
+  font-size: 36px;
+}
+
+.mythical-map-view .leaflet-tooltip.mythical-map-tooltip {
+  padding: 0;
+  background: none;
+  border: none;
+  box-shadow: none;
+}
+
+.mythical-map-view .leaflet-tooltip.mythical-map-tooltip::before {
+  display: none;
+}
