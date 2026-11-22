@@ -57,19 +57,31 @@ export class MockMap {
     return this.zoom;
   }
   // 4.4 visibility: event listeners, fired by tests with `fire`.
-  listeners: Record<string, Array<() => void>> = {};
-  on(type: string, fn: () => void): this {
+  listeners: Record<string, Array<(e?: unknown) => void>> = {};
+  on(type: string, fn: (e?: unknown) => void): this {
     for (const t of type.split(/\s+/)) (this.listeners[t] ??= []).push(fn);
     return this;
   }
-  off(type: string, fn: () => void): this {
+  off(type: string, fn: (e?: unknown) => void): this {
     for (const t of type.split(/\s+/)) this.listeners[t] = (this.listeners[t] ?? []).filter((f) => f !== fn);
     return this;
   }
-  fire(type: string): this {
-    for (const fn of [...(this.listeners[type] ?? [])]) fn();
+  fire(type: string, e?: unknown): this {
+    for (const fn of [...(this.listeners[type] ?? [])]) fn(e);
     return this;
   }
+  // Geoman (bead 5.3): records draw-mode calls.
+  drawing: { shape: string; options: Record<string, unknown> } | null = null;
+  pm = {
+    enableDraw: (shape: string, options: Record<string, unknown> = {}): void => {
+      this.calls.push({ name: "pm.enableDraw", args: [shape, options] });
+      this.drawing = { shape, options };
+    },
+    disableDraw: (): void => {
+      this.calls.push({ name: "pm.disableDraw", args: [] });
+      this.drawing = null;
+    },
+  };
   // Smooth wheel zoom surface (bead 4.6), used by the 4.4 mid-zoom test.
   getMinZoom(): number {
     return (this.options.minZoom as number | undefined) ?? 0;
@@ -215,6 +227,34 @@ export class MockFeatureLayer {
   }
   getElement(): unknown {
     return this.element;
+  }
+  // Bead 5.3: marker dragging (Leaflet handler) and Geoman vertex editing (`pm`).
+  dragging = {
+    enabled: false,
+    enable: (): void => {
+      this.dragging.enabled = true;
+    },
+    disable: (): void => {
+      this.dragging.enabled = false;
+    },
+  };
+  pm = {
+    on: false,
+    enabled: (): boolean => this.pm.on,
+    enable: (options?: unknown): void => {
+      this.pm.on = true;
+      this.record("pm.enable", [options]);
+    },
+    disable: (): void => {
+      this.pm.on = false;
+      this.record("pm.disable", []);
+    },
+  };
+  getLatLng(): unknown {
+    return this.latlngs;
+  }
+  getLatLngs(): unknown {
+    return this.latlngs;
   }
   /** Fire a Leaflet event on this layer, e.g. `fire("click", { originalEvent })`. */
   fire(type: string, e: unknown = {}): this {

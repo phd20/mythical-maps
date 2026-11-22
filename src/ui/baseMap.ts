@@ -29,6 +29,7 @@
 import * as L from "leaflet";
 import { boundsFor, type Bounds } from "../core/frame";
 import type { LatLng, MapDocument, Viewport } from "../core/schema";
+import { createGeometryEditor, type EditState, type GeometryEditor, type GeometryHandlers } from "./geometryEditor";
 import { createFeatureRenderer, type FeatureInteractions, type IconProvider, type RenderView } from "./featureRenderer";
 import { installPopoutShim, type ShimLeaflet } from "./popoutShim";
 import { SizeGate } from "./sizeGate";
@@ -56,6 +57,8 @@ export interface BaseMapOptions {
   interactions?: FeatureInteractions;
   /** Click and context-menu hooks on the map itself (bead 5.2: creating features). */
   pointer?: MapPointerHandlers;
+  /** Save hooks for drawing and editing geometry (bead 5.3, see `geometryEditor.ts`). Without them nothing is drawable or draggable. */
+  geometry?: GeometryHandlers;
 }
 
 /** Fallback icon provider: knows no icons, so pins draw the dot glyph. */
@@ -69,6 +72,8 @@ export interface BaseMapHandle {
   readonly limits: ZoomLimits | null;
   /** The live centre and zoom, rounded for saving; null until the first view is set. */
   currentViewport(): Viewport | null;
+  /** Set the toolbar mode and lock state that decide what can be drawn, dragged and reshaped (bead 5.3). */
+  setEditState(state: EditState): void;
   /** Draw the model's features, reusing layers by id (see `featureRenderer.ts`). No-op after destroy. */
   render(model: MapDocument, view?: RenderView): void;
   /** Fit the whole image in view (animated). No-op after destroy. */
@@ -125,7 +130,18 @@ export const mountBaseMap: MountBaseMap = (parent, options) => {
 
   let limits: ZoomLimits | null = null;
   const visibility = createVisibilityRenderer(renderer, () => ({ zoom: map.getZoom(), limits }));
-  const onZoom = (): void => visibility.update();
+  // Geometry editing (bead 5.3): re-applied after every render, since layers come and go.
+  const geometry: GeometryEditor | null = options.geometry
+    ? createGeometryEditor(map, (id) => renderer.layerFor(id), options.geometry)
+    : null;
+  let lastModel: MapDocument | null = null;
+  const syncGeometry = (): void => {
+    if (lastModel) geometry?.sync(lastModel);
+  };
+  const onZoom = (): void => {
+    visibility.update();
+    syncGeometry();
+  };
   map.on("zoom", onZoom);
   map.on("zoomend", onZoom);
   let viewSet = false;
@@ -137,12 +153,14 @@ export const mountBaseMap: MountBaseMap = (parent, options) => {
       // Leaflet zooms in to the new minimum itself if the current zoom is now below it.
       map.setMinZoom(limits.min);
       visibility.update();
+      syncGeometry();
     },
     onFirstSize: () => {
       if (viewport && limits) map.setView(viewport.center, clampZoom(viewport.zoom, limits), { animate: false });
       else map.fitBounds(bounds, { animate: false });
       viewSet = true;
       visibility.update();
+      syncGeometry();
     },
   });
 
@@ -164,8 +182,12 @@ export const mountBaseMap: MountBaseMap = (parent, options) => {
       const c = map.getCenter();
       return viewportFrom([c.lat, c.lng], map.getZoom());
     },
+    setEditState: (state) => geometry?.setState(state),
     render: (model, view) => {
-      if (!destroyed) visibility.render(model, view);
+      if (destroyed) return;
+      visibility.render(model, view);
+      lastModel = model;
+      syncGeometry();
     },
     fit: () => {
       if (!destroyed) map.fitBounds(bounds);
@@ -181,6 +203,7 @@ export const mountBaseMap: MountBaseMap = (parent, options) => {
       map.off("zoomend", onZoom);
       map.off("click", onMapClick);
       map.off("contextmenu", onMapContextMenu);
+      geometry?.destroy();
       renderer.destroy();
       wheelZoom.destroy();
       map.remove();

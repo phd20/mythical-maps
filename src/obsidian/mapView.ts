@@ -78,7 +78,7 @@ import {
   type TFile,
   type WorkspaceLeaf,
 } from "obsidian";
-import { createFeatureOp, type CreatableKind } from "../core/create";
+import { createFeatureOp, createShapeOp, type CreatableKind, type DrawableKind, type LatLngLike } from "../core/create";
 import { descendantCount } from "../core/features";
 import { LOCKED_ERROR, MapStore, type ApplyResult, type Op } from "../core/document";
 import { parseMap, type ParseResult } from "../core/parse";
@@ -303,6 +303,25 @@ export class MapView extends TextFileView {
     this.mode = mode;
     this.toolbar?.setMode(mode);
     this.refreshModeUi();
+    this.pushEditState();
+  }
+
+  /** Tell the map which mode and lock state apply, so it can turn drawing, dragging and reshaping on or off (bead 5.3). */
+  private pushEditState(): void {
+    // Optional call: some test doubles of the base map handle predate `setEditState`.
+    this.baseMap?.setEditState?.({ mode: this.mode, locked: this.locked });
+  }
+
+  /** Create a region or path from drawn vertices in the selected folder and select it; too few vertices create nothing (bead 5.3). */
+  private createShape(kind: DrawableKind, vertices: LatLngLike[]): void {
+    if (this.viewState.kind !== "ok") return;
+    const op = createShapeOp(this.viewState.map, kind, vertices, this.selected);
+    if (!op) {
+      this.notify(kind === "region" ? "A region needs at least 3 vertices." : "A path needs at least 2 vertices.");
+      return;
+    }
+    const result = this.edit(op);
+    if (result.ok && result.id !== undefined) this.setSelected(result.id);
   }
 
   /** Create a pin or label at `pos` in the selected folder and select it. Returns the new id, or null if refused. */
@@ -648,6 +667,7 @@ export class MapView extends TextFileView {
 
   private refreshLockUi(): void {
     this.contentEl.toggleClass("is-locked", this.locked);
+    this.pushEditState();
     const el = this.lockActionEl;
     if (!el) return;
     setIcon(el, this.locked ? "lock" : "lock-open");
@@ -761,6 +781,16 @@ export class MapView extends TextFileView {
         onClick: (pos, event) => this.handleMapClick(pos, event),
         onContextMenu: (pos, event) => this.handleMapContextMenu(pos, event),
       },
+      geometry: {
+        createShape: (kind, vertices) => this.createShape(kind, vertices),
+        updateFeature: (id, patch) => {
+          this.edit({ type: "update", id, patch });
+        },
+        // Invalid geometry (too few vertices): put the layer back to what the model says.
+        rejected: () => {
+          if (this.viewState.kind === "ok") this.baseMap?.render(this.viewState.map, this.renderView());
+        },
+      },
       ...(viewport ? { viewport } : {}),
     });
     this.toolbar = createToolbar(el, {
@@ -770,6 +800,7 @@ export class MapView extends TextFileView {
       onFit: () => this.baseMap?.fit(),
     });
     this.refreshModeUi();
+    this.pushEditState();
     this.mountedImageKey = this.imageKey(map);
     this.baseMap.render(map, this.renderView());
     if (!imageUrl) this.renderMissingImage(el, map.image.path);

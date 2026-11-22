@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { createFeatureOp, creationParent, DEFAULT_NAMES } from "./create";
+import { createFeatureOp, createShapeOp, creationParent, DEFAULT_NAMES, DEFAULT_SHAPE_NAMES, geometryPatch } from "./create";
 import { MapStore } from "./document";
 import { children } from "./features";
 import { rankAfter, rankBefore } from "./ids";
-import { validateMap, type MapDocument } from "./schema";
+import { validateMap, type Feature, type MapDocument } from "./schema";
 
 const r1 = rankBefore(null);
 const r2 = rankAfter(r1);
@@ -71,5 +71,54 @@ describe("createFeatureOp", () => {
     store.lock();
     expect(store.apply(createFeatureOp(store.map, "pin", [0, 0], null)).ok).toBe(false);
     expect(store.map.features).toHaveLength(3);
+  });
+});
+
+const pt = (lat: number, lng: number) => ({ lat, lng });
+
+describe("createShapeOp", () => {
+  it("creates a region from three or more vertices, dropping a repeated closing point", () => {
+    const op = createShapeOp(fixture(), "region", [pt(0, 0), pt(0, 5), pt(-5, 5), pt(0, 0)], null);
+    expect(op?.feature).toMatchObject({ type: "region", name: DEFAULT_SHAPE_NAMES.region, polygon: [[0, 0], [0, 5], [-5, 5]] });
+    expect(op?.placement).toEqual({ parentId: null });
+  });
+  it("creates a path in the selected folder, and the result validates", () => {
+    const map = fixture();
+    const op = createShapeOp(map, "path", [pt(0, 0), pt(-5, 5)], "towns000");
+    expect(op).not.toBeNull();
+    const store = new MapStore(map);
+    expect(store.apply(op!).ok).toBe(true);
+    expect(validateMap(store.map).ok).toBe(true);
+    expect(children(store.map, "towns000").map((f) => f.type)).toContain("path");
+  });
+  it("creates nothing with too few vertices", () => {
+    expect(createShapeOp(fixture(), "region", [pt(0, 0), pt(1, 1)], null)).toBeNull();
+    expect(createShapeOp(fixture(), "region", [pt(0, 0), pt(1, 1), pt(0, 0)], null)).toBeNull();
+    expect(createShapeOp(fixture(), "path", [pt(0, 0)], null)).toBeNull();
+    expect(createShapeOp(fixture(), "path", [pt(2, 2), pt(2, 2)], null)).toBeNull();
+    expect(createShapeOp(fixture(), "path", [], null)).toBeNull();
+  });
+});
+
+describe("geometryPatch", () => {
+  const ring = [pt(0, 0), pt(0, 5), pt(-5, 5)];
+  const region: Feature = { id: "reg00000", type: "region", polygon: [[0, 0], [0, 1], [-1, 1]], rank: r1 };
+  const path: Feature = { id: "path0000", type: "path", polyline: [[0, 0], [1, 1]], rank: r1 };
+  it("patches a region's polygon from Leaflet's [ring] shape", () => {
+    expect(geometryPatch(region, [ring])).toEqual({ polygon: [[0, 0], [0, 5], [-5, 5]] });
+  });
+  it("patches polygons for a multipolygon region", () => {
+    const multi: Feature = { id: "reg00001", type: "region", polygons: [[[0, 0], [0, 1], [-1, 1]]], rank: r1 };
+    expect(geometryPatch(multi, [[ring], [[pt(1, 1), pt(1, 2), pt(2, 2)]]])).toEqual({
+      polygons: [[[0, 0], [0, 5], [-5, 5]], [[1, 1], [1, 2], [2, 2]]],
+    });
+  });
+  it("patches a path's polyline", () => {
+    expect(geometryPatch(path, [pt(0, 0), pt(1, 1), pt(2, 0)])).toEqual({ polyline: [[0, 0], [1, 1], [2, 0]] });
+  });
+  it("is null for invalid geometry and non-shape features", () => {
+    expect(geometryPatch(region, [[pt(0, 0), pt(1, 1)]])).toBeNull();
+    expect(geometryPatch(path, [pt(0, 0)])).toBeNull();
+    expect(geometryPatch({ id: "pin00000", type: "pin", pos: [0, 0], rank: r1 }, [])).toBeNull();
   });
 });

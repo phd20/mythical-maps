@@ -5,6 +5,8 @@ import {
   BEGIN_MARKER,
   END_MARKER,
   expectedStyles,
+  GEOMAN_BEGIN_MARKER,
+  GEOMAN_END_MARKER,
   LEAFLET_CSS,
   parseCss,
   scopeLeafletCss,
@@ -37,6 +39,20 @@ describe("styles.css", () => {
     const section = styles.slice(begin, end);
     expect(section).not.toMatch(/url\(/i);
     for (const sel of [".leaflet-container", ".leaflet-pane", ".leaflet-zoom-animated", ".leaflet-control-zoom"]) {
+      expect(section).toContain(`${SCOPE} ${sel}`);
+    }
+  });
+});
+
+describe("styles.css Geoman section (bead 5.3)", () => {
+  it("bundles Geoman's CSS scoped, without url() references", () => {
+    const begin = styles.indexOf(GEOMAN_BEGIN_MARKER);
+    const end = styles.indexOf(GEOMAN_END_MARKER);
+    expect(begin).toBeGreaterThan(0);
+    expect(end).toBeGreaterThan(begin);
+    const section = styles.slice(begin, end);
+    expect(section).not.toMatch(/url\(/i);
+    for (const sel of [".marker-icon", ".geoman-draw-cursor", ".leaflet-pm-draggable"]) {
       expect(section).toContain(`${SCOPE} ${sel}`);
     }
   });

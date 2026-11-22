@@ -261,6 +261,7 @@ describe("base map lifecycle", () => {
       icons: obsidianIcons,
       interactions: expect.any(Object),
       pointer: expect.any(Object),
+      geometry: expect.any(Object),
       viewport: { center: [-96, 128], zoom: 2 },
     });
     expect(view.mapHandle).not.toBeNull();
@@ -341,6 +342,7 @@ describe("opening viewport", () => {
       icons: obsidianIcons,
       interactions: expect.any(Object),
       pointer: expect.any(Object),
+      geometry: expect.any(Object),
     });
   });
 });
