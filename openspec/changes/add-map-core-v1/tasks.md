@@ -79,7 +79,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 3.2, 2.1, 1.2
   - Accept: Leaflet and its CSS bundled into `styles.css`, scoped under `.mythical-map-view`; the image is shown as an `imageOverlay` on the frame bounds in `CRS.Simple`; a `ResizeObserver` plus `onResize` calls `invalidateSize`; the initial fit waits for a non-zero size; `popoutShim` makes drag work in pop-out windows
   - Verify: manual: (a) open a map in a background tab, then switch to it: it fits correctly; (b) resize the split: no grey areas; (c) move to a pop-out window: panning by drag works and ends on release
-- [ ] 4.2 Viewport, zoom limits and missing image
+- [x] 4.2 Viewport, zoom limits and missing image
   - Depends: 4.1
   - Accept: opens at `viewport` or fits the image; zoom limits from fit to `z + 2`; "Set current view as default" saves `viewport`; a missing image shows the notice with "Choose image…", which updates `image` (path, width, height)
   - Verify: manual, using the viewport and missing-image fixtures
