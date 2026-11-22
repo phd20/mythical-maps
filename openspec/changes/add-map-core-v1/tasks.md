@@ -102,7 +102,7 @@ Bead conventions (for loop + beads implementation)
 
 ## 5. Editing
 
-- [ ] 5.1 Wire the document store to the view: saving, lock and undo
+- [x] 5.1 Wire the document store to the view: saving, lock and undo
   - Depends: 2.7, 4.3
   - Accept: every edit goes through `MapDocument` then `requestSave()`; edits are flushed on close and unload; lock toggle in the view header; Mod+Z and Mod+Shift+Z scoped to the focused map view
   - Verify: manual: the close-right-after-edit, locked-drag and undo-delete scenarios
