@@ -87,7 +87,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 4.1, 2.9
   - Accept: one `render(model, view)` call reuses Leaflet layers by feature id; pins drawn as a shape plus `setIcon` glyph with colour and size; labels; regions with fill and border styles; paths with stroke styles; `labelVisibility` respected; unknown glyphs fall back to a dot
   - Verify: manual: the all-types fixture renders every feature at its coordinates with its style
-- [ ] 4.4 Visibility: folders and zoom ranges
+- [x] 4.4 Visibility: folders and zoom ranges
   - Depends: 4.3, 2.6
   - Accept: features hidden by `effectiveHidden` or outside `visibilityRange` are not drawn; visibility re-evaluates on `zoomend`
   - Verify: manual: the hidden-folder and zoom-gated label scenarios
