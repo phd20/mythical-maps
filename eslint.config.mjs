@@ -3,7 +3,7 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    ignores: ["main.js", "node_modules/", "test-vault/", ".beads/", "openspec/", "coverage/"],
+    ignores: ["**/main.js", "node_modules/", "test-vault/", ".beads/", "openspec/", "coverage/", ".claude/"],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

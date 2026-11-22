@@ -1,6 +1,10 @@
 # Node / build output
-node_modules/
+# no trailing slash: also matches the node_modules symlinks used in agent worktrees
+node_modules
 main.js
+
+# Agent worktrees (Claude Code subagents)
+.claude/worktrees/
 *.tsbuildinfo
 coverage/
 .DS_Store
