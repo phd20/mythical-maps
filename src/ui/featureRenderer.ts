@@ -321,6 +321,9 @@ export function createFeatureRenderer(map: L.Map, deps: FeatureRendererDeps): Fe
   return {
     render(model, view = {}) {
       if (destroyed) return;
+      // Dev-only timing (bead 8.1): set `window.__MM_PERF__ = true` in dev tools to log render time.
+      const perf = (globalThis as { __MM_PERF__?: boolean }).__MM_PERF__ === true;
+      const t0 = perf ? performance.now() : 0;
       const resolve = view.resolveStyle ?? defaultResolve;
       const isVisible = view.isVisible ?? (() => true);
       const keep = new Set<string>();
@@ -338,6 +341,7 @@ export function createFeatureRenderer(map: L.Map, deps: FeatureRendererDeps): Fe
         }
       }
       for (const id of [...entries.keys()]) if (!keep.has(id)) removeEntry(id);
+      if (perf) console.debug(`[mythical-maps] render: ${keep.size} features in ${(performance.now() - t0).toFixed(1)} ms`);
     },
     layerFor: (id) => entries.get(id)?.layer,
     destroy() {

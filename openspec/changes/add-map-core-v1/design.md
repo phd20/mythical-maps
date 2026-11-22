@@ -135,6 +135,26 @@ A toolbar in the view header offers Select, Pin, Label, Region, Path, Lock and F
 - [`.map` collides with JavaScript source-map files in vaults that hold code] → the extension is a single constant; parsing requires `"type": "mythical-map"`, and files without it open as "not a Mythical map" without being touched. Revisit before the first release (Open Question 1).
 - [Leaflet pop-out drag breakage] → an isolated `popoutShim` with its own bead and acceptance test, done early (spike), so the rest of the UI isn't built on a broken base.
 - [8k image memory, about 256 MB decoded] → acceptable on desktop. Measure in the 8k fixture bead; tiling is a follow-up and the coordinate frame already supports it.
+  **Performance check (bead 8.1, manual).** Fixture: `test-vault/Maps/perf-8k-200pins.map` (8192×6144 image, 200 pins in 8 folders plus top level, mixed styles; regenerate with `npm run fixtures:perf`, images with `npm run fixtures`). Procedure, on desktop Obsidian with `npm run dev` running:
+  1. Restart Obsidian with only the test vault open and no other maps open. Open dev tools (Cmd+Opt+I / Ctrl+Shift+I) and, in Console, run `window.__MM_PERF__ = true` so render timings are logged (`[mythical-maps] render: N features in X ms`).
+  2. Memory tab, Heap snapshot (or Performance monitor's JS heap size): record **baseline** with the vault loaded and no map open. Click the trash icon (collect garbage) first.
+  3. Open `perf-8k-200pins.map`. Note the logged render time. Take a heap snapshot (collect garbage first) and record **after open**.
+  4. Performance tab: Record while you pan across the whole image for about 10 s, zoom in and out with the wheel and trackpad pinch from fully fit to max zoom, then stop. Note whether the frame rate holds near 60 fps and any long frames. Record **after interaction** heap size (collect garbage first).
+  5. Close the map tab, collect garbage, record **after close** (a large remainder suggests a leak).
+
+  | Measure | Result |
+  | --- | --- |
+  | Machine / OS / Obsidian version | |
+  | Baseline heap (MB) | |
+  | Heap after open (MB) | |
+  | Heap after pan/zoom (MB) | |
+  | Heap after close (MB) | |
+  | Render time, 200 pins (ms) | |
+  | Pan feels smooth (yes/no, fps) | |
+  | Zoom feels smooth (yes/no, fps) | |
+  | Notes | |
+
+  Rule: any problem (dropped frames, stutter, heap well above about 400 MB, memory not released on close) becomes a follow-up bead for tiling (the image pyramid the coordinate frame already supports), not a fix inside 8.1.
 - [Renames outside Obsidian break links silently] → broken links are always visible (badge plus command) and never deleted; Relink repairs them.
 - [Duplicate note names make linktext ambiguous] → resolve like Obsidian does (nearest/first). On rename, `fileToLinktext` emits a disambiguating path when needed.
 - [Concurrent edits: the same map open in two panes, or Claude editing while the view has unsaved changes] → `TextFileView`'s reload semantics, plus all writes from the rename listener go through `vault.process`. Last write wins, which is acceptable for v1.

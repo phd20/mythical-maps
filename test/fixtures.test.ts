@@ -78,6 +78,7 @@ describe("fixture image generator", () => {
 const EXPECTED: Record<string, { type: string | undefined; version: number } | "invalid-json"> = {
   "all-types.map": { type: "mythical-map", version: 1 },
   "big-8k.map": { type: "mythical-map", version: 1 },
+  "perf-8k-200pins.map": { type: "mythical-map", version: 1 },
   "broken-links.map": { type: "mythical-map", version: 1 },
   "missing-image.map": { type: "mythical-map", version: 1 },
   "future-version.map": { type: "mythical-map", version: 99 },

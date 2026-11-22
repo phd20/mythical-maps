@@ -1,0 +1,3362 @@
+{
+  "type": "mythical-map",
+  "version": 1,
+  "image": {
+    "path": "Maps/fixture-8k.png",
+    "width": 8192,
+    "height": 6144
+  },
+  "viewport": {
+    "center": [
+      -96,
+      128
+    ],
+    "zoom": 1
+  },
+  "features": [
+    {
+      "id": "f0000000",
+      "type": "folder",
+      "name": "Region 1",
+      "rank": "a000"
+    },
+    {
+      "id": "f0000001",
+      "type": "folder",
+      "name": "Region 2",
+      "rank": "a001"
+    },
+    {
+      "id": "f0000002",
+      "type": "folder",
+      "name": "Region 3",
+      "rank": "a002"
+    },
+    {
+      "id": "f0000003",
+      "type": "folder",
+      "name": "Region 4",
+      "rank": "a003"
+    },
+    {
+      "id": "f0000004",
+      "type": "folder",
+      "name": "Region 5",
+      "rank": "a004"
+    },
+    {
+      "id": "f0000005",
+      "type": "folder",
+      "name": "Region 6",
+      "rank": "a005"
+    },
+    {
+      "id": "f0000006",
+      "type": "folder",
+      "name": "Region 7",
+      "rank": "a006"
+    },
+    {
+      "id": "f0000007",
+      "type": "folder",
+      "name": "Region 8",
+      "rank": "a007"
+    },
+    {
+      "id": "p0000000",
+      "type": "pin",
+      "name": "Pin 1 (53, 429)",
+      "rank": "a000",
+      "pos": [
+        -13.40625,
+        1.65625
+      ],
+      "parentId": "f0000000",
+      "link": "Westmarch",
+      "visibilityRange": [
+        0.4,
+        1
+      ]
+    },
+    {
+      "id": "p0000001",
+      "type": "pin",
+      "name": "Pin 2 (642, 342)",
+      "rank": "a001",
+      "pos": [
+        -10.6875,
+        20.0625
+      ],
+      "parentId": "f0000000",
+      "style": {
+        "iconGlyph": "beer",
+        "iconColor": "#AA2233",
+        "iconShape": "shield",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000002",
+      "type": "pin",
+      "name": "Pin 3 (1065, 153)",
+      "rank": "a002",
+      "pos": [
+        -4.78125,
+        33.28125
+      ],
+      "parentId": "f0000000",
+      "style": {
+        "iconGlyph": "swords",
+        "iconColor": "#8D6E63",
+        "iconShape": "flag",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000003",
+      "type": "pin",
+      "name": "Pin 4 (1581, 492)",
+      "rank": "a000",
+      "pos": [
+        -15.375,
+        49.40625
+      ],
+      "parentId": "f0000001",
+      "style": {
+        "iconGlyph": "tent",
+        "iconColor": "#3366CC",
+        "iconShape": "flag",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p0000004",
+      "type": "pin",
+      "name": "Pin 5 (1978, 138)",
+      "rank": "a001",
+      "pos": [
+        -4.3125,
+        61.8125
+      ],
+      "parentId": "f0000001",
+      "style": {
+        "iconGlyph": "tree-pine",
+        "iconColor": "#3366CC",
+        "iconShape": "banner",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000005",
+      "type": "pin",
+      "name": "Pin 6 (2328, 372)",
+      "rank": "a002",
+      "pos": [
+        -11.625,
+        72.75
+      ],
+      "parentId": "f0000001",
+      "style": {
+        "iconGlyph": "skull",
+        "iconColor": "#3366CC",
+        "iconShape": "pin",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000006",
+      "type": "pin",
+      "name": "Pin 7 (2507, 336)",
+      "rank": "a000",
+      "pos": [
+        -10.5,
+        78.34375
+      ],
+      "parentId": "f0000002",
+      "style": {
+        "iconGlyph": "home",
+        "iconColor": "#AA2233",
+        "iconShape": "flag",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p0000007",
+      "type": "pin",
+      "name": "Pin 8 (3023, 116)",
+      "rank": "a001",
+      "pos": [
+        -3.625,
+        94.46875
+      ],
+      "parentId": "f0000002",
+      "style": {
+        "iconGlyph": "landmark",
+        "iconColor": "#AA2233",
+        "iconShape": "banner",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000008",
+      "type": "pin",
+      "name": "Pin 9 (3432, 136)",
+      "rank": "a002",
+      "pos": [
+        -4.25,
+        107.25
+      ],
+      "parentId": "f0000002",
+      "style": {
+        "iconGlyph": "anchor",
+        "iconColor": "#6A1B9A",
+        "iconShape": "flag",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000009",
+      "type": "pin",
+      "name": "Pin 10 (4036, 354)",
+      "rank": "a000",
+      "pos": [
+        -11.0625,
+        126.125
+      ],
+      "parentId": "f0000003",
+      "style": {
+        "iconGlyph": "mountain",
+        "iconColor": "#F9A825",
+        "iconShape": "flag",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000000a",
+      "type": "pin",
+      "name": "Pin 11 (4355, 352)",
+      "rank": "a001",
+      "pos": [
+        -11,
+        136.09375
+      ],
+      "parentId": "f0000003"
+    },
+    {
+      "id": "p000000b",
+      "type": "pin",
+      "name": "Pin 12 (4629, 319)",
+      "rank": "a002",
+      "pos": [
+        -9.96875,
+        144.65625
+      ],
+      "parentId": "f0000003",
+      "style": {
+        "iconGlyph": "beer",
+        "iconColor": "#6A1B9A",
+        "iconShape": "arch",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000000c",
+      "type": "pin",
+      "name": "Pin 13 (5213, 500)",
+      "rank": "a000",
+      "pos": [
+        -15.625,
+        162.90625
+      ],
+      "parentId": "f0000004",
+      "style": {
+        "iconGlyph": "swords",
+        "iconColor": "#2E7D32",
+        "iconShape": "circle",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000000d",
+      "type": "pin",
+      "name": "Pin 14 (5399, 125)",
+      "rank": "a001",
+      "pos": [
+        -3.90625,
+        168.71875
+      ],
+      "parentId": "f0000004",
+      "style": {
+        "iconGlyph": "tent",
+        "iconColor": "#A7A7A7",
+        "iconShape": "banner",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000000e",
+      "type": "pin",
+      "name": "Pin 15 (5976, 263)",
+      "rank": "a002",
+      "pos": [
+        -8.21875,
+        186.75
+      ],
+      "parentId": "f0000004",
+      "style": {
+        "iconGlyph": "tree-pine",
+        "iconColor": "#AA2233",
+        "iconShape": "diamond",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000000f",
+      "type": "pin",
+      "name": "Pin 16 (6425, 93)",
+      "rank": "a000",
+      "pos": [
+        -2.90625,
+        200.78125
+      ],
+      "parentId": "f0000005",
+      "style": {
+        "iconGlyph": "skull",
+        "iconColor": "#F9A825",
+        "iconShape": "shield",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000000g",
+      "type": "pin",
+      "name": "Pin 17 (6756, 516)",
+      "rank": "a001",
+      "pos": [
+        -16.125,
+        211.125
+      ],
+      "parentId": "f0000005",
+      "style": {
+        "iconGlyph": "home",
+        "iconColor": "#2E7D32",
+        "iconShape": "shield",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000000h",
+      "type": "pin",
+      "name": "Pin 18 (7227, 308)",
+      "rank": "a002",
+      "pos": [
+        -9.625,
+        225.84375
+      ],
+      "parentId": "f0000005",
+      "style": {
+        "iconGlyph": "landmark",
+        "iconColor": "#8D6E63",
+        "iconShape": "shield",
+        "iconSize": "medium"
+      },
+      "visibilityRange": [
+        0.4,
+        1
+      ]
+    },
+    {
+      "id": "p000000i",
+      "type": "pin",
+      "name": "Pin 19 (7416, 193)",
+      "rank": "a000",
+      "pos": [
+        -6.03125,
+        231.75
+      ],
+      "parentId": "f0000006",
+      "style": {
+        "iconGlyph": "anchor",
+        "iconColor": "#6A1B9A",
+        "iconShape": "pin",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000000j",
+      "type": "pin",
+      "name": "Pin 20 (7907, 227)",
+      "rank": "a001",
+      "pos": [
+        -7.09375,
+        247.09375
+      ],
+      "parentId": "f0000006",
+      "style": {
+        "iconGlyph": "mountain",
+        "iconColor": "#AA2233",
+        "iconShape": "arch",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000000k",
+      "type": "pin",
+      "name": "Pin 21 (99, 993)",
+      "rank": "a000",
+      "pos": [
+        -31.03125,
+        3.09375
+      ],
+      "parentId": "f0000007"
+    },
+    {
+      "id": "p000000l",
+      "type": "pin",
+      "name": "Pin 22 (575, 746)",
+      "rank": "a001",
+      "pos": [
+        -23.3125,
+        17.96875
+      ],
+      "parentId": "f0000007",
+      "style": {
+        "iconGlyph": "beer",
+        "iconColor": "#A7A7A7",
+        "iconShape": "shield",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000000m",
+      "type": "pin",
+      "name": "Pin 23 (986, 739)",
+      "rank": "a002",
+      "pos": [
+        -23.09375,
+        30.8125
+      ],
+      "parentId": "f0000007",
+      "style": {
+        "iconGlyph": "swords",
+        "iconColor": "#F9A825",
+        "iconShape": "circle",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000000n",
+      "type": "pin",
+      "name": "Pin 24 (1358, 936)",
+      "rank": "a008",
+      "pos": [
+        -29.25,
+        42.4375
+      ],
+      "style": {
+        "iconGlyph": "tent",
+        "iconColor": "#F9A825",
+        "iconShape": "flag",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000000o",
+      "type": "pin",
+      "name": "Pin 25 (1965, 902)",
+      "rank": "a009",
+      "pos": [
+        -28.1875,
+        61.40625
+      ],
+      "style": {
+        "iconGlyph": "tree-pine",
+        "iconColor": "#2E7D32",
+        "iconShape": "diamond",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000000p",
+      "type": "pin",
+      "name": "Pin 26 (2168, 920)",
+      "rank": "a00a",
+      "pos": [
+        -28.75,
+        67.75
+      ],
+      "style": {
+        "iconGlyph": "skull",
+        "iconColor": "#AA2233",
+        "iconShape": "arch",
+        "iconSize": "medium"
+      },
+      "link": "Rusty Flagon"
+    },
+    {
+      "id": "p000000q",
+      "type": "pin",
+      "name": "Pin 27 (2601, 776)",
+      "rank": "a00b",
+      "pos": [
+        -24.25,
+        81.28125
+      ],
+      "style": {
+        "iconGlyph": "home",
+        "iconColor": "#CC3333",
+        "iconShape": "pin",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000000r",
+      "type": "pin",
+      "name": "Pin 28 (2920, 969)",
+      "rank": "a00c",
+      "pos": [
+        -30.28125,
+        91.25
+      ],
+      "style": {
+        "iconGlyph": "landmark",
+        "iconColor": "#CC3333",
+        "iconShape": "circle",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000000s",
+      "type": "pin",
+      "name": "Pin 29 (3603, 1106)",
+      "rank": "a00d",
+      "pos": [
+        -34.5625,
+        112.59375
+      ],
+      "style": {
+        "iconGlyph": "anchor",
+        "iconColor": "#CC3333",
+        "iconShape": "banner",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000000t",
+      "type": "pin",
+      "name": "Pin 30 (3914, 947)",
+      "rank": "a003",
+      "pos": [
+        -29.59375,
+        122.3125
+      ],
+      "parentId": "f0000000",
+      "style": {
+        "iconGlyph": "mountain",
+        "iconColor": "#A7A7A7",
+        "iconShape": "circle",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000000u",
+      "type": "pin",
+      "name": "Pin 31 (4424, 788)",
+      "rank": "a004",
+      "pos": [
+        -24.625,
+        138.25
+      ],
+      "parentId": "f0000000"
+    },
+    {
+      "id": "p000000v",
+      "type": "pin",
+      "name": "Pin 32 (4656, 1116)",
+      "rank": "a005",
+      "pos": [
+        -34.875,
+        145.5
+      ],
+      "parentId": "f0000000",
+      "style": {
+        "iconGlyph": "beer",
+        "iconColor": "#CC3333",
+        "iconShape": "circle",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000000w",
+      "type": "pin",
+      "name": "Pin 33 (5271, 1110)",
+      "rank": "a003",
+      "pos": [
+        -34.6875,
+        164.71875
+      ],
+      "parentId": "f0000001",
+      "style": {
+        "iconGlyph": "swords",
+        "iconColor": "#8D6E63",
+        "iconShape": "circle",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000000x",
+      "type": "pin",
+      "name": "Pin 34 (5485, 1046)",
+      "rank": "a004",
+      "pos": [
+        -32.6875,
+        171.40625
+      ],
+      "parentId": "f0000001",
+      "style": {
+        "iconGlyph": "tent",
+        "iconColor": "#A7A7A7",
+        "iconShape": "arch",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000000y",
+      "type": "pin",
+      "name": "Pin 35 (6095, 1164)",
+      "rank": "a005",
+      "pos": [
+        -36.375,
+        190.46875
+      ],
+      "parentId": "f0000001",
+      "style": {
+        "iconGlyph": "tree-pine",
+        "iconColor": "#6A1B9A",
+        "iconShape": "circle",
+        "iconSize": "medium"
+      },
+      "visibilityRange": [
+        0.4,
+        1
+      ]
+    },
+    {
+      "id": "p000000z",
+      "type": "pin",
+      "name": "Pin 36 (6245, 1165)",
+      "rank": "a003",
+      "pos": [
+        -36.40625,
+        195.15625
+      ],
+      "parentId": "f0000002",
+      "style": {
+        "iconGlyph": "skull",
+        "iconColor": "#CC3333",
+        "iconShape": "shield",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000010",
+      "type": "pin",
+      "name": "Pin 37 (6710, 1075)",
+      "rank": "a004",
+      "pos": [
+        -33.59375,
+        209.6875
+      ],
+      "parentId": "f0000002",
+      "style": {
+        "iconGlyph": "home",
+        "iconColor": "#6A1B9A",
+        "iconShape": "banner",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p0000011",
+      "type": "pin",
+      "name": "Pin 38 (7095, 946)",
+      "rank": "a005",
+      "pos": [
+        -29.5625,
+        221.71875
+      ],
+      "parentId": "f0000002",
+      "style": {
+        "iconGlyph": "landmark",
+        "iconColor": "#6A1B9A",
+        "iconShape": "shield",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000012",
+      "type": "pin",
+      "name": "Pin 39 (7693, 822)",
+      "rank": "a003",
+      "pos": [
+        -25.6875,
+        240.40625
+      ],
+      "parentId": "f0000003",
+      "style": {
+        "iconGlyph": "anchor",
+        "iconColor": "#F9A825",
+        "iconShape": "flag",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000013",
+      "type": "pin",
+      "name": "Pin 40 (8139, 1059)",
+      "rank": "a004",
+      "pos": [
+        -33.09375,
+        254.34375
+      ],
+      "parentId": "f0000003",
+      "style": {
+        "iconGlyph": "mountain",
+        "iconColor": "#2E7D32",
+        "iconShape": "flag",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p0000014",
+      "type": "pin",
+      "name": "Pin 41 (257, 1744)",
+      "rank": "a003",
+      "pos": [
+        -54.5,
+        8.03125
+      ],
+      "parentId": "f0000004"
+    },
+    {
+      "id": "p0000015",
+      "type": "pin",
+      "name": "Pin 42 (487, 1346)",
+      "rank": "a004",
+      "pos": [
+        -42.0625,
+        15.21875
+      ],
+      "parentId": "f0000004",
+      "style": {
+        "iconGlyph": "beer",
+        "iconColor": "#3366CC",
+        "iconShape": "arch",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000016",
+      "type": "pin",
+      "name": "Pin 43 (962, 1509)",
+      "rank": "a005",
+      "pos": [
+        -47.15625,
+        30.0625
+      ],
+      "parentId": "f0000004",
+      "style": {
+        "iconGlyph": "swords",
+        "iconColor": "#2E7D32",
+        "iconShape": "pin",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p0000017",
+      "type": "pin",
+      "name": "Pin 44 (1537, 1669)",
+      "rank": "a003",
+      "pos": [
+        -52.15625,
+        48.03125
+      ],
+      "parentId": "f0000005",
+      "style": {
+        "iconGlyph": "tent",
+        "iconColor": "#3366CC",
+        "iconShape": "diamond",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000018",
+      "type": "pin",
+      "name": "Pin 45 (1953, 1763)",
+      "rank": "a004",
+      "pos": [
+        -55.09375,
+        61.03125
+      ],
+      "parentId": "f0000005",
+      "style": {
+        "iconGlyph": "tree-pine",
+        "iconColor": "#8D6E63",
+        "iconShape": "flag",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000019",
+      "type": "pin",
+      "name": "Pin 46 (2240, 1745)",
+      "rank": "a005",
+      "pos": [
+        -54.53125,
+        70
+      ],
+      "parentId": "f0000005",
+      "style": {
+        "iconGlyph": "skull",
+        "iconColor": "#CC3333",
+        "iconShape": "shield",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000001a",
+      "type": "pin",
+      "name": "Pin 47 (2526, 1732)",
+      "rank": "a002",
+      "pos": [
+        -54.125,
+        78.9375
+      ],
+      "parentId": "f0000006",
+      "style": {
+        "iconGlyph": "home",
+        "iconColor": "#F9A825",
+        "iconShape": "arch",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000001b",
+      "type": "pin",
+      "name": "Pin 48 (2984, 1344)",
+      "rank": "a003",
+      "pos": [
+        -42,
+        93.25
+      ],
+      "parentId": "f0000006",
+      "style": {
+        "iconGlyph": "landmark",
+        "iconColor": "#2E7D32",
+        "iconShape": "marker",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000001c",
+      "type": "pin",
+      "name": "Pin 49 (3464, 1605)",
+      "rank": "a004",
+      "pos": [
+        -50.15625,
+        108.25
+      ],
+      "parentId": "f0000006",
+      "style": {
+        "iconGlyph": "anchor",
+        "iconColor": "#F9A825",
+        "iconShape": "flag",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000001d",
+      "type": "pin",
+      "name": "Pin 50 (4051, 1484)",
+      "rank": "a003",
+      "pos": [
+        -46.375,
+        126.59375
+      ],
+      "parentId": "f0000007",
+      "style": {
+        "iconGlyph": "mountain",
+        "iconColor": "#F9A825",
+        "iconShape": "pin",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000001e",
+      "type": "pin",
+      "name": "Pin 51 (4226, 1376)",
+      "rank": "a004",
+      "pos": [
+        -43,
+        132.0625
+      ],
+      "parentId": "f0000007",
+      "link": "The Keep"
+    },
+    {
+      "id": "p000001f",
+      "type": "pin",
+      "name": "Pin 52 (4751, 1497)",
+      "rank": "a005",
+      "pos": [
+        -46.78125,
+        148.46875
+      ],
+      "parentId": "f0000007",
+      "style": {
+        "iconGlyph": "beer",
+        "iconColor": "#6A1B9A",
+        "iconShape": "banner",
+        "iconSize": "small"
+      },
+      "visibilityRange": [
+        0.4,
+        1
+      ]
+    },
+    {
+      "id": "p000001g",
+      "type": "pin",
+      "name": "Pin 53 (4972, 1440)",
+      "rank": "a00e",
+      "pos": [
+        -45,
+        155.375
+      ],
+      "style": {
+        "iconGlyph": "swords",
+        "iconColor": "#2E7D32",
+        "iconShape": "diamond",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000001h",
+      "type": "pin",
+      "name": "Pin 54 (5465, 1377)",
+      "rank": "a00f",
+      "pos": [
+        -43.03125,
+        170.78125
+      ],
+      "style": {
+        "iconGlyph": "tent",
+        "iconColor": "#8D6E63",
+        "iconShape": "marker",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000001i",
+      "type": "pin",
+      "name": "Pin 55 (6048, 1481)",
+      "rank": "a00g",
+      "pos": [
+        -46.28125,
+        189
+      ],
+      "style": {
+        "iconGlyph": "tree-pine",
+        "iconColor": "#F9A825",
+        "iconShape": "circle",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000001j",
+      "type": "pin",
+      "name": "Pin 56 (6394, 1655)",
+      "rank": "a00h",
+      "pos": [
+        -51.71875,
+        199.8125
+      ],
+      "style": {
+        "iconGlyph": "skull",
+        "iconColor": "#6A1B9A",
+        "iconShape": "diamond",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000001k",
+      "type": "pin",
+      "name": "Pin 57 (6802, 1435)",
+      "rank": "a00i",
+      "pos": [
+        -44.84375,
+        212.5625
+      ],
+      "style": {
+        "iconGlyph": "home",
+        "iconColor": "#2E7D32",
+        "iconShape": "arch",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000001l",
+      "type": "pin",
+      "name": "Pin 58 (7046, 1545)",
+      "rank": "a00j",
+      "pos": [
+        -48.28125,
+        220.1875
+      ],
+      "style": {
+        "iconGlyph": "landmark",
+        "iconColor": "#F9A825",
+        "iconShape": "arch",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000001m",
+      "type": "pin",
+      "name": "Pin 59 (7730, 1456)",
+      "rank": "a006",
+      "pos": [
+        -45.5,
+        241.5625
+      ],
+      "parentId": "f0000000",
+      "style": {
+        "iconGlyph": "anchor",
+        "iconColor": "#3366CC",
+        "iconShape": "circle",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000001n",
+      "type": "pin",
+      "name": "Pin 60 (7996, 1759)",
+      "rank": "a007",
+      "pos": [
+        -54.96875,
+        249.875
+      ],
+      "parentId": "f0000000",
+      "style": {
+        "iconGlyph": "mountain",
+        "iconColor": "#F9A825",
+        "iconShape": "shield",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000001o",
+      "type": "pin",
+      "name": "Pin 61 (107, 2146)",
+      "rank": "a006",
+      "pos": [
+        -67.0625,
+        3.34375
+      ],
+      "parentId": "f0000001"
+    },
+    {
+      "id": "p000001p",
+      "type": "pin",
+      "name": "Pin 62 (760, 2392)",
+      "rank": "a007",
+      "pos": [
+        -74.75,
+        23.75
+      ],
+      "parentId": "f0000001",
+      "style": {
+        "iconGlyph": "beer",
+        "iconColor": "#6A1B9A",
+        "iconShape": "pin",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000001q",
+      "type": "pin",
+      "name": "Pin 63 (1179, 2190)",
+      "rank": "a008",
+      "pos": [
+        -68.4375,
+        36.84375
+      ],
+      "parentId": "f0000001",
+      "style": {
+        "iconGlyph": "swords",
+        "iconColor": "#8D6E63",
+        "iconShape": "diamond",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000001r",
+      "type": "pin",
+      "name": "Pin 64 (1369, 2197)",
+      "rank": "a006",
+      "pos": [
+        -68.65625,
+        42.78125
+      ],
+      "parentId": "f0000002",
+      "style": {
+        "iconGlyph": "tent",
+        "iconColor": "#8D6E63",
+        "iconShape": "marker",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000001s",
+      "type": "pin",
+      "name": "Pin 65 (1858, 2095)",
+      "rank": "a007",
+      "pos": [
+        -65.46875,
+        58.0625
+      ],
+      "parentId": "f0000002",
+      "style": {
+        "iconGlyph": "tree-pine",
+        "iconColor": "#CC3333",
+        "iconShape": "circle",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000001t",
+      "type": "pin",
+      "name": "Pin 66 (2341, 2361)",
+      "rank": "a008",
+      "pos": [
+        -73.78125,
+        73.15625
+      ],
+      "parentId": "f0000002",
+      "style": {
+        "iconGlyph": "skull",
+        "iconColor": "#CC3333",
+        "iconShape": "pin",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000001u",
+      "type": "pin",
+      "name": "Pin 67 (2786, 2154)",
+      "rank": "a005",
+      "pos": [
+        -67.3125,
+        87.0625
+      ],
+      "parentId": "f0000003",
+      "style": {
+        "iconGlyph": "home",
+        "iconColor": "#AA2233",
+        "iconShape": "flag",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000001v",
+      "type": "pin",
+      "name": "Pin 68 (3032, 2179)",
+      "rank": "a006",
+      "pos": [
+        -68.09375,
+        94.75
+      ],
+      "parentId": "f0000003",
+      "style": {
+        "iconGlyph": "landmark",
+        "iconColor": "#F9A825",
+        "iconShape": "marker",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000001w",
+      "type": "pin",
+      "name": "Pin 69 (3385, 1998)",
+      "rank": "a007",
+      "pos": [
+        -62.4375,
+        105.78125
+      ],
+      "parentId": "f0000003",
+      "style": {
+        "iconGlyph": "anchor",
+        "iconColor": "#CC3333",
+        "iconShape": "banner",
+        "iconSize": "medium"
+      },
+      "visibilityRange": [
+        0.4,
+        1
+      ]
+    },
+    {
+      "id": "p000001x",
+      "type": "pin",
+      "name": "Pin 70 (3774, 2240)",
+      "rank": "a006",
+      "pos": [
+        -70,
+        117.9375
+      ],
+      "parentId": "f0000004",
+      "style": {
+        "iconGlyph": "mountain",
+        "iconColor": "#3366CC",
+        "iconShape": "marker",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000001y",
+      "type": "pin",
+      "name": "Pin 71 (4160, 2381)",
+      "rank": "a007",
+      "pos": [
+        -74.40625,
+        130
+      ],
+      "parentId": "f0000004"
+    },
+    {
+      "id": "p000001z",
+      "type": "pin",
+      "name": "Pin 72 (4801, 1916)",
+      "rank": "a008",
+      "pos": [
+        -59.875,
+        150.03125
+      ],
+      "parentId": "f0000004",
+      "style": {
+        "iconGlyph": "beer",
+        "iconColor": "#CC3333",
+        "iconShape": "shield",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000020",
+      "type": "pin",
+      "name": "Pin 73 (5250, 1995)",
+      "rank": "a006",
+      "pos": [
+        -62.34375,
+        164.0625
+      ],
+      "parentId": "f0000005",
+      "style": {
+        "iconGlyph": "swords",
+        "iconColor": "#6A1B9A",
+        "iconShape": "diamond",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p0000021",
+      "type": "pin",
+      "name": "Pin 74 (5611, 2156)",
+      "rank": "a007",
+      "pos": [
+        -67.375,
+        175.34375
+      ],
+      "parentId": "f0000005",
+      "style": {
+        "iconGlyph": "tent",
+        "iconColor": "#6A1B9A",
+        "iconShape": "banner",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000022",
+      "type": "pin",
+      "name": "Pin 75 (6102, 2337)",
+      "rank": "a008",
+      "pos": [
+        -73.03125,
+        190.6875
+      ],
+      "parentId": "f0000005",
+      "style": {
+        "iconGlyph": "tree-pine",
+        "iconColor": "#8D6E63",
+        "iconShape": "pin",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000023",
+      "type": "pin",
+      "name": "Pin 76 (6494, 2208)",
+      "rank": "a005",
+      "pos": [
+        -69,
+        202.9375
+      ],
+      "parentId": "f0000006",
+      "style": {
+        "iconGlyph": "skull",
+        "iconColor": "#AA2233",
+        "iconShape": "shield",
+        "iconSize": "small"
+      },
+      "link": "Westmarch"
+    },
+    {
+      "id": "p0000024",
+      "type": "pin",
+      "name": "Pin 77 (6803, 2249)",
+      "rank": "a006",
+      "pos": [
+        -70.28125,
+        212.59375
+      ],
+      "parentId": "f0000006",
+      "style": {
+        "iconGlyph": "home",
+        "iconColor": "#6A1B9A",
+        "iconShape": "diamond",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000025",
+      "type": "pin",
+      "name": "Pin 78 (7239, 2230)",
+      "rank": "a007",
+      "pos": [
+        -69.6875,
+        226.21875
+      ],
+      "parentId": "f0000006",
+      "style": {
+        "iconGlyph": "landmark",
+        "iconColor": "#F9A825",
+        "iconShape": "circle",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000026",
+      "type": "pin",
+      "name": "Pin 79 (7562, 2086)",
+      "rank": "a006",
+      "pos": [
+        -65.1875,
+        236.3125
+      ],
+      "parentId": "f0000007",
+      "style": {
+        "iconGlyph": "anchor",
+        "iconColor": "#6A1B9A",
+        "iconShape": "marker",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p0000027",
+      "type": "pin",
+      "name": "Pin 80 (8150, 2120)",
+      "rank": "a007",
+      "pos": [
+        -66.25,
+        254.6875
+      ],
+      "parentId": "f0000007",
+      "style": {
+        "iconGlyph": "mountain",
+        "iconColor": "#A7A7A7",
+        "iconShape": "diamond",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000028",
+      "type": "pin",
+      "name": "Pin 81 (226, 2811)",
+      "rank": "a00k",
+      "pos": [
+        -87.84375,
+        7.0625
+      ]
+    },
+    {
+      "id": "p0000029",
+      "type": "pin",
+      "name": "Pin 82 (482, 2672)",
+      "rank": "a00l",
+      "pos": [
+        -83.5,
+        15.0625
+      ],
+      "style": {
+        "iconGlyph": "beer",
+        "iconColor": "#CC3333",
+        "iconShape": "arch",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000002a",
+      "type": "pin",
+      "name": "Pin 83 (894, 2523)",
+      "rank": "a00m",
+      "pos": [
+        -78.84375,
+        27.9375
+      ],
+      "style": {
+        "iconGlyph": "swords",
+        "iconColor": "#2E7D32",
+        "iconShape": "shield",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000002b",
+      "type": "pin",
+      "name": "Pin 84 (1322, 2562)",
+      "rank": "a00n",
+      "pos": [
+        -80.0625,
+        41.3125
+      ],
+      "style": {
+        "iconGlyph": "tent",
+        "iconColor": "#8D6E63",
+        "iconShape": "marker",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000002c",
+      "type": "pin",
+      "name": "Pin 85 (1721, 2644)",
+      "rank": "a00o",
+      "pos": [
+        -82.625,
+        53.78125
+      ],
+      "style": {
+        "iconGlyph": "tree-pine",
+        "iconColor": "#F9A825",
+        "iconShape": "arch",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000002d",
+      "type": "pin",
+      "name": "Pin 86 (2277, 2820)",
+      "rank": "a00p",
+      "pos": [
+        -88.125,
+        71.15625
+      ],
+      "style": {
+        "iconGlyph": "skull",
+        "iconColor": "#3366CC",
+        "iconShape": "shield",
+        "iconSize": "medium"
+      },
+      "visibilityRange": [
+        0.4,
+        1
+      ]
+    },
+    {
+      "id": "p000002e",
+      "type": "pin",
+      "name": "Pin 87 (2703, 2921)",
+      "rank": "a008",
+      "pos": [
+        -91.28125,
+        84.46875
+      ],
+      "parentId": "f0000000",
+      "style": {
+        "iconGlyph": "home",
+        "iconColor": "#F9A825",
+        "iconShape": "diamond",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000002f",
+      "type": "pin",
+      "name": "Pin 88 (2983, 2746)",
+      "rank": "a009",
+      "pos": [
+        -85.8125,
+        93.21875
+      ],
+      "parentId": "f0000000",
+      "style": {
+        "iconGlyph": "landmark",
+        "iconColor": "#CC3333",
+        "iconShape": "circle",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000002g",
+      "type": "pin",
+      "name": "Pin 89 (3377, 2561)",
+      "rank": "a00a",
+      "pos": [
+        -80.03125,
+        105.53125
+      ],
+      "parentId": "f0000000",
+      "style": {
+        "iconGlyph": "anchor",
+        "iconColor": "#8D6E63",
+        "iconShape": "shield",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000002h",
+      "type": "pin",
+      "name": "Pin 90 (3791, 2865)",
+      "rank": "a009",
+      "pos": [
+        -89.53125,
+        118.46875
+      ],
+      "parentId": "f0000001",
+      "style": {
+        "iconGlyph": "mountain",
+        "iconColor": "#2E7D32",
+        "iconShape": "circle",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000002i",
+      "type": "pin",
+      "name": "Pin 91 (4208, 2803)",
+      "rank": "a00a",
+      "pos": [
+        -87.59375,
+        131.5
+      ],
+      "parentId": "f0000001"
+    },
+    {
+      "id": "p000002j",
+      "type": "pin",
+      "name": "Pin 92 (4703, 2644)",
+      "rank": "a00b",
+      "pos": [
+        -82.625,
+        146.96875
+      ],
+      "parentId": "f0000001",
+      "style": {
+        "iconGlyph": "beer",
+        "iconColor": "#3366CC",
+        "iconShape": "flag",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000002k",
+      "type": "pin",
+      "name": "Pin 93 (5264, 2580)",
+      "rank": "a009",
+      "pos": [
+        -80.625,
+        164.5
+      ],
+      "parentId": "f0000002",
+      "style": {
+        "iconGlyph": "swords",
+        "iconColor": "#A7A7A7",
+        "iconShape": "diamond",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000002l",
+      "type": "pin",
+      "name": "Pin 94 (5629, 2988)",
+      "rank": "a00a",
+      "pos": [
+        -93.375,
+        175.90625
+      ],
+      "parentId": "f0000002",
+      "style": {
+        "iconGlyph": "tent",
+        "iconColor": "#2E7D32",
+        "iconShape": "banner",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000002m",
+      "type": "pin",
+      "name": "Pin 95 (5909, 2708)",
+      "rank": "a00b",
+      "pos": [
+        -84.625,
+        184.65625
+      ],
+      "parentId": "f0000002",
+      "style": {
+        "iconGlyph": "tree-pine",
+        "iconColor": "#F9A825",
+        "iconShape": "banner",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000002n",
+      "type": "pin",
+      "name": "Pin 96 (6412, 2664)",
+      "rank": "a008",
+      "pos": [
+        -83.25,
+        200.375
+      ],
+      "parentId": "f0000003",
+      "style": {
+        "iconGlyph": "skull",
+        "iconColor": "#CC3333",
+        "iconShape": "flag",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000002o",
+      "type": "pin",
+      "name": "Pin 97 (6646, 2556)",
+      "rank": "a009",
+      "pos": [
+        -79.875,
+        207.6875
+      ],
+      "parentId": "f0000003",
+      "style": {
+        "iconGlyph": "home",
+        "iconColor": "#A7A7A7",
+        "iconShape": "banner",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000002p",
+      "type": "pin",
+      "name": "Pin 98 (7261, 2701)",
+      "rank": "a00a",
+      "pos": [
+        -84.40625,
+        226.90625
+      ],
+      "parentId": "f0000003",
+      "style": {
+        "iconGlyph": "landmark",
+        "iconColor": "#CC3333",
+        "iconShape": "banner",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000002q",
+      "type": "pin",
+      "name": "Pin 99 (7687, 2540)",
+      "rank": "a009",
+      "pos": [
+        -79.375,
+        240.21875
+      ],
+      "parentId": "f0000004",
+      "style": {
+        "iconGlyph": "anchor",
+        "iconColor": "#2E7D32",
+        "iconShape": "banner",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000002r",
+      "type": "pin",
+      "name": "Pin 100 (7948, 2751)",
+      "rank": "a00a",
+      "pos": [
+        -85.96875,
+        248.375
+      ],
+      "parentId": "f0000004",
+      "style": {
+        "iconGlyph": "mountain",
+        "iconColor": "#2E7D32",
+        "iconShape": "pin",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000002s",
+      "type": "pin",
+      "name": "Pin 101 (173, 3359)",
+      "rank": "a009",
+      "pos": [
+        -104.96875,
+        5.40625
+      ],
+      "parentId": "f0000005",
+      "link": "Rusty Flagon"
+    },
+    {
+      "id": "p000002t",
+      "type": "pin",
+      "name": "Pin 102 (561, 3534)",
+      "rank": "a00a",
+      "pos": [
+        -110.4375,
+        17.53125
+      ],
+      "parentId": "f0000005",
+      "style": {
+        "iconGlyph": "beer",
+        "iconColor": "#F9A825",
+        "iconShape": "pin",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000002u",
+      "type": "pin",
+      "name": "Pin 103 (917, 3168)",
+      "rank": "a00b",
+      "pos": [
+        -99,
+        28.65625
+      ],
+      "parentId": "f0000005",
+      "style": {
+        "iconGlyph": "swords",
+        "iconColor": "#CC3333",
+        "iconShape": "banner",
+        "iconSize": "small"
+      },
+      "visibilityRange": [
+        0.4,
+        1
+      ]
+    },
+    {
+      "id": "p000002v",
+      "type": "pin",
+      "name": "Pin 104 (1564, 3181)",
+      "rank": "a008",
+      "pos": [
+        -99.40625,
+        48.875
+      ],
+      "parentId": "f0000006",
+      "style": {
+        "iconGlyph": "tent",
+        "iconColor": "#2E7D32",
+        "iconShape": "flag",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000002w",
+      "type": "pin",
+      "name": "Pin 105 (1919, 3145)",
+      "rank": "a009",
+      "pos": [
+        -98.28125,
+        59.96875
+      ],
+      "parentId": "f0000006",
+      "style": {
+        "iconGlyph": "tree-pine",
+        "iconColor": "#6A1B9A",
+        "iconShape": "circle",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000002x",
+      "type": "pin",
+      "name": "Pin 106 (2391, 3267)",
+      "rank": "a00a",
+      "pos": [
+        -102.09375,
+        74.71875
+      ],
+      "parentId": "f0000006",
+      "style": {
+        "iconGlyph": "skull",
+        "iconColor": "#8D6E63",
+        "iconShape": "shield",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000002y",
+      "type": "pin",
+      "name": "Pin 107 (2673, 3293)",
+      "rank": "a008",
+      "pos": [
+        -102.90625,
+        83.53125
+      ],
+      "parentId": "f0000007",
+      "style": {
+        "iconGlyph": "home",
+        "iconColor": "#A7A7A7",
+        "iconShape": "arch",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000002z",
+      "type": "pin",
+      "name": "Pin 108 (2929, 3205)",
+      "rank": "a009",
+      "pos": [
+        -100.15625,
+        91.53125
+      ],
+      "parentId": "f0000007",
+      "style": {
+        "iconGlyph": "landmark",
+        "iconColor": "#6A1B9A",
+        "iconShape": "shield",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000030",
+      "type": "pin",
+      "name": "Pin 109 (3597, 3569)",
+      "rank": "a00a",
+      "pos": [
+        -111.53125,
+        112.40625
+      ],
+      "parentId": "f0000007",
+      "style": {
+        "iconGlyph": "anchor",
+        "iconColor": "#8D6E63",
+        "iconShape": "pin",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p0000031",
+      "type": "pin",
+      "name": "Pin 110 (3978, 3238)",
+      "rank": "a00q",
+      "pos": [
+        -101.1875,
+        124.3125
+      ],
+      "style": {
+        "iconGlyph": "mountain",
+        "iconColor": "#6A1B9A",
+        "iconShape": "diamond",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000032",
+      "type": "pin",
+      "name": "Pin 111 (4349, 3565)",
+      "rank": "a00r",
+      "pos": [
+        -111.40625,
+        135.90625
+      ]
+    },
+    {
+      "id": "p0000033",
+      "type": "pin",
+      "name": "Pin 112 (4838, 3550)",
+      "rank": "a00s",
+      "pos": [
+        -110.9375,
+        151.1875
+      ],
+      "style": {
+        "iconGlyph": "beer",
+        "iconColor": "#8D6E63",
+        "iconShape": "pin",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p0000034",
+      "type": "pin",
+      "name": "Pin 113 (5135, 3215)",
+      "rank": "a00t",
+      "pos": [
+        -100.46875,
+        160.46875
+      ],
+      "style": {
+        "iconGlyph": "swords",
+        "iconColor": "#CC3333",
+        "iconShape": "shield",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000035",
+      "type": "pin",
+      "name": "Pin 114 (5393, 3330)",
+      "rank": "a00u",
+      "pos": [
+        -104.0625,
+        168.53125
+      ],
+      "style": {
+        "iconGlyph": "tent",
+        "iconColor": "#AA2233",
+        "iconShape": "banner",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000036",
+      "type": "pin",
+      "name": "Pin 115 (5933, 3324)",
+      "rank": "a00v",
+      "pos": [
+        -103.875,
+        185.40625
+      ],
+      "style": {
+        "iconGlyph": "tree-pine",
+        "iconColor": "#AA2233",
+        "iconShape": "diamond",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p0000037",
+      "type": "pin",
+      "name": "Pin 116 (6446, 3563)",
+      "rank": "a00b",
+      "pos": [
+        -111.34375,
+        201.4375
+      ],
+      "parentId": "f0000000",
+      "style": {
+        "iconGlyph": "skull",
+        "iconColor": "#3366CC",
+        "iconShape": "flag",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000038",
+      "type": "pin",
+      "name": "Pin 117 (6912, 3469)",
+      "rank": "a00c",
+      "pos": [
+        -108.40625,
+        216
+      ],
+      "parentId": "f0000000",
+      "style": {
+        "iconGlyph": "home",
+        "iconColor": "#F9A825",
+        "iconShape": "diamond",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000039",
+      "type": "pin",
+      "name": "Pin 118 (7186, 3186)",
+      "rank": "a00d",
+      "pos": [
+        -99.5625,
+        224.5625
+      ],
+      "parentId": "f0000000",
+      "style": {
+        "iconGlyph": "landmark",
+        "iconColor": "#8D6E63",
+        "iconShape": "flag",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000003a",
+      "type": "pin",
+      "name": "Pin 119 (7468, 3457)",
+      "rank": "a00c",
+      "pos": [
+        -108.03125,
+        233.375
+      ],
+      "parentId": "f0000001",
+      "style": {
+        "iconGlyph": "anchor",
+        "iconColor": "#8D6E63",
+        "iconShape": "arch",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000003b",
+      "type": "pin",
+      "name": "Pin 120 (7889, 3200)",
+      "rank": "a00d",
+      "pos": [
+        -100,
+        246.53125
+      ],
+      "parentId": "f0000001",
+      "style": {
+        "iconGlyph": "mountain",
+        "iconColor": "#2E7D32",
+        "iconShape": "flag",
+        "iconSize": "medium"
+      },
+      "visibilityRange": [
+        0.4,
+        1
+      ]
+    },
+    {
+      "id": "p000003c",
+      "type": "pin",
+      "name": "Pin 121 (104, 4222)",
+      "rank": "a00c",
+      "pos": [
+        -131.9375,
+        3.25
+      ],
+      "parentId": "f0000002"
+    },
+    {
+      "id": "p000003d",
+      "type": "pin",
+      "name": "Pin 122 (698, 3807)",
+      "rank": "a00d",
+      "pos": [
+        -118.96875,
+        21.8125
+      ],
+      "parentId": "f0000002",
+      "style": {
+        "iconGlyph": "beer",
+        "iconColor": "#AA2233",
+        "iconShape": "arch",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000003e",
+      "type": "pin",
+      "name": "Pin 123 (1044, 4040)",
+      "rank": "a00e",
+      "pos": [
+        -126.25,
+        32.625
+      ],
+      "parentId": "f0000002",
+      "style": {
+        "iconGlyph": "swords",
+        "iconColor": "#AA2233",
+        "iconShape": "circle",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000003f",
+      "type": "pin",
+      "name": "Pin 124 (1341, 3884)",
+      "rank": "a00b",
+      "pos": [
+        -121.375,
+        41.90625
+      ],
+      "parentId": "f0000003",
+      "style": {
+        "iconGlyph": "tent",
+        "iconColor": "#2E7D32",
+        "iconShape": "marker",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000003g",
+      "type": "pin",
+      "name": "Pin 125 (1908, 4194)",
+      "rank": "a00c",
+      "pos": [
+        -131.0625,
+        59.625
+      ],
+      "parentId": "f0000003",
+      "style": {
+        "iconGlyph": "tree-pine",
+        "iconColor": "#8D6E63",
+        "iconShape": "arch",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000003h",
+      "type": "pin",
+      "name": "Pin 126 (2094, 4085)",
+      "rank": "a00d",
+      "pos": [
+        -127.65625,
+        65.4375
+      ],
+      "parentId": "f0000003",
+      "style": {
+        "iconGlyph": "skull",
+        "iconColor": "#F9A825",
+        "iconShape": "pin",
+        "iconSize": "medium"
+      },
+      "link": "The Keep"
+    },
+    {
+      "id": "p000003i",
+      "type": "pin",
+      "name": "Pin 127 (2515, 4097)",
+      "rank": "a00b",
+      "pos": [
+        -128.03125,
+        78.59375
+      ],
+      "parentId": "f0000004",
+      "style": {
+        "iconGlyph": "home",
+        "iconColor": "#AA2233",
+        "iconShape": "shield",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000003j",
+      "type": "pin",
+      "name": "Pin 128 (3139, 4194)",
+      "rank": "a00c",
+      "pos": [
+        -131.0625,
+        98.09375
+      ],
+      "parentId": "f0000004",
+      "style": {
+        "iconGlyph": "landmark",
+        "iconColor": "#6A1B9A",
+        "iconShape": "diamond",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000003k",
+      "type": "pin",
+      "name": "Pin 129 (3409, 4094)",
+      "rank": "a00d",
+      "pos": [
+        -127.9375,
+        106.53125
+      ],
+      "parentId": "f0000004",
+      "style": {
+        "iconGlyph": "anchor",
+        "iconColor": "#A7A7A7",
+        "iconShape": "arch",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000003l",
+      "type": "pin",
+      "name": "Pin 130 (3925, 4134)",
+      "rank": "a00c",
+      "pos": [
+        -129.1875,
+        122.65625
+      ],
+      "parentId": "f0000005",
+      "style": {
+        "iconGlyph": "mountain",
+        "iconColor": "#F9A825",
+        "iconShape": "circle",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000003m",
+      "type": "pin",
+      "name": "Pin 131 (4450, 4238)",
+      "rank": "a00d",
+      "pos": [
+        -132.4375,
+        139.0625
+      ],
+      "parentId": "f0000005"
+    },
+    {
+      "id": "p000003n",
+      "type": "pin",
+      "name": "Pin 132 (4804, 4005)",
+      "rank": "a00e",
+      "pos": [
+        -125.15625,
+        150.125
+      ],
+      "parentId": "f0000005",
+      "style": {
+        "iconGlyph": "beer",
+        "iconColor": "#F9A825",
+        "iconShape": "diamond",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000003o",
+      "type": "pin",
+      "name": "Pin 133 (5276, 4144)",
+      "rank": "a00b",
+      "pos": [
+        -129.5,
+        164.875
+      ],
+      "parentId": "f0000006",
+      "style": {
+        "iconGlyph": "swords",
+        "iconColor": "#2E7D32",
+        "iconShape": "shield",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000003p",
+      "type": "pin",
+      "name": "Pin 134 (5557, 4219)",
+      "rank": "a00c",
+      "pos": [
+        -131.84375,
+        173.65625
+      ],
+      "parentId": "f0000006",
+      "style": {
+        "iconGlyph": "tent",
+        "iconColor": "#CC3333",
+        "iconShape": "marker",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000003q",
+      "type": "pin",
+      "name": "Pin 135 (5966, 4100)",
+      "rank": "a00d",
+      "pos": [
+        -128.125,
+        186.4375
+      ],
+      "parentId": "f0000006",
+      "style": {
+        "iconGlyph": "tree-pine",
+        "iconColor": "#3366CC",
+        "iconShape": "marker",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000003r",
+      "type": "pin",
+      "name": "Pin 136 (6222, 3846)",
+      "rank": "a00b",
+      "pos": [
+        -120.1875,
+        194.4375
+      ],
+      "parentId": "f0000007",
+      "style": {
+        "iconGlyph": "skull",
+        "iconColor": "#F9A825",
+        "iconShape": "flag",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000003s",
+      "type": "pin",
+      "name": "Pin 137 (6792, 3896)",
+      "rank": "a00c",
+      "pos": [
+        -121.75,
+        212.25
+      ],
+      "parentId": "f0000007",
+      "style": {
+        "iconGlyph": "home",
+        "iconColor": "#6A1B9A",
+        "iconShape": "pin",
+        "iconSize": "medium"
+      },
+      "visibilityRange": [
+        0.4,
+        1
+      ]
+    },
+    {
+      "id": "p000003t",
+      "type": "pin",
+      "name": "Pin 138 (7051, 3917)",
+      "rank": "a00d",
+      "pos": [
+        -122.40625,
+        220.34375
+      ],
+      "parentId": "f0000007",
+      "style": {
+        "iconGlyph": "landmark",
+        "iconColor": "#3366CC",
+        "iconShape": "flag",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000003u",
+      "type": "pin",
+      "name": "Pin 139 (7538, 3751)",
+      "rank": "a00w",
+      "pos": [
+        -117.21875,
+        235.5625
+      ],
+      "style": {
+        "iconGlyph": "anchor",
+        "iconColor": "#CC3333",
+        "iconShape": "diamond",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000003v",
+      "type": "pin",
+      "name": "Pin 140 (8150, 4107)",
+      "rank": "a00x",
+      "pos": [
+        -128.34375,
+        254.6875
+      ],
+      "style": {
+        "iconGlyph": "mountain",
+        "iconColor": "#8D6E63",
+        "iconShape": "circle",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000003w",
+      "type": "pin",
+      "name": "Pin 141 (362, 4377)",
+      "rank": "a00y",
+      "pos": [
+        -136.78125,
+        11.3125
+      ]
+    },
+    {
+      "id": "p000003x",
+      "type": "pin",
+      "name": "Pin 142 (702, 4763)",
+      "rank": "a00z",
+      "pos": [
+        -148.84375,
+        21.9375
+      ],
+      "style": {
+        "iconGlyph": "beer",
+        "iconColor": "#3366CC",
+        "iconShape": "banner",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000003y",
+      "type": "pin",
+      "name": "Pin 143 (1103, 4771)",
+      "rank": "a010",
+      "pos": [
+        -149.09375,
+        34.46875
+      ],
+      "style": {
+        "iconGlyph": "swords",
+        "iconColor": "#8D6E63",
+        "iconShape": "circle",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000003z",
+      "type": "pin",
+      "name": "Pin 144 (1561, 4743)",
+      "rank": "a00e",
+      "pos": [
+        -148.21875,
+        48.78125
+      ],
+      "parentId": "f0000000",
+      "style": {
+        "iconGlyph": "tent",
+        "iconColor": "#3366CC",
+        "iconShape": "pin",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000040",
+      "type": "pin",
+      "name": "Pin 145 (1861, 4687)",
+      "rank": "a00f",
+      "pos": [
+        -146.46875,
+        58.15625
+      ],
+      "parentId": "f0000000",
+      "style": {
+        "iconGlyph": "tree-pine",
+        "iconColor": "#3366CC",
+        "iconShape": "marker",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p0000041",
+      "type": "pin",
+      "name": "Pin 146 (2346, 4515)",
+      "rank": "a00g",
+      "pos": [
+        -141.09375,
+        73.3125
+      ],
+      "parentId": "f0000000",
+      "style": {
+        "iconGlyph": "skull",
+        "iconColor": "#A7A7A7",
+        "iconShape": "circle",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000042",
+      "type": "pin",
+      "name": "Pin 147 (2622, 4607)",
+      "rank": "a00e",
+      "pos": [
+        -143.96875,
+        81.9375
+      ],
+      "parentId": "f0000001",
+      "style": {
+        "iconGlyph": "home",
+        "iconColor": "#A7A7A7",
+        "iconShape": "shield",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000043",
+      "type": "pin",
+      "name": "Pin 148 (2941, 4478)",
+      "rank": "a00f",
+      "pos": [
+        -139.9375,
+        91.90625
+      ],
+      "parentId": "f0000001",
+      "style": {
+        "iconGlyph": "landmark",
+        "iconColor": "#AA2233",
+        "iconShape": "diamond",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p0000044",
+      "type": "pin",
+      "name": "Pin 149 (3603, 4659)",
+      "rank": "a00g",
+      "pos": [
+        -145.59375,
+        112.59375
+      ],
+      "parentId": "f0000001",
+      "style": {
+        "iconGlyph": "anchor",
+        "iconColor": "#2E7D32",
+        "iconShape": "flag",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000045",
+      "type": "pin",
+      "name": "Pin 150 (3899, 4665)",
+      "rank": "a00f",
+      "pos": [
+        -145.78125,
+        121.84375
+      ],
+      "parentId": "f0000002",
+      "style": {
+        "iconGlyph": "mountain",
+        "iconColor": "#2E7D32",
+        "iconShape": "flag",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000046",
+      "type": "pin",
+      "name": "Pin 151 (4156, 4563)",
+      "rank": "a00g",
+      "pos": [
+        -142.59375,
+        129.875
+      ],
+      "parentId": "f0000002",
+      "link": "Westmarch"
+    },
+    {
+      "id": "p0000047",
+      "type": "pin",
+      "name": "Pin 152 (4669, 4436)",
+      "rank": "a00h",
+      "pos": [
+        -138.625,
+        145.90625
+      ],
+      "parentId": "f0000002",
+      "style": {
+        "iconGlyph": "beer",
+        "iconColor": "#CC3333",
+        "iconShape": "shield",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000048",
+      "type": "pin",
+      "name": "Pin 153 (5185, 4583)",
+      "rank": "a00e",
+      "pos": [
+        -143.21875,
+        162.03125
+      ],
+      "parentId": "f0000003",
+      "style": {
+        "iconGlyph": "swords",
+        "iconColor": "#F9A825",
+        "iconShape": "arch",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000049",
+      "type": "pin",
+      "name": "Pin 154 (5403, 4447)",
+      "rank": "a00f",
+      "pos": [
+        -138.96875,
+        168.84375
+      ],
+      "parentId": "f0000003",
+      "style": {
+        "iconGlyph": "tent",
+        "iconColor": "#2E7D32",
+        "iconShape": "marker",
+        "iconSize": "small"
+      },
+      "visibilityRange": [
+        0.4,
+        1
+      ]
+    },
+    {
+      "id": "p000004a",
+      "type": "pin",
+      "name": "Pin 155 (6038, 4722)",
+      "rank": "a00g",
+      "pos": [
+        -147.5625,
+        188.6875
+      ],
+      "parentId": "f0000003",
+      "style": {
+        "iconGlyph": "tree-pine",
+        "iconColor": "#A7A7A7",
+        "iconShape": "banner",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000004b",
+      "type": "pin",
+      "name": "Pin 156 (6224, 4850)",
+      "rank": "a00e",
+      "pos": [
+        -151.5625,
+        194.5
+      ],
+      "parentId": "f0000004",
+      "style": {
+        "iconGlyph": "skull",
+        "iconColor": "#F9A825",
+        "iconShape": "marker",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000004c",
+      "type": "pin",
+      "name": "Pin 157 (6785, 4631)",
+      "rank": "a00f",
+      "pos": [
+        -144.71875,
+        212.03125
+      ],
+      "parentId": "f0000004",
+      "style": {
+        "iconGlyph": "home",
+        "iconColor": "#8D6E63",
+        "iconShape": "marker",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000004d",
+      "type": "pin",
+      "name": "Pin 158 (7036, 4601)",
+      "rank": "a00g",
+      "pos": [
+        -143.78125,
+        219.875
+      ],
+      "parentId": "f0000004",
+      "style": {
+        "iconGlyph": "landmark",
+        "iconColor": "#8D6E63",
+        "iconShape": "banner",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000004e",
+      "type": "pin",
+      "name": "Pin 159 (7550, 4650)",
+      "rank": "a00f",
+      "pos": [
+        -145.3125,
+        235.9375
+      ],
+      "parentId": "f0000005",
+      "style": {
+        "iconGlyph": "anchor",
+        "iconColor": "#3366CC",
+        "iconShape": "circle",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000004f",
+      "type": "pin",
+      "name": "Pin 160 (8111, 4494)",
+      "rank": "a00g",
+      "pos": [
+        -140.4375,
+        253.46875
+      ],
+      "parentId": "f0000005",
+      "style": {
+        "iconGlyph": "mountain",
+        "iconColor": "#8D6E63",
+        "iconShape": "flag",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000004g",
+      "type": "pin",
+      "name": "Pin 161 (318, 5214)",
+      "rank": "a00e",
+      "pos": [
+        -162.9375,
+        9.9375
+      ],
+      "parentId": "f0000006"
+    },
+    {
+      "id": "p000004h",
+      "type": "pin",
+      "name": "Pin 162 (497, 5012)",
+      "rank": "a00f",
+      "pos": [
+        -156.625,
+        15.53125
+      ],
+      "parentId": "f0000006",
+      "style": {
+        "iconGlyph": "beer",
+        "iconColor": "#F9A825",
+        "iconShape": "flag",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000004i",
+      "type": "pin",
+      "name": "Pin 163 (1163, 5298)",
+      "rank": "a00g",
+      "pos": [
+        -165.5625,
+        36.34375
+      ],
+      "parentId": "f0000006",
+      "style": {
+        "iconGlyph": "swords",
+        "iconColor": "#6A1B9A",
+        "iconShape": "banner",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000004j",
+      "type": "pin",
+      "name": "Pin 164 (1307, 5134)",
+      "rank": "a00e",
+      "pos": [
+        -160.4375,
+        40.84375
+      ],
+      "parentId": "f0000007",
+      "style": {
+        "iconGlyph": "tent",
+        "iconColor": "#AA2233",
+        "iconShape": "pin",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000004k",
+      "type": "pin",
+      "name": "Pin 165 (1814, 5005)",
+      "rank": "a00f",
+      "pos": [
+        -156.40625,
+        56.6875
+      ],
+      "parentId": "f0000007",
+      "style": {
+        "iconGlyph": "tree-pine",
+        "iconColor": "#3366CC",
+        "iconShape": "pin",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000004l",
+      "type": "pin",
+      "name": "Pin 166 (2325, 5324)",
+      "rank": "a00g",
+      "pos": [
+        -166.375,
+        72.65625
+      ],
+      "parentId": "f0000007",
+      "style": {
+        "iconGlyph": "skull",
+        "iconColor": "#CC3333",
+        "iconShape": "arch",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000004m",
+      "type": "pin",
+      "name": "Pin 167 (2811, 5074)",
+      "rank": "a011",
+      "pos": [
+        -158.5625,
+        87.84375
+      ],
+      "style": {
+        "iconGlyph": "home",
+        "iconColor": "#A7A7A7",
+        "iconShape": "banner",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000004n",
+      "type": "pin",
+      "name": "Pin 168 (3197, 5181)",
+      "rank": "a012",
+      "pos": [
+        -161.90625,
+        99.90625
+      ],
+      "style": {
+        "iconGlyph": "landmark",
+        "iconColor": "#AA2233",
+        "iconShape": "marker",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000004o",
+      "type": "pin",
+      "name": "Pin 169 (3558, 5366)",
+      "rank": "a013",
+      "pos": [
+        -167.6875,
+        111.1875
+      ],
+      "style": {
+        "iconGlyph": "anchor",
+        "iconColor": "#F9A825",
+        "iconShape": "marker",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000004p",
+      "type": "pin",
+      "name": "Pin 170 (3940, 5379)",
+      "rank": "a014",
+      "pos": [
+        -168.09375,
+        123.125
+      ],
+      "style": {
+        "iconGlyph": "mountain",
+        "iconColor": "#6A1B9A",
+        "iconShape": "shield",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000004q",
+      "type": "pin",
+      "name": "Pin 171 (4363, 5017)",
+      "rank": "a015",
+      "pos": [
+        -156.78125,
+        136.34375
+      ],
+      "visibilityRange": [
+        0.4,
+        1
+      ]
+    },
+    {
+      "id": "p000004r",
+      "type": "pin",
+      "name": "Pin 172 (4742, 5131)",
+      "rank": "a016",
+      "pos": [
+        -160.34375,
+        148.1875
+      ],
+      "style": {
+        "iconGlyph": "beer",
+        "iconColor": "#AA2233",
+        "iconShape": "banner",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000004s",
+      "type": "pin",
+      "name": "Pin 173 (5077, 5237)",
+      "rank": "a00h",
+      "pos": [
+        -163.65625,
+        158.65625
+      ],
+      "parentId": "f0000000",
+      "style": {
+        "iconGlyph": "swords",
+        "iconColor": "#8D6E63",
+        "iconShape": "circle",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000004t",
+      "type": "pin",
+      "name": "Pin 174 (5463, 5029)",
+      "rank": "a00i",
+      "pos": [
+        -157.15625,
+        170.71875
+      ],
+      "parentId": "f0000000",
+      "style": {
+        "iconGlyph": "tent",
+        "iconColor": "#3366CC",
+        "iconShape": "circle",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000004u",
+      "type": "pin",
+      "name": "Pin 175 (6081, 5079)",
+      "rank": "a00j",
+      "pos": [
+        -158.71875,
+        190.03125
+      ],
+      "parentId": "f0000000",
+      "style": {
+        "iconGlyph": "tree-pine",
+        "iconColor": "#CC3333",
+        "iconShape": "circle",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000004v",
+      "type": "pin",
+      "name": "Pin 176 (6288, 5297)",
+      "rank": "a00h",
+      "pos": [
+        -165.53125,
+        196.5
+      ],
+      "parentId": "f0000001",
+      "style": {
+        "iconGlyph": "skull",
+        "iconColor": "#6A1B9A",
+        "iconShape": "arch",
+        "iconSize": "medium"
+      },
+      "link": "Rusty Flagon"
+    },
+    {
+      "id": "p000004w",
+      "type": "pin",
+      "name": "Pin 177 (6758, 5051)",
+      "rank": "a00i",
+      "pos": [
+        -157.84375,
+        211.1875
+      ],
+      "parentId": "f0000001",
+      "style": {
+        "iconGlyph": "home",
+        "iconColor": "#F9A825",
+        "iconShape": "arch",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000004x",
+      "type": "pin",
+      "name": "Pin 178 (7324, 5074)",
+      "rank": "a00j",
+      "pos": [
+        -158.5625,
+        228.875
+      ],
+      "parentId": "f0000001",
+      "style": {
+        "iconGlyph": "landmark",
+        "iconColor": "#AA2233",
+        "iconShape": "pin",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000004y",
+      "type": "pin",
+      "name": "Pin 179 (7577, 5272)",
+      "rank": "a00i",
+      "pos": [
+        -164.75,
+        236.78125
+      ],
+      "parentId": "f0000002",
+      "style": {
+        "iconGlyph": "anchor",
+        "iconColor": "#AA2233",
+        "iconShape": "pin",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000004z",
+      "type": "pin",
+      "name": "Pin 180 (8070, 5415)",
+      "rank": "a00j",
+      "pos": [
+        -169.21875,
+        252.1875
+      ],
+      "parentId": "f0000002",
+      "style": {
+        "iconGlyph": "mountain",
+        "iconColor": "#3366CC",
+        "iconShape": "shield",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000050",
+      "type": "pin",
+      "name": "Pin 181 (46, 5816)",
+      "rank": "a00h",
+      "pos": [
+        -181.75,
+        1.4375
+      ],
+      "parentId": "f0000003"
+    },
+    {
+      "id": "p0000051",
+      "type": "pin",
+      "name": "Pin 182 (714, 5775)",
+      "rank": "a00i",
+      "pos": [
+        -180.46875,
+        22.3125
+      ],
+      "parentId": "f0000003",
+      "style": {
+        "iconGlyph": "beer",
+        "iconColor": "#A7A7A7",
+        "iconShape": "arch",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000052",
+      "type": "pin",
+      "name": "Pin 183 (1002, 5977)",
+      "rank": "a00j",
+      "pos": [
+        -186.78125,
+        31.3125
+      ],
+      "parentId": "f0000003",
+      "style": {
+        "iconGlyph": "swords",
+        "iconColor": "#CC3333",
+        "iconShape": "diamond",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000053",
+      "type": "pin",
+      "name": "Pin 184 (1486, 5728)",
+      "rank": "a00h",
+      "pos": [
+        -179,
+        46.4375
+      ],
+      "parentId": "f0000004",
+      "style": {
+        "iconGlyph": "tent",
+        "iconColor": "#CC3333",
+        "iconShape": "banner",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p0000054",
+      "type": "pin",
+      "name": "Pin 185 (1797, 5625)",
+      "rank": "a00i",
+      "pos": [
+        -175.78125,
+        56.15625
+      ],
+      "parentId": "f0000004",
+      "style": {
+        "iconGlyph": "tree-pine",
+        "iconColor": "#8D6E63",
+        "iconShape": "marker",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000055",
+      "type": "pin",
+      "name": "Pin 186 (2252, 5882)",
+      "rank": "a00j",
+      "pos": [
+        -183.8125,
+        70.375
+      ],
+      "parentId": "f0000004",
+      "style": {
+        "iconGlyph": "skull",
+        "iconColor": "#AA2233",
+        "iconShape": "arch",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000056",
+      "type": "pin",
+      "name": "Pin 187 (2733, 5771)",
+      "rank": "a00h",
+      "pos": [
+        -180.34375,
+        85.40625
+      ],
+      "parentId": "f0000005",
+      "style": {
+        "iconGlyph": "home",
+        "iconColor": "#A7A7A7",
+        "iconShape": "marker",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p0000057",
+      "type": "pin",
+      "name": "Pin 188 (2952, 6006)",
+      "rank": "a00i",
+      "pos": [
+        -187.6875,
+        92.25
+      ],
+      "parentId": "f0000005",
+      "style": {
+        "iconGlyph": "landmark",
+        "iconColor": "#6A1B9A",
+        "iconShape": "banner",
+        "iconSize": "medium"
+      },
+      "visibilityRange": [
+        0.4,
+        1
+      ]
+    },
+    {
+      "id": "p0000058",
+      "type": "pin",
+      "name": "Pin 189 (3437, 5767)",
+      "rank": "a00j",
+      "pos": [
+        -180.21875,
+        107.40625
+      ],
+      "parentId": "f0000005",
+      "style": {
+        "iconGlyph": "anchor",
+        "iconColor": "#6A1B9A",
+        "iconShape": "diamond",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p0000059",
+      "type": "pin",
+      "name": "Pin 190 (3822, 5804)",
+      "rank": "a00h",
+      "pos": [
+        -181.375,
+        119.4375
+      ],
+      "parentId": "f0000006",
+      "style": {
+        "iconGlyph": "mountain",
+        "iconColor": "#8D6E63",
+        "iconShape": "pin",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000005a",
+      "type": "pin",
+      "name": "Pin 191 (4271, 6063)",
+      "rank": "a00i",
+      "pos": [
+        -189.46875,
+        133.46875
+      ],
+      "parentId": "f0000006"
+    },
+    {
+      "id": "p000005b",
+      "type": "pin",
+      "name": "Pin 192 (4553, 5938)",
+      "rank": "a00j",
+      "pos": [
+        -185.5625,
+        142.28125
+      ],
+      "parentId": "f0000006",
+      "style": {
+        "iconGlyph": "beer",
+        "iconColor": "#CC3333",
+        "iconShape": "banner",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000005c",
+      "type": "pin",
+      "name": "Pin 193 (5196, 6038)",
+      "rank": "a00h",
+      "pos": [
+        -188.6875,
+        162.375
+      ],
+      "parentId": "f0000007",
+      "style": {
+        "iconGlyph": "swords",
+        "iconColor": "#F9A825",
+        "iconShape": "flag",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000005d",
+      "type": "pin",
+      "name": "Pin 194 (5630, 5812)",
+      "rank": "a00i",
+      "pos": [
+        -181.625,
+        175.9375
+      ],
+      "parentId": "f0000007",
+      "style": {
+        "iconGlyph": "tent",
+        "iconColor": "#8D6E63",
+        "iconShape": "pin",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000005e",
+      "type": "pin",
+      "name": "Pin 195 (5973, 5757)",
+      "rank": "a00j",
+      "pos": [
+        -179.90625,
+        186.65625
+      ],
+      "parentId": "f0000007",
+      "style": {
+        "iconGlyph": "tree-pine",
+        "iconColor": "#8D6E63",
+        "iconShape": "banner",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000005f",
+      "type": "pin",
+      "name": "Pin 196 (6189, 5715)",
+      "rank": "a017",
+      "pos": [
+        -178.59375,
+        193.40625
+      ],
+      "style": {
+        "iconGlyph": "skull",
+        "iconColor": "#AA2233",
+        "iconShape": "arch",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000005g",
+      "type": "pin",
+      "name": "Pin 197 (6885, 6071)",
+      "rank": "a018",
+      "pos": [
+        -189.71875,
+        215.15625
+      ],
+      "style": {
+        "iconGlyph": "home",
+        "iconColor": "#8D6E63",
+        "iconShape": "flag",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000005h",
+      "type": "pin",
+      "name": "Pin 198 (7028, 5606)",
+      "rank": "a019",
+      "pos": [
+        -175.1875,
+        219.625
+      ],
+      "style": {
+        "iconGlyph": "landmark",
+        "iconColor": "#A7A7A7",
+        "iconShape": "diamond",
+        "iconSize": "medium"
+      }
+    },
+    {
+      "id": "p000005i",
+      "type": "pin",
+      "name": "Pin 199 (7738, 5664)",
+      "rank": "a01a",
+      "pos": [
+        -177,
+        241.8125
+      ],
+      "style": {
+        "iconGlyph": "anchor",
+        "iconColor": "#A7A7A7",
+        "iconShape": "flag",
+        "iconSize": "small"
+      }
+    },
+    {
+      "id": "p000005j",
+      "type": "pin",
+      "name": "Pin 200 (8054, 5929)",
+      "rank": "a01b",
+      "pos": [
+        -185.28125,
+        251.6875
+      ],
+      "style": {
+        "iconGlyph": "mountain",
+        "iconColor": "#2E7D32",
+        "iconShape": "circle",
+        "iconSize": "medium"
+      }
+    }
+  ]
+}
