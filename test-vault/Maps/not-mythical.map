@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "name": "Just some JSON that is not a Mythical map",
+  "image": { "path": "Maps/fixture-4k.png", "width": 4096, "height": 3072 },
+  "features": []
+}

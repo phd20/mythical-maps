@@ -1,0 +1,11 @@
+{
+  "type": "mythical-map",
+  "version": 1,
+  "image": { "path": "Maps/fixture-4k.png", "width": 4096, "height": 3072 },
+  "viewport": { "center": [-96, 128], "zoom": 2 },
+  "features": [
+    { "id": "pnowhe01", "type": "pin", "name": "Nowhere Inn", "rank": "a0", "pos": [-48, 64], "link": "Nowhere Inn" },
+    { "id": "plostc01", "type": "pin", "name": "Lost City gates", "rank": "a1", "pos": [-144, 192], "link": "Lost City#Gates" },
+    { "id": "pkeepo01", "type": "pin", "name": "The Keep (resolves)", "rank": "a2", "pos": [-96, 128], "link": "The Keep" }
+  ]
+}

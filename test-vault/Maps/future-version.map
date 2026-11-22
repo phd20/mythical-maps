@@ -1,0 +1,9 @@
+{
+  "type": "mythical-map",
+  "version": 99,
+  "image": { "path": "Maps/fixture-4k.png", "width": 4096, "height": 3072 },
+  "viewport": { "center": [-96, 128], "zoom": 2 },
+  "features": [
+    { "id": "pfutur01", "type": "pin", "name": "From the future", "rank": "a0", "pos": [-96, 128] }
+  ]
+}

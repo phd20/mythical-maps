@@ -12,6 +12,7 @@ coverage/
 # Dev build target inside the test vault (npm run dev)
 test-vault/.obsidian/plugins/mythical-maps/
 test-vault/.obsidian/workspace*.json
+test-vault/Maps/*.png
 
 # Beads / Dolt files (added by bd init)
 .dolt/

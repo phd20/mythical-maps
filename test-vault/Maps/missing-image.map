@@ -1,0 +1,9 @@
+{
+  "type": "mythical-map",
+  "version": 1,
+  "image": { "path": "Maps/does-not-exist.png", "width": 4096, "height": 3072 },
+  "viewport": { "center": [-96, 128], "zoom": 2 },
+  "features": [
+    { "id": "pmissi01", "type": "pin", "name": "Pin on a missing image", "rank": "a0", "pos": [-96, 128], "link": "Westmarch" }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "type": "mythical-map",
+  "version": 1,
+  "image": { "path": "Maps/fixture-8k.png", "width": 8192, "height": 6144 },
+  "viewport": { "center": [-96, 128], "zoom": 1 },
+  "features": [
+    { "id": "pcentr01", "type": "pin", "name": "Centre (4096, 3072)", "rank": "a0", "pos": [-96, 128], "link": "Westmarch" },
+    { "id": "pnwest01", "type": "pin", "name": "North-west (1000, 1000)", "rank": "a1", "pos": [-31.25, 31.25] },
+    { "id": "pseast01", "type": "pin", "name": "South-east (7000, 5500)", "rank": "a2", "pos": [-171.875, 218.75], "link": "Rusty Flagon" },
+    { "id": "pneast01", "type": "pin", "name": "North-east (8000, 200)", "rank": "a3", "pos": [-6.25, 250] }
+  ]
+}

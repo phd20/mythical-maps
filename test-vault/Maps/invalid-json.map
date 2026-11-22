@@ -1,0 +1,7 @@
+{
+  "type": "mythical-map",
+  "version": 1,
+  "image": { "path": "Maps/fixture-4k.png", "width": 4096, "height": 3072 },
+  "features": [
+    { "id": "pbroke01", "type": "pin", "rank": "a0", "pos": [-96, 128], }
+

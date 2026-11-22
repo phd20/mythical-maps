@@ -1,0 +1,28 @@
+{
+  "type": "mythical-map",
+  "version": 1,
+  "image": { "path": "Maps/fixture-4k.png", "width": 4096, "height": 3072 },
+  "viewport": { "center": [-96, 128], "zoom": 2 },
+  "features": [
+    { "id": "ftowns01", "type": "folder", "name": "Towns", "rank": "a0", "isHidden": false },
+    { "id": "pwestm01", "type": "pin", "name": "Westmarch", "rank": "a1",
+      "pos": [-96, 128], "link": "Westmarch",
+      "style": { "iconGlyph": "castle", "iconColor": "#3366CC", "iconShape": "pin", "iconSize": "medium" } },
+    { "id": "lwildc01", "type": "label", "name": "The Wild Coast", "rank": "a2",
+      "pos": [-160, 32], "visibilityRange": [0.5, 1],
+      "style": { "labelSize": "lg", "textColor": "#203040" } },
+    { "id": "rdarkf01", "type": "region", "name": "Dark Forest", "rank": "a3",
+      "polygon": [[-32, 160], [-32, 224], [-96, 224], [-96, 160]],
+      "style": { "color": "#2E7D32", "fillOpacity": 0.35, "borderStyle": "solid" } },
+    { "id": "hkroad01", "type": "path", "name": "King's Road", "rank": "a4",
+      "polyline": [[-16, 16], [-96, 128], [-176, 240]],
+      "style": { "color": "#8D6E63", "strokeWidth": 4, "strokeStyle": "dashed" } },
+    { "id": "fsecrt01", "type": "folder", "name": "Secret Places", "rank": "a5", "isHidden": true },
+    { "id": "prusty01", "type": "pin", "name": "Rusty Flagon", "parentId": "ftowns01", "rank": "a0",
+      "pos": [-64, 96], "link": "Rusty Flagon",
+      "style": { "iconGlyph": "beer", "iconColor": "#A7A7A7", "iconShape": "pin", "iconSize": "medium" },
+      "visibilityRange": [0, 1] },
+    { "id": "pkeep001", "type": "pin", "name": "The Keep", "parentId": "fsecrt01", "rank": "a0",
+      "pos": [-144, 192], "link": "The Keep" }
+  ]
+}
