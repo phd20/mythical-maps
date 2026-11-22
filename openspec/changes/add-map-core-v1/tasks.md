@@ -133,7 +133,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 5.5
   - Accept: a fuzzy note picker in the pin form sets `link` via `fileToLinktext` (shortest unambiguous); the link can be cleared
   - Verify: manual: the set-link-with-picker scenario
-- [ ] 6.2 Hover preview and opening notes
+- [x] 6.2 Hover preview and opening notes
   - Depends: 4.3
   - Accept: hovering a linked pin triggers the `hover-link` page preview; clicking opens the note with Obsidian's modifier semantics; in edit modes a click selects instead
   - Verify: manual: the hover and Mod-click scenarios
