@@ -18,6 +18,9 @@
  *
  * - Features (bead 4.3, `featureRenderer.ts`) are drawn by `render(model, view?)`,
  *   also when the image is missing; glyphs come from the injected `icons`.
+ * - Visibility (bead 4.4, `visibility.ts`): hidden folders and zoom ranges. The
+ *   last model is kept and re-evaluated on `zoom`, `zoomend` and limit changes;
+ *   features are re-rendered only when the visible set changes.
  *
  * The map model stays the only state: nothing is read back out of Leaflet into
  * the model. `currentViewport()` reads the live centre and zoom only so the
@@ -30,6 +33,7 @@ import { createFeatureRenderer, type IconProvider, type RenderView } from "./fea
 import { installPopoutShim, type ShimLeaflet } from "./popoutShim";
 import { SizeGate } from "./sizeGate";
 import { attachSmoothWheelZoom } from "./smoothWheelZoom";
+import { createVisibilityRenderer } from "./visibility";
 import { clampZoom, maxZoomFor, viewportFrom, ZOOM_DELTA, ZOOM_SNAP, zoomLimits, type ZoomLimits } from "./zoomLimits";
 
 export interface BaseMapOptions {
@@ -98,6 +102,10 @@ export const mountBaseMap: MountBaseMap = (parent, options) => {
   });
 
   let limits: ZoomLimits | null = null;
+  const visibility = createVisibilityRenderer(renderer, () => ({ zoom: map.getZoom(), limits }));
+  const onZoom = (): void => visibility.update();
+  map.on("zoom", onZoom);
+  map.on("zoomend", onZoom);
   let viewSet = false;
   const gate = new SizeGate({
     getSize: () => ({ width: container.clientWidth, height: container.clientHeight }),
@@ -106,11 +114,13 @@ export const mountBaseMap: MountBaseMap = (parent, options) => {
       limits = zoomLimits(width, height, container.clientWidth, container.clientHeight);
       // Leaflet zooms in to the new minimum itself if the current zoom is now below it.
       map.setMinZoom(limits.min);
+      visibility.update();
     },
     onFirstSize: () => {
       if (viewport && limits) map.setView(viewport.center, clampZoom(viewport.zoom, limits), { animate: false });
       else map.fitBounds(bounds, { animate: false });
       viewSet = true;
+      visibility.update();
     },
   });
 
@@ -133,7 +143,7 @@ export const mountBaseMap: MountBaseMap = (parent, options) => {
       return viewportFrom([c.lat, c.lng], map.getZoom());
     },
     render: (model, view) => {
-      if (!destroyed) renderer.render(model, view);
+      if (!destroyed) visibility.render(model, view);
     },
     refresh: () => {
       if (!destroyed) gate.check(true);
@@ -142,6 +152,8 @@ export const mountBaseMap: MountBaseMap = (parent, options) => {
       if (destroyed) return;
       destroyed = true;
       observer?.disconnect();
+      map.off("zoom", onZoom);
+      map.off("zoomend", onZoom);
       renderer.destroy();
       wheelZoom.destroy();
       map.remove();

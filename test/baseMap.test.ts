@@ -1,8 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 // vitest aliases `leaflet` to this stub (see vitest.config.ts).
 import { created, CRS, Draggable, featureLayers, type MockDivIcon, type MockFeatureLayer, type MockMap } from "./mocks/leaflet";
 import { mountBaseMap } from "../src/ui/baseMap";
 import { boundsFor } from "../src/core/frame";
+import { parseMap } from "../src/core/parse";
 import type { Feature, MapDocument } from "../src/core/schema";
 import { fitZoom, ZOOM_DELTA, ZOOM_SNAP } from "../src/ui/zoomLimits";
 
@@ -31,6 +34,8 @@ interface FakeEl {
   remove(): void;
   /** Event listeners currently attached, as [type, options]. */
   listeners: [string, unknown][];
+  /** The last handler attached per event type. */
+  handlers: Record<string, (e: unknown) => void>;
   addEventListener(type: string, fn: unknown, options?: unknown): void;
   removeEventListener(type: string, fn: unknown): void;
 }
@@ -51,8 +56,10 @@ function fakeParent(width: number, height: number) {
           this.removed = true;
         },
         listeners: [],
-        addEventListener(type, _fn, options) {
+        handlers: {},
+        addEventListener(type, fn, options) {
           this.listeners.push([type, options]);
+          this.handlers[type] = fn as (e: unknown) => void;
         },
         removeEventListener(type) {
           this.listeners = this.listeners.filter(([t]) => t !== type);
@@ -323,5 +330,120 @@ describe("feature rendering (bead 4.3)", () => {
     expect(map.removed).toBe(true);
     handle.render(model([region, path]));
     expect(featureLayers).toHaveLength(1);
+  });
+});
+
+describe("visibility (bead 4.4)", () => {
+  const allTypes = (): MapDocument => {
+    const file = fileURLToPath(new URL("../test-vault/Maps/all-types.map", import.meta.url));
+    const res = parseMap(readFileSync(file, "utf8"));
+    if (!res.ok) throw new Error("all-types.map failed to parse");
+    return res.map;
+  };
+  /** Positions of the layers currently on the map. */
+  const drawn = (): unknown[] => featureLayers.filter((l) => l.map !== null).map((l) => l.latlngs);
+  const KEEP = [-144, 192];
+  const WILD_COAST = [-160, 32];
+
+  beforeEach(() => {
+    featureLayers.length = 0;
+  });
+
+  // 4096 x 3072 in 1024 x 768: limits {min 2, max 6}, so [0.5, 1] starts at zoom 4.
+  const mount = (w = 1024, h = 768) => {
+    const { parent, children } = fakeParent(w, h);
+    // Pins and labels build DOM; a minimal element is enough here.
+    (parent as unknown as { ownerDocument: Record<string, unknown> }).ownerDocument.createElement = () => ({
+      className: "",
+      textContent: "",
+      style: { setProperty() {} },
+      appendChild: (c: unknown) => c,
+    });
+    const handle = mountBaseMap(parent, { imageUrl: "x", width: 4096, height: 3072, viewport: { center: [-96, 128], zoom: 2 } });
+    return { handle, map: lastMap(), el: children[0] as FakeEl };
+  };
+
+  it("does not draw features inside a hidden folder", () => {
+    const { handle } = mount();
+    handle.render(allTypes());
+    expect(drawn()).not.toContainEqual(KEEP);
+    expect(drawn()).toContainEqual([-64, 96]); // Rusty Flagon, in the shown folder "Towns"
+    const shown = allTypes();
+    shown.features = shown.features.map((f) => (f.id === "fsecrt01" ? { ...f, isHidden: false } : f));
+    handle.render(shown);
+    expect(drawn()).toContainEqual(KEEP);
+  });
+
+  it("a zoom-gated label is hidden at min zoom and appears past the midpoint, during and after a zoom", () => {
+    const { handle, map } = mount();
+    handle.render(allTypes());
+    expect(drawn()).not.toContainEqual(WILD_COAST);
+    map.setView(map.center, 4.2);
+    map.fire("zoom"); // a continuous zoom step, before zoomend
+    expect(drawn()).toContainEqual(WILD_COAST);
+    map.setView(map.center, 3.5);
+    map.fire("zoomend");
+    expect(drawn()).not.toContainEqual(WILD_COAST);
+  });
+
+  it("does not re-render while the visible set is unchanged", () => {
+    const { handle, map } = mount();
+    handle.render(allTypes());
+    const westmarch = featureLayers.find((l) => JSON.stringify(l.latlngs) === "[-96,128]") as MockFeatureLayer;
+    const before = westmarch.calls.length;
+    map.setView(map.center, 2.5);
+    map.fire("zoom");
+    map.setView(map.center, 3.9);
+    map.fire("zoomend");
+    expect(westmarch.calls.length).toBe(before);
+    map.setView(map.center, 4);
+    map.fire("zoomend");
+    expect(westmarch.callNames.slice(before)).toContain("setLatLng"); // re-rendered once the label appeared
+  });
+
+  it("re-evaluates when the zoom limits change on resize", () => {
+    const { handle, map, el } = mount();
+    handle.render(allTypes());
+    map.setView(map.center, 4);
+    map.fire("zoomend");
+    expect(drawn()).toContainEqual(WILD_COAST);
+    // 2048 x 1536 → min 3, so [0.5, 1] now starts at 4.5; the zoom stays 4.
+    el.clientWidth = 2048;
+    el.clientHeight = 1536;
+    FakeResizeObserver.instances.at(-1)?.callback();
+    expect(handle.limits).toEqual({ min: 3, max: 6 });
+    expect(drawn()).not.toContainEqual(WILD_COAST);
+  });
+
+  it("labels pop in mid-zoom during the smooth wheel zoom loop (bead 4.6)", () => {
+    const frames: ((t: number) => void)[] = [];
+    const { handle, map, el } = mount();
+    Object.assign(el.ownerDocument.defaultView, {
+      requestAnimationFrame: (cb: (t: number) => void) => frames.push(cb),
+      cancelAnimationFrame: () => {},
+    });
+    handle.render(allTypes());
+    expect(drawn()).not.toContainEqual(WILD_COAST);
+    const wheel = el.handlers.wheel as (e: unknown) => void;
+    for (let i = 0; i < 20; i++) wheel({ deltaY: -1000, deltaMode: 0, ctrlKey: false, preventDefault() {} });
+    let appearedAt: number | null = null;
+    let t = 0;
+    while (frames.length > 0 && t < 10_000) {
+      (frames.shift() as (t: number) => void)((t += 16));
+      if (appearedAt === null && drawn().some((p) => JSON.stringify(p) === JSON.stringify(WILD_COAST))) appearedAt = map.zoom;
+    }
+    expect(map.zoom).toBe(6); // the loop eased all the way to maxZoom
+    expect(appearedAt).not.toBeNull();
+    expect(appearedAt as number).toBeGreaterThanOrEqual(4);
+    expect(appearedAt as number).toBeLessThan(6); // during the zoom, not at its end
+  });
+
+  it("destroy removes the zoom listeners", () => {
+    const { handle, map } = mount();
+    expect(map.listeners.zoom).toHaveLength(1);
+    expect(map.listeners.zoomend).toHaveLength(1);
+    handle.destroy();
+    expect(map.listeners.zoom).toHaveLength(0);
+    expect(map.listeners.zoomend).toHaveLength(0);
   });
 });

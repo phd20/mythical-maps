@@ -56,6 +56,39 @@ export class MockMap {
   getZoom(): number {
     return this.zoom;
   }
+  // 4.4 visibility: event listeners, fired by tests with `fire`.
+  listeners: Record<string, Array<() => void>> = {};
+  on(type: string, fn: () => void): this {
+    for (const t of type.split(/\s+/)) (this.listeners[t] ??= []).push(fn);
+    return this;
+  }
+  off(type: string, fn: () => void): this {
+    for (const t of type.split(/\s+/)) this.listeners[t] = (this.listeners[t] ?? []).filter((f) => f !== fn);
+    return this;
+  }
+  fire(type: string): this {
+    for (const fn of [...(this.listeners[type] ?? [])]) fn();
+    return this;
+  }
+  // Smooth wheel zoom surface (bead 4.6), used by the 4.4 mid-zoom test.
+  getMinZoom(): number {
+    return (this.options.minZoom as number | undefined) ?? 0;
+  }
+  getMaxZoom(): number {
+    return (this.options.maxZoom as number | undefined) ?? 0;
+  }
+  mouseEventToContainerPoint(): { x: number; y: number } {
+    return { x: 0, y: 0 };
+  }
+  /** Like Leaflet's non-animated `setView` → `_resetView`: fires `zoom` then `zoomend` synchronously. */
+  setZoomAround(_point: unknown, zoom: number, ...rest: unknown[]): this {
+    this.calls.push({ name: "setZoomAround", args: [_point, zoom, ...rest] });
+    const changed = zoom !== this.zoom;
+    this.zoom = zoom;
+    if (changed) this.fire("zoom");
+    this.fire("zoomend");
+    return this;
+  }
 }
 
 export class MockImageOverlay {

@@ -90,6 +90,55 @@ export function effectiveHidden(map: MapDocument, id: string): boolean {
   return feature.isHidden === true || ancestors(map, id).some((a) => a.isHidden === true);
 }
 
+/**
+ * Ids of every effectively hidden feature (`effectiveHidden` for the whole map
+ * at once, in linear time): the feature or an ancestor folder has `isHidden: true`.
+ */
+export function hiddenIds(map: MapDocument): Set<string> {
+  const byId = new Map<string, Feature>(map.features.map((f) => [f.id, f]));
+  const memo = new Map<string, boolean>();
+  for (const start of map.features) {
+    if (memo.has(start.id)) continue;
+    // Walk up until a known answer, the root, a missing parent or a cycle.
+    const path: Feature[] = [];
+    const onPath = new Map<string, number>();
+    let cur: Feature | undefined = start;
+    let tail = false;
+    let cycleAt = -1;
+    while (cur) {
+      const known = memo.get(cur.id);
+      if (known !== undefined) {
+        tail = known;
+        break;
+      }
+      const at = onPath.get(cur.id);
+      if (at !== undefined) {
+        cycleAt = at;
+        break;
+      }
+      onPath.set(cur.id, path.length);
+      path.push(cur);
+      cur = cur.parentId === undefined ? undefined : byId.get(cur.parentId);
+    }
+    let end = path.length;
+    if (cycleAt >= 0) {
+      // Every member of a cycle has every other member as an ancestor.
+      const anyHidden = path.slice(cycleAt).some((f) => f.isHidden === true);
+      for (const f of path.slice(cycleAt)) memo.set(f.id, anyHidden);
+      tail = anyHidden;
+      end = cycleAt;
+    }
+    for (let i = end - 1; i >= 0; i--) {
+      const f = path[i] as Feature;
+      tail = tail || f.isHidden === true;
+      memo.set(f.id, tail);
+    }
+  }
+  const out = new Set<string>();
+  for (const [id, hidden] of memo) if (hidden) out.add(id);
+  return out;
+}
+
 const ZOOM_EPSILON = 1e-9;
 
 /**

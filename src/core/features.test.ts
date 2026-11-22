@@ -6,6 +6,7 @@ import {
   descendants,
   effectiveHidden,
   getFeature,
+  hiddenIds,
   insert,
   isVisible,
   move,
@@ -94,6 +95,32 @@ describe("visibility", () => {
     const shown = ok(update(hidden, "towns000", { isHidden: undefined })).map;
     expect(effectiveHidden(shown, "deep0000")).toBe(false);
     expect("isHidden" in getFeature(shown, "towns000")!).toBe(false);
+  });
+
+  it("hiddenIds matches effectiveHidden for every feature", () => {
+    const hidden = ok(update(fixture(), "inner000", { isHidden: true })).map;
+    expect([...hiddenIds(hidden)].sort()).toEqual(["deep0000", "inner000"]);
+    const towns = ok(update(fixture(), "towns000", { isHidden: true })).map;
+    const set = hiddenIds(towns);
+    for (const f of towns.features) expect(set.has(f.id)).toBe(effectiveHidden(towns, f.id));
+    expect(hiddenIds(fixture()).size).toBe(0);
+  });
+
+  it("hiddenIds handles missing parents and cycles like effectiveHidden", () => {
+    const base = fixture();
+    const map: MapDocument = {
+      ...base,
+      features: [
+        { id: "orphan00", type: "pin", pos: [0, 0], parentId: "gone0000", rank: r1 },
+        { id: "cyca0000", type: "folder", parentId: "cycb0000", rank: r1, isHidden: true },
+        { id: "cycb0000", type: "folder", parentId: "cyca0000", rank: r1 },
+        { id: "under000", type: "pin", pos: [0, 0], parentId: "cycb0000", rank: r1 },
+      ],
+    };
+    const set = hiddenIds(map);
+    for (const f of map.features) expect(set.has(f.id)).toBe(effectiveHidden(map, f.id));
+    expect(set.has("under000")).toBe(true);
+    expect(set.has("orphan00")).toBe(false);
   });
 
   it("a feature's own isHidden hides it", () => {
