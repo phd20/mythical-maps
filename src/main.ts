@@ -5,6 +5,7 @@ import { MAP_EXTENSION, VIEW_TYPE_MAP } from "./obsidian/constants";
 import { MapView } from "./obsidian/mapView";
 import { registerMapLinkMaintenance } from "./obsidian/renameListener";
 import type { VaultMapIndex } from "./obsidian/vaultMapIndex";
+import { registerNewMapFromImage } from "./obsidian/newMapCommand";
 
 /** Mythical Maps plugin entry point. Features are registered by later beads. */
 export default class MythicalMapsPlugin extends Plugin {
@@ -18,6 +19,7 @@ export default class MythicalMapsPlugin extends Plugin {
     this.registerView(VIEW_TYPE_MAP, (leaf) => new MapView(leaf));
     this.registerExtensions([MAP_EXTENSION], VIEW_TYPE_MAP);
     this.mapIndex = registerMapLinkMaintenance(this, this.app);
+    registerNewMapFromImage(this, this.app);
   }
 
   override onunload(): void {

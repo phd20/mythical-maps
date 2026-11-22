@@ -15,12 +15,17 @@ describe("MythicalMapsPlugin", () => {
     const plugin = new MythicalMapsPlugin(app as never, manifest);
     await plugin.onload();
     expect(plugin.mapIndex).toBeDefined();
-    expect((plugin as unknown as { events: unknown[] }).events).toHaveLength(0);
-    // tsc checks tests against the real obsidian types; runLayoutReady exists only on the mock.
+    // tsc checks tests against the real obsidian types; `events`, `owner` and runLayoutReady exist only on the mock.
+    const events = (plugin as unknown as { events: { name: string; owner: unknown }[] }).events;
+    const vaultEventNames = () => events.filter((e) => e.owner === app.vault).map((e) => e.name).sort();
+    expect(vaultEventNames()).toEqual([]);
     (app.workspace as unknown as { runLayoutReady(): void }).runLayoutReady();
     await plugin.mapIndex.whenIdle();
-    const names = (plugin as unknown as { events: { name: string }[] }).events.map((e) => e.name).sort();
-    expect(names).toEqual(["create", "delete", "modify", "rename"]);
+    expect(vaultEventNames()).toEqual(["create", "delete", "modify", "rename"]);
+    // The only other event is the "New map from image" file-menu item, registered at load.
+    expect(events.filter((e) => e.owner !== app.vault).map((e) => [e.owner === app.workspace, e.name])).toEqual([
+      [true, "file-menu"],
+    ]);
   });
 
   it("has the expected manifest id and is not desktop-only", () => {

@@ -32,6 +32,8 @@ export interface PluginManifest {
 
 export interface EventRef {
   name: string;
+  /** The emitter the handler was registered on (vault, workspace, …). */
+  owner: unknown;
 }
 
 /** Minimal event emitter, shaped like Obsidian's Events.on/trigger. */
@@ -39,7 +41,7 @@ class MockEvents {
   handlers: Record<string, Array<(...args: unknown[]) => unknown>> = {};
   on(name: string, cb: (...args: never[]) => unknown): EventRef {
     (this.handlers[name] ??= []).push(cb as (...args: unknown[]) => unknown);
-    return { name };
+    return { name, owner: this };
   }
   trigger(name: string, ...args: unknown[]): void {
     for (const cb of this.handlers[name] ?? []) cb(...args);
@@ -60,6 +62,20 @@ export class Vault extends MockEvents {
   }
   async cachedRead(_file: TFile): Promise<string> {
     return "";
+  }
+  /** Files made with `create`; `getAbstractFileByPath` finds them. */
+  created: Array<{ file: TFile; data: string }> = [];
+  async create(path: string, data: string): Promise<TFile> {
+    if (this.getAbstractFileByPath(path)) throw new Error(`File already exists: ${path}`);
+    const file = new TFile(path);
+    this.created.push({ file, data });
+    return file;
+  }
+  getAbstractFileByPath(path: string): TFile | null {
+    return this.created.find((c) => c.file.path === path)?.file ?? null;
+  }
+  getResourcePath(file: TFile): string {
+    return `app://local/${file.path}`;
   }
   async process(file: TFile, fn: (data: string) => string): Promise<string> {
     const data = fn("");
@@ -85,6 +101,17 @@ export class Workspace extends MockEvents {
   }
   runLayoutReady(): void {
     for (const cb of this.layoutReadyCallbacks.splice(0)) cb();
+  }
+  activeFile: TFile | null = null;
+  getActiveFile(): TFile | null {
+    return this.activeFile;
+  }
+  /** Every leaf handed out by `getLeaf`, so tests can see what was opened. */
+  leaves: WorkspaceLeaf[] = [];
+  getLeaf(_newLeaf?: unknown): WorkspaceLeaf {
+    const leaf = new WorkspaceLeaf();
+    this.leaves.push(leaf);
+    return leaf;
   }
 }
 
@@ -141,6 +168,12 @@ export class Plugin extends Component {
     for (const ext of extensions) this.extensions[ext] = viewType;
   }
 
+  commands: Command[] = [];
+  addCommand(command: Command): Command {
+    this.commands.push(command);
+    return command;
+  }
+
   events: EventRef[] = [];
   registerEvent(ref: EventRef): void {
     this.events.push(ref);
@@ -148,7 +181,46 @@ export class Plugin extends Component {
 }
 
 export class WorkspaceLeaf {
+  opened: TFile[] = [];
   constructor(public app: App = new App()) {}
+  async openFile(file: TFile): Promise<void> {
+    this.opened.push(file);
+  }
+}
+
+export interface Command {
+  id: string;
+  name: string;
+  callback?: () => unknown;
+  checkCallback?: (checking: boolean) => boolean | void;
+}
+
+export class MenuItem {
+  title = "";
+  icon: string | null = null;
+  clickHandler: ((evt: unknown) => unknown) | undefined;
+  setTitle(title: string): this {
+    this.title = title;
+    return this;
+  }
+  setIcon(icon: string | null): this {
+    this.icon = icon;
+    return this;
+  }
+  onClick(cb: (evt: unknown) => unknown): this {
+    this.clickHandler = cb;
+    return this;
+  }
+}
+
+export class Menu {
+  items: MenuItem[] = [];
+  addItem(cb: (item: MenuItem) => unknown): this {
+    const item = new MenuItem();
+    this.items.push(item);
+    cb(item);
+    return this;
+  }
 }
 
 interface MockElementInfo {
