@@ -95,7 +95,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 4.3
   - Accept: an external modification of an open, unmodified map re-renders it while keeping pan and zoom
   - Verify: manual: edit the fixture `.map` in a text editor while it's open, and the new pin appears
-- [ ] 4.6 Smooth continuous zoom
+- [x] 4.6 Smooth continuous zoom
   - Depends: 4.2
   - Accept: `zoomSnap: 0`; a custom wheel handler replaces `scrollWheelZoom`, changing the zoom in proportion to the normalised wheel delta (larger factor for ctrl-wheel trackpad pinch), anchored on the pointer, clamped to the zoom limits, and eased with one `requestAnimationFrame` loop taken from the container's window; unit tests cover delta normalisation, clamping and the easing step
   - Verify: manual: trackpad pinch, two-finger scroll and mouse wheel zoom smoothly with no jumps between levels, comparable to LegendKeeper; zoom stops cleanly at both limits; the same holds in a pop-out window
