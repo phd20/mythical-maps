@@ -122,7 +122,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 5.4
   - Accept: per-type fields (name, style fields, `labelVisibility`, `isHidden`, `visibilityRange`); invalid input shows an error and keeps the stored value; changes apply live
   - Verify: manual: the rename-pin and invalid-colour scenarios
-- [ ] 5.6 Delete features
+- [x] 5.6 Delete features
   - Depends: 5.4
   - Accept: Delete key and context menu; deleting a folder with descendants asks for confirmation, then cascades; cancelling removes nothing
   - Verify: manual: the delete-folder and cancel scenarios
