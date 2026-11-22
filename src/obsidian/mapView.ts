@@ -42,6 +42,7 @@ import { FEATURE_TYPES, type FeatureType, type MapDocument, type Viewport } from
 import { stringifyMap } from "../core/serialize";
 import { mountBaseMap, type BaseMapHandle, type MountBaseMap } from "../ui/baseMap";
 import { obsidianIcons } from "../ui/obsidianIcons";
+import type { RenderView } from "../ui/featureRenderer";
 import { VIEW_TYPE_MAP } from "./constants";
 import { ImageSuggestModal, vaultImageFiles } from "./imageSuggestModal";
 import { readImageSizeFromVault, type ImageSize } from "./newMapCommand";
@@ -286,6 +287,27 @@ export class MapView extends TextFileView {
     );
   }
 
+  // --- Bead 7.1: frontmatter style overrides (see styleOverrides.ts) ---
+  /** Builds the renderer's `RenderView` (style resolver) for a map path; set by the plugin. Null draws plugin defaults. */
+  styleSource: ((mapPath: string) => RenderView) | null = null;
+
+  /** The shown map and its path, or null outside the ok state. */
+  styledMap(): { map: MapDocument; path: string } | null {
+    const path = this.file?.path;
+    return this.viewState.kind === "ok" && path ? { map: this.viewState.map, path } : null;
+  }
+
+  /** Re-render features with freshly resolved styles (a linked note or the settings changed). Never writes. */
+  refreshStyles(): void {
+    if (this.viewState.kind === "ok") this.baseMap?.render(this.viewState.map, this.renderView());
+  }
+
+  private renderView(): RenderView {
+    const path = this.file?.path;
+    return this.styleSource && path ? this.styleSource(path) : {};
+  }
+  // --- end bead 7.1 ---
+
   /** Apply an edit through the store (which enforces the lock), then schedule a save. Only in the ok state. */
   private applyOp(op: Exclude<Op, { type: "replace" }>): boolean {
     const store = this.store;
@@ -305,7 +327,7 @@ export class MapView extends TextFileView {
     this.unsubscribe?.();
     this.unsubscribe = null;
     this.store = store;
-    if (store) this.unsubscribe = store.subscribe((map) => this.baseMap?.render(map));
+    if (store) this.unsubscribe = store.subscribe((map) => this.baseMap?.render(map, this.renderView()));
   }
 
   private destroyMap(): void {
@@ -349,7 +371,7 @@ export class MapView extends TextFileView {
       ...(viewport ? { viewport } : {}),
     });
     this.mountedImageKey = this.imageKey(map);
-    this.baseMap.render(map);
+    this.baseMap.render(map, this.renderView());
     if (!imageUrl) this.renderMissingImage(el, map.image.path);
     this.statusEl = el.createDiv({ cls: "mythical-map-status" });
     this.fillStatus(this.statusEl, map);

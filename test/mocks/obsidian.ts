@@ -91,6 +91,10 @@ export class MetadataCache extends MockEvents {
   fileToLinktext(file: TFile, _sourcePath: string, omitMdExtension = true): string {
     return omitMdExtension && file.extension === "md" ? file.path.slice(0, -3) : file.path;
   }
+  /** No cached metadata by default; tests replace this per instance. */
+  getFileCache(_file: TFile): { frontmatter?: Record<string, unknown> } | null {
+    return null;
+  }
 }
 
 export class Workspace extends MockEvents {
@@ -117,6 +121,10 @@ export class Workspace extends MockEvents {
   activeView: unknown = null;
   getActiveViewOfType<T>(type: abstract new (...args: never[]) => T): T | null {
     return this.activeView instanceof type ? this.activeView : null;
+  }
+  /** Leaves (from `leaves`) whose `view` has the given type. */
+  getLeavesOfType(type: string): WorkspaceLeaf[] {
+    return this.leaves.filter((leaf) => leaf.view?.getViewType() === type);
   }
 }
 
@@ -191,6 +199,8 @@ export class WorkspaceLeaf {
   async openFile(file: TFile): Promise<void> {
     this.opened.push(file);
   }
+  /** The view shown in this leaf; tests set it directly. */
+  view: View | null = null;
 }
 
 export interface Command {

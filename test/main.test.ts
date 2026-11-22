@@ -22,9 +22,10 @@ describe("MythicalMapsPlugin", () => {
     (app.workspace as unknown as { runLayoutReady(): void }).runLayoutReady();
     await plugin.mapIndex.whenIdle();
     expect(vaultEventNames()).toEqual(["create", "delete", "modify", "rename"]);
-    // The only other event is the "New map from image" file-menu item, registered at load.
-    expect(events.filter((e) => e.owner !== app.vault).map((e) => [e.owner === app.workspace, e.name])).toEqual([
-      [true, "file-menu"],
+    // The other events are the style-override metadata listener (bead 7.1) and the "New map from image" file-menu item, registered at load.
+    expect(events.filter((e) => e.owner !== app.vault).map((e) => [e.owner === app.workspace ? "workspace" : e.owner === app.metadataCache ? "metadataCache" : "other", e.name])).toEqual([
+      ["metadataCache", "changed"],
+      ["workspace", "file-menu"],
     ]);
   });
 
