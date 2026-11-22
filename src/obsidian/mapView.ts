@@ -90,6 +90,7 @@ import { createToolbar, creationKindFor, EDIT_MODES, type EditMode, type Toolbar
 import { VIEW_TYPE_MAP } from "./constants";
 import { ImageSuggestModal, vaultImageFiles } from "./imageSuggestModal";
 import { createLinkInteractions } from "./linkActions";
+import type { NoteMapsLookup } from "./noteMaps";
 import { readImageSizeFromVault, type ImageSize } from "./newMapCommand";
 
 export const SET_DEFAULT_VIEW_COMMAND_ID = "set-current-view-as-default";
@@ -500,8 +501,13 @@ export class MapView extends TextFileView {
 
   private renderView(): RenderView {
     const path = this.file?.path;
-    return this.styleSource && path ? this.styleSource(path) : {};
+    const base: RenderView = this.styleSource && path ? this.styleSource(path) : {};
+    const lookup = this.noteMaps;
+    return lookup && path ? { ...base, hasMap: (f) => lookup.forPin(f, path).length > 0 } : base;
   }
+
+  /** Bead 6.3: which maps a pin's note lists (drill-down); set by the plugin. Null disables it. */
+  noteMaps: NoteMapsLookup | null = null;
   // --- end bead 7.1 ---
 
   /**
@@ -654,6 +660,10 @@ export class MapView extends TextFileView {
         isEditing: () => this.isEditing(),
         onSelect: (id) => this.selectFeature(id),
         notify: (message) => this.notify(message),
+        noteMaps: (feature) => {
+          const path = this.file?.path;
+          return this.noteMaps && path ? this.noteMaps.forPin(feature, path) : [];
+        },
       }),
       pointer: {
         onClick: (pos, event) => this.handleMapClick(pos, event),

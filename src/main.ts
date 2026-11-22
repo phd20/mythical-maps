@@ -13,6 +13,7 @@ import {
 import { registerMapLinkMaintenance } from "./obsidian/renameListener";
 import type { VaultMapIndex } from "./obsidian/vaultMapIndex";
 import { registerNewMapFromImage } from "./obsidian/newMapCommand";
+import { registerNoteMaps, type NoteMaps } from "./obsidian/noteMaps";
 import { registerStyleOverrides, type StyleOverrides } from "./obsidian/styleOverrides";
 import { registerLinkHoverSource } from "./obsidian/linkActions";
 
@@ -23,14 +24,18 @@ export default class MythicalMapsPlugin extends Plugin {
   mapIndex!: VaultMapIndex;
   /** Frontmatter style overrides for open map views (bead 7.1). */
   styleOverrides!: StyleOverrides;
+  /** Drill-down into a pinned note's maps (bead 6.3). */
+  noteMaps!: NoteMaps;
 
   override async onload(): Promise<void> {
     await this.loadSettings();
     this.addSettingTab(new MythicalMapsSettingTab(this.app, this));
     // Bead 7.1: style overrides; views get their resolver and re-render on note/settings changes.
     this.styleOverrides = registerStyleOverrides(this, this.app, () => this.settings, () => this.openMapViews());
+    this.noteMaps = registerNoteMaps(this, this.app, () => this.settings, () => this.openMapViews());
     this.registerView(VIEW_TYPE_MAP, (leaf) => {
       const view = new MapView(leaf);
+      view.noteMaps = this.noteMaps.lookup;
       view.styleSource = (mapPath) => this.styleOverrides.viewFor(mapPath);
       return view;
     });

@@ -52,6 +52,8 @@ export interface RenderView {
   resolveStyle?: (feature: Feature) => ResolvedStyle;
   /** Whether a feature is drawn (bead 4.4: hidden folders, zoom ranges); defaults to all visible. */
   isVisible?: (feature: Feature) => boolean;
+  /** Whether a pin shows the "has map" indicator (bead 6.3: its note lists maps); defaults to none. */
+  hasMap?: (feature: Feature) => boolean;
 }
 
 /** Pointer hooks on drawn features (bead 6.2). Each receives the feature as of the latest render. */
@@ -60,6 +62,8 @@ export interface FeatureInteractions {
   onHover?(feature: Feature, event: MouseEvent, targetEl: HTMLElement | null): void;
   /** A feature's layer was clicked. */
   onClick?(feature: Feature, event: MouseEvent): void;
+  /** A feature's layer was right-clicked (bead 6.3). */
+  onContextMenu?(feature: Feature, event: MouseEvent): void;
 }
 
 export interface FeatureRendererDeps {
@@ -164,9 +168,15 @@ export function createFeatureRenderer(map: L.Map, deps: FeatureRendererDeps): Fe
     return node;
   }
 
-  function pinIcon(style: ResolvedPinStyle): L.DivIcon {
+  function pinIcon(style: ResolvedPinStyle, hasMap: boolean): L.DivIcon {
     const size = PIN_SIZES[style.iconSize];
     const root = el("div", `mythical-map-pin mythical-map-pin-${style.iconShape} mythical-map-pin-${style.iconSize}`);
+    if (hasMap) {
+      root.className += " mythical-map-pin-has-map";
+      const badge = el("div", "mythical-map-pin-map-badge");
+      if (deps.icons.has("map")) deps.icons.set(badge, "map");
+      root.appendChild(badge);
+    }
     root.style.setProperty("--mythical-map-pin-color", style.iconColor);
     if (style.iconShape !== "none") root.appendChild(el("div", "mythical-map-pin-shape"));
     const glyph = el("div", "mythical-map-pin-glyph");
@@ -214,18 +224,18 @@ export function createFeatureRenderer(map: L.Map, deps: FeatureRendererDeps): Fe
     });
   }
 
-  function drawPin(f: PinFeature, style: ResolvedPinStyle, prev: Entry | undefined): Entry {
-    const key = JSON.stringify(style);
+  function drawPin(f: PinFeature, style: ResolvedPinStyle, hasMap: boolean, prev: Entry | undefined): Entry {
+    const key = JSON.stringify([style, hasMap]);
     if (prev && prev.kind === "pin") {
       const marker = prev.layer as L.Marker;
       marker.setLatLng(f.pos);
       if (prev.iconKey !== key) {
-        marker.setIcon(pinIcon(style));
+        marker.setIcon(pinIcon(style, hasMap));
         prev.iconKey = key;
       }
       return prev;
     }
-    const marker = L.marker(f.pos, { icon: pinIcon(style), keyboard: false });
+    const marker = L.marker(f.pos, { icon: pinIcon(style, hasMap), keyboard: false });
     return { kind: "pin", layer: marker, iconKey: key, tooltipKey: "" };
   }
 
@@ -269,10 +279,15 @@ export function createFeatureRenderer(map: L.Map, deps: FeatureRendererDeps): Fe
     return { kind: "path", layer: L.polyline(f.polyline, options), tooltipKey: "" };
   }
 
-  function draw(f: Exclude<Feature, { type: "folder" }>, style: ResolvedStyle, prev: Entry | undefined): Entry {
+  function draw(
+    f: Exclude<Feature, { type: "folder" }>,
+    style: ResolvedStyle,
+    hasMap: boolean,
+    prev: Entry | undefined,
+  ): Entry {
     switch (f.type) {
       case "pin": {
-        const entry = drawPin(f, style as ResolvedPinStyle, prev);
+        const entry = drawPin(f, style as ResolvedPinStyle, hasMap, prev);
         syncTooltip(entry, f, DEFAULT_STYLES.label);
         return entry;
       }
@@ -316,6 +331,11 @@ export function createFeatureRenderer(map: L.Map, deps: FeatureRendererDeps): Fe
       const event = (e as L.LeafletMouseEvent).originalEvent;
       if (f && hooks.onClick && event) hooks.onClick(f, event);
     });
+    layer.on("contextmenu", (e: L.LeafletEvent) => {
+      const f = current.get(id);
+      const event = (e as L.LeafletMouseEvent).originalEvent;
+      if (f && hooks.onContextMenu && event) hooks.onContextMenu(f, event);
+    });
   }
 
   return {
@@ -332,7 +352,7 @@ export function createFeatureRenderer(map: L.Map, deps: FeatureRendererDeps): Fe
         keep.add(f.id);
         current.set(f.id, f);
         const prev = entries.get(f.id);
-        const entry = draw(f, resolve(f), prev);
+        const entry = draw(f, resolve(f), f.type === "pin" && (view.hasMap?.(f) ?? false), prev);
         if (entry !== prev) {
           prev?.layer.remove();
           attachInteractions(f.id, entry.layer);

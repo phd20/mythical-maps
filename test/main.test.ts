@@ -25,6 +25,7 @@ describe("MythicalMapsPlugin", () => {
     // The other events are the style-override metadata listener (bead 7.1) and the "New map from image" file-menu item, registered at load.
     expect(events.filter((e) => e.owner !== app.vault).map((e) => [e.owner === app.workspace ? "workspace" : e.owner === app.metadataCache ? "metadataCache" : "other", e.name])).toEqual([
       ["metadataCache", "changed"],
+      ["metadataCache", "changed"], // bead 6.3: drill-down listener
       ["workspace", "file-menu"],
     ]);
   });
