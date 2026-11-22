@@ -260,6 +260,7 @@ describe("base map lifecycle", () => {
       height: 3072,
       icons: obsidianIcons,
       interactions: expect.any(Object),
+      pointer: expect.any(Object),
       viewport: { center: [-96, 128], zoom: 2 },
     });
     expect(view.mapHandle).not.toBeNull();
@@ -339,6 +340,7 @@ describe("opening viewport", () => {
       height: 3072,
       icons: obsidianIcons,
       interactions: expect.any(Object),
+      pointer: expect.any(Object),
     });
   });
 });
@@ -702,6 +704,7 @@ describe("hover preview and opening notes (bead 6.2)", () => {
     if (!hooks || state.kind !== "ok") throw new Error("no interactions");
     const feature = state.map.features[0]!;
     const evt = { ctrlKey: true } as MouseEvent;
+    view.setLocked(true); // unlocked views are in an edit mode, where a click selects
     hooks.onHover?.(feature, evt, null);
     expect(hovers).toMatchObject([{ hoverParent: view, linktext: "Rusty Flagon", sourcePath: "Maps/linked.map" }]);
     hooks.onClick?.(feature, evt);

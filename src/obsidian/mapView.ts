@@ -57,24 +57,36 @@
  *   `onUnloadFile` (file switched or tab closed), on `onClose`, on Obsidian's
  *   `quit` event and, synchronously, on unload. Nothing is written from an
  *   error or empty state, or when the store is clean.
+ *
+ * Bead 5.2, toolbar and creating features (spec map-editing "Create features"):
+ * a toolbar over the map picks the mode (Select, Pin, Label, Region, Path; the
+ * drawing modes are bead 5.3) and offers Fit. A click in Pin or Label mode
+ * creates that feature at the click, Shift-click and the map context menu's
+ * "Add pin here" create a pin in any mode. New features go in through `edit()`
+ * as the last child of the selected folder (or the root, see `core/create.ts`)
+ * and become selected. Selection lives in the view; a selection whose feature
+ * is gone is dropped. While unlocked the view is in an edit mode: a click on a
+ * feature selects it instead of opening its link.
  */
 import {
+  Menu,
   Notice,
   Scope,
   setIcon,
   TextFileView,
   type HoverPopover,
-  type Menu,
   type TFile,
   type WorkspaceLeaf,
 } from "obsidian";
+import { createFeatureOp, type CreatableKind } from "../core/create";
 import { LOCKED_ERROR, MapStore, type ApplyResult, type Op } from "../core/document";
 import { parseMap, type ParseResult } from "../core/parse";
-import { FEATURE_TYPES, type FeatureType, type MapDocument, type Viewport } from "../core/schema";
+import { FEATURE_TYPES, type FeatureType, type LatLng, type MapDocument, type Viewport } from "../core/schema";
 import { stringifyMap } from "../core/serialize";
 import { mountBaseMap, type BaseMapHandle, type MountBaseMap } from "../ui/baseMap";
 import { obsidianIcons } from "../ui/obsidianIcons";
 import type { RenderView } from "../ui/featureRenderer";
+import { createToolbar, creationKindFor, EDIT_MODES, type EditMode, type ToolbarHandle } from "../ui/toolbar";
 import { VIEW_TYPE_MAP } from "./constants";
 import { ImageSuggestModal, vaultImageFiles } from "./imageSuggestModal";
 import { createLinkInteractions } from "./linkActions";
@@ -89,6 +101,7 @@ export const TOGGLE_LOCK_COMMAND_ID = "toggle-map-lock";
 export const LOCKED_NOTICE ="This map is locked. Unlock it to edit.";
 export const LOCK_TITLE = "Lock map";
 export const UNLOCK_TITLE = "Unlock map";
+export const ADD_PIN_HERE = "Add pin here";
 
 /** An op a user edit can apply; `replace` is reserved for reloading from disk. */
 export type EditOp = Exclude<Op, { type: "replace" }>;
@@ -161,6 +174,11 @@ export class MapView extends TextFileView {
   private statusEl: HTMLElement | null = null;
   /** Per-view lock (never saved); applied to every store this view creates. */
   private locked = false;
+  /** The active toolbar mode (bead 5.2); kept across re-renders, per view. */
+  private mode: EditMode = "select";
+  private toolbar: ToolbarHandle | null = null;
+  private selected: string | null = null;
+  private selectionListeners = new Set<(id: string | null) => void>();
   /** The header lock toggle, once the view is loaded. */
   private lockActionEl: HTMLElement | null = null;
 
@@ -180,10 +198,10 @@ export class MapView extends TextFileView {
   // --- Bead 6.2: hover preview and opening notes (see linkActions.ts) ---
   /** HoverParent: the page preview popover owned by this view. */
   hoverPopover: HoverPopover | null = null;
-  /** True in edit modes, where a click selects instead of opening (bead 5.2 sets this). Default: view mode. */
-  isEditing = (): boolean => false;
-  /** Select a feature (bead 5.2+); a no-op until selection exists. */
-  selectFeature = (_featureId: string): void => {};
+  /** True in edit modes (the view is unlocked), where a click selects instead of opening. */
+  isEditing = (): boolean => !this.locked;
+  /** Select a feature (bead 5.2); `selectedId` and `onSelectionChange` follow. */
+  selectFeature = (featureId: string): void => this.setSelected(featureId);
   // --- end bead 6.2 ---
 
   constructor(leaf: WorkspaceLeaf) {
@@ -221,6 +239,69 @@ export class MapView extends TextFileView {
   /** The store behind an ok-state map, for reading and subscribing; edit through `edit()`. Null otherwise. */
   get mapStore(): MapStore | null {
     return this.store;
+  }
+
+  /** The current toolbar mode. */
+  get editMode(): EditMode {
+    return this.mode;
+  }
+
+  /** The selected feature id, or null. */
+  get selectedId(): string | null {
+    return this.selected;
+  }
+
+  /** Subscribe to selection changes; returns an unsubscribe function. */
+  onSelectionChange(listener: (id: string | null) => void): () => void {
+    this.selectionListeners.add(listener);
+    return () => this.selectionListeners.delete(listener);
+  }
+
+  /** Select a feature (or clear with null). Unknown ids clear the selection. */
+  setSelected(id: string | null): void {
+    const map = this.viewState.kind === "ok" ? this.viewState.map : null;
+    const next = id !== null && map?.features.some((f) => f.id === id) ? id : null;
+    if (next === this.selected) return;
+    this.selected = next;
+    if (this.statusEl && map) this.fillStatus(this.statusEl, map);
+    for (const listener of [...this.selectionListeners]) listener(next);
+  }
+
+  setEditMode(mode: EditMode): void {
+    this.mode = mode;
+    this.toolbar?.setMode(mode);
+    this.refreshModeUi();
+  }
+
+  /** Create a pin or label at `pos` in the selected folder and select it. Returns the new id, or null if refused. */
+  createFeatureAt(kind: CreatableKind, pos: LatLng): string | null {
+    if (this.viewState.kind !== "ok") return null;
+    const result = this.edit(createFeatureOp(this.viewState.map, kind, pos, this.selected));
+    if (!result.ok || result.id === undefined) return null;
+    this.setSelected(result.id);
+    return result.id;
+  }
+
+  private handleMapClick(pos: LatLng, event: MouseEvent): void {
+    const kind = creationKindFor(this.mode, event.shiftKey);
+    if (kind) this.createFeatureAt(kind, pos);
+  }
+
+  private handleMapContextMenu(pos: LatLng, event: MouseEvent): void {
+    const menu = new Menu();
+    menu.addItem((item) =>
+      item
+        .setTitle(ADD_PIN_HERE)
+        .setIcon("map-pin")
+        .onClick(() => {
+          this.createFeatureAt("pin", pos);
+        }),
+    );
+    menu.showAtMouseEvent(event);
+  }
+
+  private refreshModeUi(): void {
+    for (const m of EDIT_MODES) this.contentEl.toggleClass(`mythical-map-mode-${m}`, m === this.mode);
   }
 
   /** Whether this view is locked (per view, not saved; default unlocked). */
@@ -513,6 +594,7 @@ export class MapView extends TextFileView {
   private onStoreChange(map: MapDocument): void {
     const previous = this.viewState.kind === "ok" ? this.viewState.map : null;
     this.viewState = { kind: "ok", map };
+    if (this.selected !== null && !map.features.some((f) => f.id === this.selected)) this.setSelected(null);
     const baseMap = this.baseMap;
     if (!baseMap) return;
     if (this.imageKey(map) !== this.mountedImageKey) {
@@ -529,6 +611,7 @@ export class MapView extends TextFileView {
   private destroyMap(): void {
     this.baseMap?.destroy();
     this.baseMap = null;
+    this.toolbar = null;
     this.mountedImageKey = null;
     this.statusEl = null;
   }
@@ -572,8 +655,19 @@ export class MapView extends TextFileView {
         onSelect: (id) => this.selectFeature(id),
         notify: (message) => this.notify(message),
       }),
+      pointer: {
+        onClick: (pos, event) => this.handleMapClick(pos, event),
+        onContextMenu: (pos, event) => this.handleMapContextMenu(pos, event),
+      },
       ...(viewport ? { viewport } : {}),
     });
+    this.toolbar = createToolbar(el, {
+      mode: this.mode,
+      icons: obsidianIcons,
+      onMode: (mode) => this.setEditMode(mode),
+      onFit: () => this.baseMap?.fit(),
+    });
+    this.refreshModeUi();
     this.mountedImageKey = this.imageKey(map);
     this.baseMap.render(map, this.renderView());
     if (!imageUrl) this.renderMissingImage(el, map.image.path);
@@ -586,6 +680,11 @@ export class MapView extends TextFileView {
     status.createSpan({ cls: "mythical-map-image", text: `${map.image.path} (${map.image.width} × ${map.image.height})` });
     status.createSpan({ text: " · " });
     status.createSpan({ cls: "mythical-map-counts", text: featureSummary(map) });
+    const selected = this.selected === null ? undefined : map.features.find((f) => f.id === this.selected);
+    if (selected) {
+      status.createSpan({ text: " · " });
+      status.createSpan({ cls: "mythical-map-selected", text: `Selected: ${selected.name ?? selected.type}` });
+    }
   }
 
   private renderMissingImage(el: HTMLElement, path: string): void {

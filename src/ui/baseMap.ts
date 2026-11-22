@@ -28,13 +28,19 @@
  */
 import * as L from "leaflet";
 import { boundsFor, type Bounds } from "../core/frame";
-import type { MapDocument, Viewport } from "../core/schema";
+import type { LatLng, MapDocument, Viewport } from "../core/schema";
 import { createFeatureRenderer, type FeatureInteractions, type IconProvider, type RenderView } from "./featureRenderer";
 import { installPopoutShim, type ShimLeaflet } from "./popoutShim";
 import { SizeGate } from "./sizeGate";
 import { attachSmoothWheelZoom } from "./smoothWheelZoom";
 import { createVisibilityRenderer } from "./visibility";
 import { clampZoom, maxZoomFor, viewportFrom, ZOOM_DELTA, ZOOM_SNAP, zoomLimits, type ZoomLimits } from "./zoomLimits";
+
+/** Pointer hooks on the empty map or any non-marker layer (bead 5.2); positions are `[lat, lng]`. */
+export interface MapPointerHandlers {
+  onClick?(pos: LatLng, event: MouseEvent): void;
+  onContextMenu?(pos: LatLng, event: MouseEvent): void;
+}
 
 export interface BaseMapOptions {
   /** Resource URL of the map image, or null when the image is missing (no overlay is drawn). */
@@ -48,6 +54,8 @@ export interface BaseMapOptions {
   icons?: IconProvider;
   /** Hover and click hooks on features (bead 6.2, see `featureRenderer.ts`). */
   interactions?: FeatureInteractions;
+  /** Click and context-menu hooks on the map itself (bead 5.2: creating features). */
+  pointer?: MapPointerHandlers;
 }
 
 /** Fallback icon provider: knows no icons, so pins draw the dot glyph. */
@@ -63,6 +71,8 @@ export interface BaseMapHandle {
   currentViewport(): Viewport | null;
   /** Draw the model's features, reusing layers by id (see `featureRenderer.ts`). No-op after destroy. */
   render(model: MapDocument, view?: RenderView): void;
+  /** Fit the whole image in view (animated). No-op after destroy. */
+  fit(): void;
   /** Re-check the container size: `invalidateSize`, plus the deferred initial fit. */
   refresh(): void;
   /** Tear down the Leaflet map, the resize observer and the container. Idempotent. */
@@ -103,6 +113,15 @@ export const mountBaseMap: MountBaseMap = (parent, options) => {
     ownerDocument: container.ownerDocument,
     ...(options.interactions ? { interactions: options.interactions } : {}),
   });
+
+  const pointer = options.pointer;
+  const onMapClick = (e: L.LeafletMouseEvent): void => pointer?.onClick?.([e.latlng.lat, e.latlng.lng], e.originalEvent);
+  const onMapContextMenu = (e: L.LeafletMouseEvent): void =>
+    pointer?.onContextMenu?.([e.latlng.lat, e.latlng.lng], e.originalEvent);
+  if (pointer) {
+    map.on("click", onMapClick);
+    map.on("contextmenu", onMapContextMenu);
+  }
 
   let limits: ZoomLimits | null = null;
   const visibility = createVisibilityRenderer(renderer, () => ({ zoom: map.getZoom(), limits }));
@@ -148,6 +167,9 @@ export const mountBaseMap: MountBaseMap = (parent, options) => {
     render: (model, view) => {
       if (!destroyed) visibility.render(model, view);
     },
+    fit: () => {
+      if (!destroyed) map.fitBounds(bounds);
+    },
     refresh: () => {
       if (!destroyed) gate.check(true);
     },
@@ -157,6 +179,8 @@ export const mountBaseMap: MountBaseMap = (parent, options) => {
       observer?.disconnect();
       map.off("zoom", onZoom);
       map.off("zoomend", onZoom);
+      map.off("click", onMapClick);
+      map.off("contextmenu", onMapContextMenu);
       renderer.destroy();
       wheelZoom.destroy();
       map.remove();

@@ -282,6 +282,12 @@ export class Menu {
     cb(item);
     return this;
   }
+  /** Set by `showAtMouseEvent` (bead 5.2). */
+  shownAt: unknown = null;
+  showAtMouseEvent(evt: unknown): this {
+    this.shownAt = evt;
+    return this;
+  }
 }
 
 interface MockElementInfo {
@@ -308,6 +314,7 @@ export class MockElement {
   addClass(...cls: string[]): void {
     for (const c of cls) this.classes.add(c);
   }
+  remove(): void {}
   hasClass(cls: string): boolean {
     return this.classes.has(cls);
   }

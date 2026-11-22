@@ -826,3 +826,44 @@
 .mythical-map-view .leaflet-tooltip.mythical-map-tooltip::before {
   display: none;
 }
+
+.mythical-map-view .mythical-map-toolbar {
+  position: absolute;
+  top: 10px;
+  left: 50px;
+  z-index: 1000;
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  box-shadow: var(--shadow-s);
+}
+
+.mythical-map-view .mythical-map-tool {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.mythical-map-view .mythical-map-tool.is-active {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.mythical-map-view .mythical-map-tool-fit {
+  margin-left: 6px;
+}
+
+.mythical-map-view.mythical-map-mode-pin .leaflet-container,
+.mythical-map-view.mythical-map-mode-label .leaflet-container,
+.mythical-map-view.mythical-map-mode-region .leaflet-container,
+.mythical-map-view.mythical-map-mode-path .leaflet-container {
+  cursor: crosshair;
+}
