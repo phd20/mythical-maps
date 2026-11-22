@@ -324,6 +324,12 @@ export abstract class TextFileView extends View {
     this.data = data;
     this.setViewData(data, true);
   }
+  /** Test helper: simulate Obsidian reloading the open file after it changed on disk. */
+  modifyExternally(data: string): void {
+    if (data === this.data) return;
+    this.data = data;
+    this.setViewData(data, false);
+  }
   abstract getViewData(): string;
   abstract setViewData(data: string, clear: boolean): void;
   abstract clear(): void;

@@ -8,7 +8,8 @@
  * state nothing is ever written: `getViewData()` hands back the raw text
  * unchanged, and `save()` / `requestSave()` return early.
  *
- * The Leaflet map is torn down on every re-render, on `clear()` and on unload.
+ * The Leaflet map is torn down on every full re-render, on `clear()` and on
+ * unload (a live reload re-renders in place, see bead 4.5 below).
  *
  * Bead 4.2: the map opens at its saved `viewport` (or fits the image), "Set
  * current view as default" saves the live centre and zoom as `viewport`, and a
@@ -19,11 +20,25 @@
  *
  * Bead 4.3: features are drawn by the base map's renderer, once after mount and
  * again on every store change (layers are reused by id). Bead 5.1 takes over the store wiring (undo, lock toggle).
+ *
+ * Bead 4.5, live reload: Obsidian calls `setViewData(data, false)` when the
+ * open file changes on disk. Policy:
+ * - an echo of our own save (data equal to `getViewData()`) is ignored;
+ * - data that fails to parse switches to the error state (nothing is written);
+ * - with no unsaved edits, the new map goes into the existing store as a
+ *   `replace` op (history cleared, lock kept, not dirty) and the mounted base
+ *   map re-renders in place, keeping pan and zoom. The base map is remounted
+ *   only when the image (resolved URL, width or height) changed; with the same
+ *   width and height the live centre and zoom carry over;
+ * - with unsaved edits (store dirty), the local map is kept and a notice says
+ *   the file changed on disk; the pending save then writes the local version
+ *   (last write wins, design "Risks").
+ * `save()` marks the store saved once the write finishes, if nothing changed meanwhile.
  */
 import { Notice, TextFileView, type Menu, type TFile, type WorkspaceLeaf } from "obsidian";
 import { MapStore, type Op } from "../core/document";
 import { parseMap, type ParseResult } from "../core/parse";
-import { FEATURE_TYPES, type FeatureType, type MapDocument } from "../core/schema";
+import { FEATURE_TYPES, type FeatureType, type MapDocument, type Viewport } from "../core/schema";
 import { stringifyMap } from "../core/serialize";
 import { mountBaseMap, type BaseMapHandle, type MountBaseMap } from "../ui/baseMap";
 import { obsidianIcons } from "../ui/obsidianIcons";
@@ -88,6 +103,10 @@ export class MapView extends TextFileView {
   private store: MapStore | null = null;
   /** Unsubscribes the re-render listener from the current store. */
   private unsubscribe: (() => void) | null = null;
+  /** Identifies the image the mounted base map shows (URL, width, height); a change needs a remount. */
+  private mountedImageKey: string | null = null;
+  /** The status line under the map, refreshed in place on reload. */
+  private statusEl: HTMLElement | null = null;
 
   /** Creates the Leaflet base map. Replaceable so tests can run without a DOM. */
   mountMap: MountBaseMap = mountBaseMap;
@@ -146,11 +165,38 @@ export class MapView extends TextFileView {
     }
   }
 
-  override setViewData(data: string, _clear: boolean): void {
+  override setViewData(data: string, clear: boolean): void {
+    if (!clear && this.viewState.kind !== "empty" && data === this.getViewData()) return;
     const result = parseMap(data);
+    if (!clear && result.ok && this.viewState.kind === "ok" && this.store && this.baseMap) {
+      this.reload(this.store, result.map);
+      return;
+    }
     this.viewState = result.ok ? { kind: "ok", map: result.map } : { kind: "error", failure: result, raw: data };
     this.setStore(result.ok ? new MapStore(result.map) : null);
     this.render();
+  }
+
+  /** External change to an open map (see the file comment for the policy). */
+  private reload(store: MapStore, map: MapDocument): void {
+    if (store.dirty) {
+      this.notify(`${this.file?.basename ?? "This map"} changed on disk, but it has unsaved edits here; keeping this version.`);
+      return;
+    }
+    if (this.imageKey(map) !== this.mountedImageKey) {
+      const live = this.baseMap?.currentViewport() ?? null;
+      const old = this.viewState.kind === "ok" ? this.viewState.map.image : null;
+      const sameFrame = old !== null && old.width === map.image.width && old.height === map.image.height;
+      this.destroyMap();
+      store.apply({ type: "replace", map });
+      this.viewState = { kind: "ok", map: store.map };
+      this.render(sameFrame && live ? live : undefined);
+      return;
+    }
+    // The store listener re-renders the mounted base map; pan and zoom are untouched.
+    store.apply({ type: "replace", map });
+    this.viewState = { kind: "ok", map: store.map };
+    if (this.statusEl) this.fillStatus(this.statusEl, store.map);
   }
 
   override clear(): void {
@@ -174,7 +220,10 @@ export class MapView extends TextFileView {
   /** Never write from an error (or empty) state: the file must stay untouched. */
   override async save(clear?: boolean): Promise<void> {
     if (this.viewState.kind !== "ok") return;
+    const store = this.store;
+    const saving = store?.map;
     await super.save(clear);
+    if (store && this.store === store && store.map === saving) store.markSaved();
   }
 
   /** True when the view shows a map whose live view can be saved as `viewport`. */
@@ -262,16 +311,23 @@ export class MapView extends TextFileView {
   private destroyMap(): void {
     this.baseMap?.destroy();
     this.baseMap = null;
+    this.mountedImageKey = null;
+    this.statusEl = null;
   }
 
-  private render(): void {
+  /** Full re-render. `keepView` overrides the opening view (a remount during live reload). */
+  private render(keepView?: Viewport): void {
     this.destroyMap();
     const el = this.contentEl;
     el.empty();
     el.addClass("mythical-map-view");
     const state = this.viewState;
-    if (state.kind === "ok") this.renderMap(el, state.map);
+    if (state.kind === "ok") this.renderMap(el, state.map, keepView);
     else if (state.kind === "error") this.renderError(el, state.failure);
+  }
+
+  private imageKey(map: MapDocument): string {
+    return JSON.stringify([this.imageUrl(map), map.image.width, map.image.height]);
   }
 
   /** Vault resource URL of the map image, or null when the file is missing. */
@@ -280,20 +336,27 @@ export class MapView extends TextFileView {
     return file ? this.app.vault.getResourcePath(file) : null;
   }
 
-  private renderMap(el: HTMLElement, map: MapDocument): void {
+  private renderMap(el: HTMLElement, map: MapDocument, keepView?: Viewport): void {
     const imageUrl = this.imageUrl(map);
     const { width, height } = map.image;
+    const viewport = keepView ?? map.viewport;
     // A missing image still mounts the map (no overlay), so features keep their frame.
     this.baseMap = this.mountMap(el, {
       imageUrl,
       width,
       height,
       icons: obsidianIcons,
-      ...(map.viewport ? { viewport: map.viewport } : {}),
+      ...(viewport ? { viewport } : {}),
     });
+    this.mountedImageKey = this.imageKey(map);
     this.baseMap.render(map);
     if (!imageUrl) this.renderMissingImage(el, map.image.path);
-    const status = el.createDiv({ cls: "mythical-map-status" });
+    this.statusEl = el.createDiv({ cls: "mythical-map-status" });
+    this.fillStatus(this.statusEl, map);
+  }
+
+  private fillStatus(status: HTMLElement, map: MapDocument): void {
+    status.empty();
     status.createSpan({ cls: "mythical-map-image", text: `${map.image.path} (${map.image.width} × ${map.image.height})` });
     status.createSpan({ text: " · " });
     status.createSpan({ cls: "mythical-map-counts", text: featureSummary(map) });

@@ -526,3 +526,121 @@ describe("feature rendering (bead 4.3)", () => {
     expect(mounts[2]?.destroyed).toBe(1);
   });
 });
+
+describe("live reload on external change (bead 4.5)", () => {
+  /** all-types.map with one extra pin, as an external editor would write it. */
+  const withNewPin = (raw = fixture("all-types.map"), image?: { path: string; width: number; height: number }) => {
+    const json = JSON.parse(raw) as { image: unknown; features: unknown[] };
+    json.features.push({ id: "pnew0001", type: "pin", name: "New", rank: "b0", pos: [-10, 10] });
+    if (image) json.image = image;
+    return JSON.stringify(json, null, 2);
+  };
+  const external = (view: MapView, data: string) =>
+    (view as unknown as { modifyExternally(d: string): void }).modifyExternally(data);
+  const storeOf = (view: MapView) => (view as unknown as { store: MapStore }).store;
+
+  it("re-renders an unmodified map in place: no remount, new pin rendered, status updated", () => {
+    const { view, content, mounts } = open("Maps/all-types.map", fixture("all-types.map"));
+    const store = storeOf(view);
+    external(view, withNewPin());
+    expect(mounts).toHaveLength(1);
+    expect(mounts[0]?.destroyed).toBe(0);
+    const renders = mounts[0]?.renders ?? [];
+    expect(renders).toHaveLength(2);
+    expect(renders[1]?.features.some((f) => f.id === "pnew0001")).toBe(true);
+    expect(storeOf(view)).toBe(store);
+    expect(store.dirty).toBe(false);
+    const state = view.mapState;
+    expect(state.kind === "ok" && state.map).toBe(store.map);
+    expect(content.textContent).toContain("4 pins");
+    expect(content.findAll((el) => el.hasClass("mythical-map-status"))).toHaveLength(1);
+  });
+
+  it("keeps the lock across a reload and clears undo history", () => {
+    const { view } = open("Maps/all-types.map", fixture("all-types.map"));
+    const store = storeOf(view);
+    store.lock();
+    external(view, withNewPin());
+    expect(store.isLocked).toBe(true);
+    expect(store.map.features.some((f) => f.id === "pnew0001")).toBe(true);
+    store.unlock();
+    expect(store.canUndo).toBe(false);
+  });
+
+  it("ignores an echo of our own save", async () => {
+    const { view, mounts } = open("Maps/x.map", NO_VIEWPORT);
+    view.notify = () => {};
+    view.setCurrentViewAsDefault();
+    await Promise.resolve();
+    view.setViewData(view.getViewData(), false);
+    expect(mounts).toHaveLength(1);
+    expect(mounts[0]?.renders).toHaveLength(2);
+  });
+
+  it("marks the store saved after a save, so later external edits reload", async () => {
+    const { view, mounts } = open("Maps/all-types.map", fixture("all-types.map"));
+    view.notify = () => {};
+    view.setCurrentViewAsDefault();
+    expect(storeOf(view).dirty).toBe(true);
+    await view.save();
+    expect(storeOf(view).dirty).toBe(false);
+    external(view, withNewPin(view.getViewData()));
+    expect(mounts).toHaveLength(1);
+    const state = view.mapState;
+    expect(state.kind === "ok" && state.map.features.some((f) => f.id === "pnew0001")).toBe(true);
+    expect(state.kind === "ok" && state.map.viewport).toEqual({ center: [-50, 60.5], zoom: 2.25 });
+  });
+
+  it("keeps unsaved local edits and tells the user the file changed on disk", () => {
+    const { view, mounts } = open("Maps/all-types.map", fixture("all-types.map"));
+    const notices: string[] = [];
+    view.notify = (m) => notices.push(m);
+    view.setCurrentViewAsDefault();
+    // The debounced save has not run yet, so the store is still dirty.
+    expect(storeOf(view).dirty).toBe(true);
+    external(view, withNewPin());
+    expect(notices.at(-1)).toMatch(/changed on disk/);
+    const state = view.mapState;
+    expect(state.kind === "ok" && state.map.features.some((f) => f.id === "pnew0001")).toBe(false);
+    expect(state.kind === "ok" && state.map.viewport).toEqual({ center: [-50, 60.5], zoom: 2.25 });
+    expect(mounts).toHaveLength(1);
+  });
+
+  it("an external edit that breaks the file shows the error state and never writes", async () => {
+    const { app, view, mounts } = open("Maps/all-types.map", fixture("all-types.map"));
+    external(view, fixture("invalid-json.map"));
+    expect(view.mapState.kind).toBe("error");
+    expect(mounts[0]?.destroyed).toBe(1);
+    await view.save();
+    expect(app.vault.modified).toEqual([]);
+    external(view, fixture("all-types.map"));
+    expect(view.mapState.kind).toBe("ok");
+    expect(mounts).toHaveLength(2);
+  });
+
+  it("remounts when the image changes, keeping the live view if the frame size is the same", () => {
+    const app = new App();
+    withFiles(app, ["Maps/fixture-4k.png", "Maps/other.png", "Maps/small.png"]);
+    const vault = app.vault as unknown as { getResourcePath(f: TFile): string };
+    vault.getResourcePath = (f) => `app://local/${f.path}`;
+    const { view, mounts } = open("Maps/all-types.map", fixture("all-types.map"), app);
+    external(view, withNewPin(undefined, { path: "Maps/other.png", width: 4096, height: 3072 }));
+    expect(mounts).toHaveLength(2);
+    expect(mounts[0]?.destroyed).toBe(1);
+    expect(mounts[1]?.options).toMatchObject({
+      imageUrl: "app://local/Maps/other.png",
+      viewport: { center: [-50, 60.5], zoom: 2.25 },
+    });
+    expect(mounts[1]?.renders).toHaveLength(1);
+    external(view, withNewPin(undefined, { path: "Maps/small.png", width: 100, height: 50 }));
+    expect(mounts).toHaveLength(3);
+    // A different frame falls back to the file's own viewport.
+    expect(mounts[2]?.options.viewport).toEqual({ center: [-96, 128], zoom: 2 });
+  });
+
+  it("a clear=true load still remounts (a different file opened in the leaf)", () => {
+    const { load, mounts } = open("Maps/all-types.map", fixture("all-types.map"));
+    load(withNewPin());
+    expect(mounts).toHaveLength(2);
+  });
+});
