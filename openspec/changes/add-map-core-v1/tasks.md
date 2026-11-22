@@ -33,7 +33,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 2.2
   - Accept: `parseMap(text)` returns `{ok, map}` or `{ok: false, kind: 'json' | 'not-mythical' | 'future-version' | 'invalid', issues}`; `migrate()` is a v1 pass-through; tests cover each failure kind
   - Verify: auto
-- [ ] 2.4 Deterministic serialization (`core/serialize.ts`)
+- [x] 2.4 Deterministic serialization (`core/serialize.ts`)
   - Depends: 2.2
   - Accept: `stringifyMap` uses a fixed key order, 2-space indent, sorting by `(parentId, rank, id)` and a trailing newline; property test: `stringify(parse(stringify(m))) === stringify(m)` for generated maps
   - Verify: auto
