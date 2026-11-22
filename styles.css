@@ -1043,3 +1043,65 @@
 .mythical-map-view .mythical-map-panel-row:not(:hover) .mythical-map-panel-button:not(.mythical-map-panel-eye) {
   visibility: hidden;
 }
+
+/* Properties form (bead 5.5): below the feature tree inside the panel. */
+.mythical-map-view .mythical-map-props {
+  flex: none;
+  max-height: 55%;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.mythical-map-view .mythical-map-props.is-empty {
+  display: none;
+}
+
+.mythical-map-view .mythical-map-props-header {
+  padding: var(--size-2-2) var(--size-4-2);
+  font-weight: var(--font-semibold);
+}
+
+.mythical-map-view .mythical-map-props-body {
+  overflow-y: auto;
+  padding: 0 var(--size-4-2) var(--size-4-2);
+}
+
+.mythical-map-view .mythical-map-props-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2-1);
+  margin-bottom: var(--size-4-2);
+}
+
+.mythical-map-view .mythical-map-props-label {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.mythical-map-view .mythical-map-props-field {
+  display: flex;
+  gap: var(--size-2-2);
+}
+
+.mythical-map-view .mythical-map-props-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.mythical-map-view .mythical-map-props-input[type="checkbox"] {
+  flex: none;
+}
+
+.mythical-map-view .mythical-map-props-input.is-invalid {
+  border-color: var(--text-error);
+}
+
+.mythical-map-view .mythical-map-props-error {
+  color: var(--text-error);
+  font-size: var(--font-ui-smaller);
+}
+
+.mythical-map-view .mythical-map-props-error:empty {
+  display: none;
+}

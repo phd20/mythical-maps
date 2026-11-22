@@ -86,6 +86,7 @@ import { FEATURE_TYPES, type FeatureType, type LatLng, type MapDocument, type Vi
 import { stringifyMap } from "../core/serialize";
 import { mountBaseMap, type BaseMapHandle, type MountBaseMap } from "../ui/baseMap";
 import { FeaturePanel } from "../ui/featurePanel";
+import { PropertiesForm } from "../ui/propertiesForm";
 import { obsidianIcons } from "../ui/obsidianIcons";
 import type { RenderView } from "../ui/featureRenderer";
 import { createToolbar, creationKindFor, EDIT_MODES, type EditMode, type ToolbarHandle } from "../ui/toolbar";
@@ -215,6 +216,8 @@ export class MapView extends TextFileView {
 
   // --- Bead 5.4: selection and the feature panel (see ui/featurePanel.ts) ---
   private panel: FeaturePanel | null = null;
+  /** Bead 5.5: the properties form, shown inside the feature panel. */
+  private propsForm: PropertiesForm | null = null;
 
   /** The selected feature's id, or null. Dropped automatically when the feature is deleted. */
   get selection(): string | null {
@@ -290,6 +293,7 @@ export class MapView extends TextFileView {
     if (next === this.selected) return;
     this.selected = next;
     this.panel?.setSelected(next);
+    this.propsForm?.setSelected(next);
     if (this.statusEl && map) this.fillStatus(this.statusEl, map);
     for (const listener of [...this.selectionListeners]) listener(next);
   }
@@ -689,9 +693,12 @@ export class MapView extends TextFileView {
   private syncPanel(map: MapDocument): void {
     if (this.selected !== null && !map.features.some((f) => f.id === this.selected)) this.setSelected(null);
     this.panel?.update(map);
+    this.propsForm?.update(map);
   }
 
   private destroyMap(): void {
+    this.propsForm?.destroy();
+    this.propsForm = null;
     this.panel?.destroy();
     this.panel = null;
     this.baseMap?.destroy();
@@ -777,7 +784,9 @@ export class MapView extends TextFileView {
         menu.showAtMouseEvent(event);
       },
     });
+    this.propsForm = new PropertiesForm(this.panel.el, { edit: (op) => this.edit(op) });
     this.panel.setSelected(this.selected);
+    this.propsForm.setSelected(this.selected);
     this.syncPanel(map);
   }
 
