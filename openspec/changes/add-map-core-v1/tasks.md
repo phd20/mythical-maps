@@ -114,7 +114,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 5.2
   - Accept: Geoman (free) bundled and scoped; drawing a region or path creates the feature; too few vertices creates nothing; in Select mode, pins and labels can be dragged and vertices moved, added or removed, all saved through `MapDocument`
   - Verify: manual: the draw-region, too-few-vertices and drag-pin scenarios, also tried once in a pop-out window
-- [ ] 5.4 Feature panel tree
+- [x] 5.4 Feature panel tree
   - Depends: 5.1, 4.4
   - Accept: an in-view side panel shows the tree ordered by `rank`; selection syncs between the panel and the map; eye toggle; create and rename folders; drag to reorder or reparent, with cycles refused
   - Verify: manual: the move-into-folder and no-cycles scenarios
