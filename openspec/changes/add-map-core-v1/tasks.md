@@ -83,7 +83,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 4.1
   - Accept: opens at `viewport` or fits the image; zoom limits from fit to `z + 2`; "Set current view as default" saves `viewport`; a missing image shows the notice with "Choose image…", which updates `image` (path, width, height)
   - Verify: manual, using the viewport and missing-image fixtures
-- [ ] 4.3 Feature renderer
+- [x] 4.3 Feature renderer
   - Depends: 4.1, 2.9
   - Accept: one `render(model, view)` call reuses Leaflet layers by feature id; pins drawn as a shape plus `setIcon` glyph with colour and size; labels; regions with fill and border styles; paths with stroke styles; `labelVisibility` respected; unknown glyphs fall back to a dot
   - Verify: manual: the all-types fixture renders every feature at its coordinates with its style
