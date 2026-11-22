@@ -41,7 +41,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 1.1
   - Accept: `newId(existing)` matches `^[a-z][0-9a-z]{7}$` and is unique; `rankBetween(a, b)` and `rankAfter(last)` use `fractional-indexing`; tests cover inserting between `a0` and `a1` and repeated inserts
   - Verify: auto
-- [ ] 2.6 Feature tree operations (`core/features.ts`)
+- [x] 2.6 Feature tree operations (`core/features.ts`)
   - Depends: 2.2, 2.5
   - Accept: immutable `children`, `ancestors`, `effectiveHidden`, `visibleAtZoom(feature, zoom, minZoom, maxZoom)`, `insert`, `move` (refuses cycles), `update` and `deleteSubtree`; tests cover each map-editing tree scenario and the zoom-gating scenario
   - Verify: auto
