@@ -113,6 +113,11 @@ export class Workspace extends MockEvents {
     this.leaves.push(leaf);
     return leaf;
   }
+  /** The view in the active leaf; tests set it directly. */
+  activeView: unknown = null;
+  getActiveViewOfType<T>(type: abstract new (...args: never[]) => T): T | null {
+    return this.activeView instanceof type ? this.activeView : null;
+  }
 }
 
 export class App {
@@ -273,6 +278,14 @@ export class MockElement {
   findAll(pred: (el: MockElement) => boolean): MockElement[] {
     return this.children.flatMap((c) => [...(pred(c) ? [c] : []), ...c.findAll(pred)]);
   }
+  listeners: Record<string, Array<(evt: unknown) => unknown>> = {};
+  addEventListener(type: string, cb: (evt: unknown) => unknown): void {
+    (this.listeners[type] ??= []).push(cb);
+  }
+  /** Test helper: fire the element's click listeners. */
+  click(): void {
+    for (const cb of this.listeners.click ?? []) cb({ type: "click" });
+  }
 }
 
 export abstract class View extends Component {
@@ -287,6 +300,7 @@ export abstract class View extends Component {
   getIcon(): string {
     return "";
   }
+  onPaneMenu(_menu: Menu, _source: string): void {}
 }
 
 /**
@@ -400,4 +414,33 @@ export class Setting {
 
 export class Notice {
   constructor(public message: string) {}
+}
+
+export class Modal {
+  /** Every modal opened, so tests can find and drive it. */
+  static opened: Modal[] = [];
+  isOpen = false;
+  constructor(public app: App) {}
+  open(): void {
+    this.isOpen = true;
+    Modal.opened.push(this);
+  }
+  close(): void {
+    this.isOpen = false;
+  }
+}
+
+export abstract class FuzzySuggestModal<T> extends Modal {
+  placeholder = "";
+  setPlaceholder(placeholder: string): void {
+    this.placeholder = placeholder;
+  }
+  abstract getItems(): T[];
+  abstract getItemText(item: T): string;
+  abstract onChooseItem(item: T, evt: unknown): void;
+  /** Test helper: simulate the user picking `item` (Obsidian closes, then calls onChooseItem). */
+  choose(item: T): void {
+    this.close();
+    this.onChooseItem(item, {});
+  }
 }

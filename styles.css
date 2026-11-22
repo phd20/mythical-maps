@@ -638,3 +638,27 @@
   font-family: var(--font-monospace);
   font-size: var(--font-smaller);
 }
+
+/* 4.2 viewport & missing image */
+.mythical-map-view .mythical-map-missing-image {
+  position: absolute;
+  top: var(--size-4-4);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: var(--size-4-3);
+  max-width: calc(100% - 2 * var(--size-4-4));
+  padding: var(--size-4-2) var(--size-4-4);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-primary);
+  box-shadow: var(--shadow-s);
+}
+
+.mythical-map-view .mythical-map-missing-image p {
+  margin: 0;
+  color: var(--text-error);
+  overflow-wrap: anywhere;
+}

@@ -9,13 +9,27 @@
  * unchanged, and `save()` / `requestSave()` return early.
  *
  * The Leaflet map is torn down on every re-render, on `clear()` and on unload.
+ *
+ * Bead 4.2: the map opens at its saved `viewport` (or fits the image), "Set
+ * current view as default" saves the live centre and zoom as `viewport`, and a
+ * missing image shows an "Image not found" notice whose "Choose image…" picks
+ * a vault image and updates `image`. Both edits go through a `MapStore` op
+ * (`setViewport` / `setImage`, so the store's lock applies), then
+ * `requestSave()`. Bead 5.1 takes over the store wiring (undo, lock toggle).
  */
-import { TextFileView, type WorkspaceLeaf } from "obsidian";
+import { Notice, TextFileView, type Menu, type TFile, type WorkspaceLeaf } from "obsidian";
+import { MapStore, type Op } from "../core/document";
 import { parseMap, type ParseResult } from "../core/parse";
 import { FEATURE_TYPES, type FeatureType, type MapDocument } from "../core/schema";
 import { stringifyMap } from "../core/serialize";
 import { mountBaseMap, type BaseMapHandle, type MountBaseMap } from "../ui/baseMap";
 import { VIEW_TYPE_MAP } from "./constants";
+import { ImageSuggestModal, vaultImageFiles } from "./imageSuggestModal";
+import { readImageSizeFromVault, type ImageSize } from "./newMapCommand";
+
+export const SET_DEFAULT_VIEW_COMMAND_ID = "set-current-view-as-default";
+export const SET_DEFAULT_VIEW_COMMAND_NAME = "Set current view as default";
+export const CHOOSE_IMAGE_TEXT = "Choose image…";
 
 export type ParseFailure = Extract<ParseResult, { ok: false }>;
 
@@ -66,9 +80,21 @@ export function featureSummary(map: MapDocument): string {
 export class MapView extends TextFileView {
   private viewState: MapViewState = { kind: "empty" };
   private baseMap: BaseMapHandle | null = null;
+  /** Applies edit ops to the ok-state map; null in any other state. */
+  private store: MapStore | null = null;
 
   /** Creates the Leaflet base map. Replaceable so tests can run without a DOM. */
   mountMap: MountBaseMap = mountBaseMap;
+  /** Lets the user pick a vault image; calls `onChoose` only if one is chosen. Replaceable for tests. */
+  pickImage = (onChoose: (file: TFile) => void): void => {
+    new ImageSuggestModal(this.app, vaultImageFiles(this.app), onChoose).open();
+  };
+  /** Natural pixel size of an image file. Replaceable for tests. */
+  readImageSize = (file: TFile): Promise<ImageSize> => readImageSizeFromVault(this.app, file);
+  /** Shows a message to the user. Replaceable for tests. */
+  notify = (message: string): void => {
+    new Notice(message);
+  };
 
   constructor(leaf: WorkspaceLeaf) {
     super(leaf);
@@ -117,12 +143,14 @@ export class MapView extends TextFileView {
   override setViewData(data: string, _clear: boolean): void {
     const result = parseMap(data);
     this.viewState = result.ok ? { kind: "ok", map: result.map } : { kind: "error", failure: result, raw: data };
+    this.store = result.ok ? new MapStore(result.map) : null;
     this.render();
   }
 
   override clear(): void {
     this.destroyMap();
     this.viewState = { kind: "empty" };
+    this.store = null;
     this.contentEl.empty();
   }
 
@@ -140,6 +168,80 @@ export class MapView extends TextFileView {
   override async save(clear?: boolean): Promise<void> {
     if (this.viewState.kind !== "ok") return;
     await super.save(clear);
+  }
+
+  /** True when the view shows a map whose live view can be saved as `viewport`. */
+  canSetDefaultView(): boolean {
+    return this.viewState.kind === "ok" && this.baseMap?.currentViewport() != null;
+  }
+
+  /** Save the live centre and zoom as the map's `viewport`. Returns false if nothing was saved. */
+  setCurrentViewAsDefault(): boolean {
+    const viewport = this.viewState.kind === "ok" ? this.baseMap?.currentViewport() : null;
+    if (!viewport) return false;
+    if (!this.applyOp({ type: "setViewport", viewport })) return false;
+    this.notify("Saved the current view as this map's default.");
+    return true;
+  }
+
+  /** Open the image picker; the chosen image replaces `image` (path and pixel size). */
+  chooseImage(): void {
+    if (this.viewState.kind !== "ok") return;
+    this.pickImage((file) => {
+      void this.replaceImage(file);
+    });
+  }
+
+  /** Point the map at `file`: read its pixel size, apply `setImage`, save and re-render. Never throws. */
+  async replaceImage(file: TFile): Promise<boolean> {
+    const store = this.store;
+    if (!store) return false;
+    let size: ImageSize;
+    try {
+      size = await this.readImageSize(file);
+    } catch (err) {
+      console.error("Mythical Maps: could not read image size", file.path, err);
+      this.notify(`Could not read the size of ${file.path}.`);
+      return false;
+    }
+    const width = Math.round(size.width);
+    const height = Math.round(size.height);
+    if (!(width > 0 && height > 0)) {
+      this.notify(`Could not read the size of ${file.path}.`);
+      return false;
+    }
+    // The file may have been reloaded (or turned invalid) while the image loaded.
+    if (this.store !== store) return false;
+    if (!this.applyOp({ type: "setImage", image: { path: file.path, width, height } })) return false;
+    this.render();
+    return true;
+  }
+
+  override onPaneMenu(menu: Menu, source: string): void {
+    super.onPaneMenu(menu, source);
+    if (!this.canSetDefaultView()) return;
+    menu.addItem((item) =>
+      item
+        .setTitle(SET_DEFAULT_VIEW_COMMAND_NAME)
+        .setIcon("locate-fixed")
+        .onClick(() => {
+          this.setCurrentViewAsDefault();
+        }),
+    );
+  }
+
+  /** Apply an edit through the store (which enforces the lock), then schedule a save. Only in the ok state. */
+  private applyOp(op: Exclude<Op, { type: "replace" }>): boolean {
+    const store = this.store;
+    if (this.viewState.kind !== "ok" || !store) return false;
+    const result = store.apply(op);
+    if (!result.ok) {
+      this.notify(result.error);
+      return false;
+    }
+    this.viewState = { kind: "ok", map: store.map };
+    this.requestSave();
+    return true;
   }
 
   private destroyMap(): void {
@@ -164,12 +266,22 @@ export class MapView extends TextFileView {
   }
 
   private renderMap(el: HTMLElement, map: MapDocument): void {
-    // Bead 4.2 replaces a missing image with a "Image not found" notice; for now the map shows without an overlay.
-    this.baseMap = this.mountMap(el, { imageUrl: this.imageUrl(map), width: map.image.width, height: map.image.height });
+    const imageUrl = this.imageUrl(map);
+    const { width, height } = map.image;
+    // A missing image still mounts the map (no overlay), so features keep their frame.
+    this.baseMap = this.mountMap(el, { imageUrl, width, height, ...(map.viewport ? { viewport: map.viewport } : {}) });
+    if (!imageUrl) this.renderMissingImage(el, map.image.path);
     const status = el.createDiv({ cls: "mythical-map-status" });
     status.createSpan({ cls: "mythical-map-image", text: `${map.image.path} (${map.image.width} × ${map.image.height})` });
     status.createSpan({ text: " · " });
     status.createSpan({ cls: "mythical-map-counts", text: featureSummary(map) });
+  }
+
+  private renderMissingImage(el: HTMLElement, path: string): void {
+    const notice = el.createDiv({ cls: "mythical-map-missing-image" });
+    notice.createEl("p", { text: `Image not found: ${path}` });
+    const button = notice.createEl("button", { cls: "mod-cta", text: CHOOSE_IMAGE_TEXT });
+    button.addEventListener("click", () => this.chooseImage());
   }
 
   private renderError(el: HTMLElement, failure: ParseFailure): void {

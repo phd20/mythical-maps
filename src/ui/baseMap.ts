@@ -9,14 +9,22 @@
  * - The initial fit waits until the container has a non-zero size, so a map
  *   opened in a background tab fits correctly once it is shown.
  * - `installPopoutShim` routes Leaflet's global drag listeners to the right window.
+ * - Zoom limits (bead 4.2, `zoomLimits.ts`): `maxZoom` is `z + 2`; `minZoom` is
+ *   the zoom that fits the whole image, set once the container has a size and
+ *   recomputed on every resize.
+ * - The first view is the saved `viewport` (zoom clamped to the limits), or a
+ *   fit of the whole image when there is none.
  *
- * The map model stays the only state: nothing is read back out of Leaflet here.
- * Viewport, zoom limits and the missing-image UX come in bead 4.2.
+ * The map model stays the only state: nothing is read back out of Leaflet into
+ * the model. `currentViewport()` reads the live centre and zoom only so the
+ * view can save them as `viewport` through the document model.
  */
 import * as L from "leaflet";
 import { boundsFor, type Bounds } from "../core/frame";
+import type { Viewport } from "../core/schema";
 import { installPopoutShim, type ShimLeaflet } from "./popoutShim";
 import { SizeGate } from "./sizeGate";
+import { clampZoom, maxZoomFor, viewportFrom, ZOOM_DELTA, ZOOM_SNAP, zoomLimits, type ZoomLimits } from "./zoomLimits";
 
 export interface BaseMapOptions {
   /** Resource URL of the map image, or null when the image is missing (no overlay is drawn). */
@@ -24,12 +32,18 @@ export interface BaseMapOptions {
   /** Image size in pixels, from the map file. */
   width: number;
   height: number;
+  /** Saved opening view; when absent the whole image is fitted. */
+  viewport?: Viewport;
 }
 
 export interface BaseMapHandle {
   readonly map: L.Map;
   readonly bounds: Bounds;
   readonly container: HTMLElement;
+  /** Current zoom limits, or null until the container first has a size. */
+  readonly limits: ZoomLimits | null;
+  /** The live centre and zoom, rounded for saving; null until the first view is set. */
+  currentViewport(): Viewport | null;
   /** Re-check the container size: `invalidateSize`, plus the deferred initial fit. */
   refresh(): void;
   /** Tear down the Leaflet map, the resize observer and the container. Idempotent. */
@@ -49,22 +63,34 @@ export const mountBaseMap: MountBaseMap = (parent, options) => {
 
   const container = parent.createDiv({ cls: "mythical-map-leaflet" });
   const bounds = boundsFor(options.width, options.height);
+  const { width, height, viewport } = options;
   const map = L.map(container, {
     crs: L.CRS.Simple,
     attributionControl: false,
-    // Fit-to-view needs room below zoom 0 in small panes; bead 4.2 sets the real limits.
-    minZoom: -4,
-    zoomSnap: 0.25,
-    zoomDelta: 0.5,
+    // minZoom (fit) needs the container size; it is set before the first view.
+    maxZoom: maxZoomFor(width, height),
+    zoomSnap: ZOOM_SNAP,
+    zoomDelta: ZOOM_DELTA,
     // The ResizeObserver below replaces Leaflet's global window resize listener.
     trackResize: false,
   });
   if (options.imageUrl) L.imageOverlay(options.imageUrl, bounds, { interactive: false }).addTo(map);
 
+  let limits: ZoomLimits | null = null;
+  let viewSet = false;
   const gate = new SizeGate({
     getSize: () => ({ width: container.clientWidth, height: container.clientHeight }),
-    onResize: () => map.invalidateSize({ animate: false }),
-    onFirstSize: () => map.fitBounds(bounds, { animate: false }),
+    onResize: () => {
+      map.invalidateSize({ animate: false });
+      limits = zoomLimits(width, height, container.clientWidth, container.clientHeight);
+      // Leaflet zooms in to the new minimum itself if the current zoom is now below it.
+      map.setMinZoom(limits.min);
+    },
+    onFirstSize: () => {
+      if (viewport && limits) map.setView(viewport.center, clampZoom(viewport.zoom, limits), { animate: false });
+      else map.fitBounds(bounds, { animate: false });
+      viewSet = true;
+    },
   });
 
   const RO = resizeObserverFor(container);
@@ -77,6 +103,14 @@ export const mountBaseMap: MountBaseMap = (parent, options) => {
     map,
     bounds,
     container,
+    get limits() {
+      return limits;
+    },
+    currentViewport: () => {
+      if (!viewSet || destroyed) return null;
+      const c = map.getCenter();
+      return viewportFrom([c.lat, c.lng], map.getZoom());
+    },
     refresh: () => {
       if (!destroyed) gate.check(true);
     },

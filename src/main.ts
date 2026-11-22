@@ -2,7 +2,7 @@ import { Plugin } from "obsidian";
 import { mergeSettings, type MythicalMapsSettings } from "./obsidian/settings";
 import { MythicalMapsSettingTab } from "./obsidian/settingsTab";
 import { MAP_EXTENSION, VIEW_TYPE_MAP } from "./obsidian/constants";
-import { MapView } from "./obsidian/mapView";
+import { MapView, SET_DEFAULT_VIEW_COMMAND_ID, SET_DEFAULT_VIEW_COMMAND_NAME } from "./obsidian/mapView";
 import { registerMapLinkMaintenance } from "./obsidian/renameListener";
 import type { VaultMapIndex } from "./obsidian/vaultMapIndex";
 import { registerNewMapFromImage } from "./obsidian/newMapCommand";
@@ -20,6 +20,16 @@ export default class MythicalMapsPlugin extends Plugin {
     this.registerExtensions([MAP_EXTENSION], VIEW_TYPE_MAP);
     this.mapIndex = registerMapLinkMaintenance(this, this.app);
     registerNewMapFromImage(this, this.app);
+    this.addCommand({
+      id: SET_DEFAULT_VIEW_COMMAND_ID,
+      name: SET_DEFAULT_VIEW_COMMAND_NAME,
+      checkCallback: (checking) => {
+        const view = this.app.workspace.getActiveViewOfType(MapView);
+        if (!view?.canSetDefaultView()) return false;
+        if (!checking) view.setCurrentViewAsDefault();
+        return true;
+      },
+    });
   }
 
   override onunload(): void {

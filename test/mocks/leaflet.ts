@@ -36,6 +36,26 @@ export class MockMap {
   get callNames(): string[] {
     return this.calls.map((c) => c.name);
   }
+  // 4.2 viewport & zoom limits. `center`/`zoom` track setView only (fitBounds leaves them unchanged).
+  center: [number, number] = [0, 0];
+  zoom = 0;
+  setView(center: [number, number], zoom: number, ...rest: unknown[]): this {
+    this.calls.push({ name: "setView", args: [center, zoom, ...rest] });
+    this.center = center;
+    this.zoom = zoom;
+    return this;
+  }
+  setMinZoom(zoom: number): this {
+    this.calls.push({ name: "setMinZoom", args: [zoom] });
+    this.options.minZoom = zoom;
+    return this;
+  }
+  getCenter(): { lat: number; lng: number } {
+    return { lat: this.center[0], lng: this.center[1] };
+  }
+  getZoom(): number {
+    return this.zoom;
+  }
 }
 
 export class MockImageOverlay {
