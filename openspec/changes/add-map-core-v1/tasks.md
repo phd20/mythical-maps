@@ -91,7 +91,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 4.3, 2.6
   - Accept: features hidden by `effectiveHidden` or outside `visibilityRange` are not drawn; visibility re-evaluates on `zoomend`
   - Verify: manual: the hidden-folder and zoom-gated label scenarios
-- [ ] 4.5 Live reload on external change
+- [x] 4.5 Live reload on external change
   - Depends: 4.3
   - Accept: an external modification of an open, unmodified map re-renders it while keeping pan and zoom
   - Verify: manual: edit the fixture `.map` in a text editor while it's open, and the new pin appears
