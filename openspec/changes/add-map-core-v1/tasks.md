@@ -106,7 +106,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 2.7, 4.3
   - Accept: every edit goes through `MapDocument` then `requestSave()`; edits are flushed on close and unload; lock toggle in the view header; Mod+Z and Mod+Shift+Z scoped to the focused map view
   - Verify: manual: the close-right-after-edit, locked-drag and undo-delete scenarios
-- [ ] 5.2 Toolbar modes and creating pins and labels
+- [x] 5.2 Toolbar modes and creating pins and labels
   - Depends: 5.1
   - Accept: Select, Pin, Label, Region and Path modes plus Fit; clicking in Pin or Label mode creates the feature; Shift-click and context menu "Add pin here"; new features go into the selected folder as its last child, and are selected
   - Verify: manual: the add-pin scenario
