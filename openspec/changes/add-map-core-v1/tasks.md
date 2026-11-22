@@ -53,7 +53,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 2.2
   - Accept: given an injected `LinkResolver`, provides `collectLinks(map, mapPath)`, `findBroken(map, mapPath)`, and `rewriteForRename(map, mapPath, oldPath, newLinktextFn)`, which changes only the `link` and `image.path` fields; tests cover the note rename, image move, folder rename and "broken stays untouched" scenarios
   - Verify: auto
-- [ ] 2.9 Style resolution (`core/style.ts`)
+- [x] 2.9 Style resolution (`core/style.ts`)
   - Depends: 2.2
   - Accept: `resolveStyle(feature, defaults, overrideConfig, frontmatter?)` follows the order in design D9; rejects invalid values; tests cover each plugin-settings scenario
   - Verify: auto
