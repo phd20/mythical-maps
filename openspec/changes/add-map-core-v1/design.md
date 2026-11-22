@@ -87,6 +87,15 @@ Leaflet's CSS and Geoman's CSS are bundled into `styles.css`, because Obsidian o
 
 *Alternatives:* a custom renderer (Zoom Map's cost); Leaflet.draw (unmaintained).
 
+**Smooth zoom:** Leaflet's stock wheel handler debounces wheel events and then plays one animated zoom per batch, which feels like stepping between levels next to LegendKeeper. v1 sets `zoomSnap: 0` and replaces `scrollWheelZoom` with a small custom handler in `src/ui/`:
+- **Per event:** each `wheel` event changes a target zoom by `-deltaY × k`, with `deltaMode` normalised so pixel, line and page deltas behave alike. A `ctrlKey` wheel (trackpad pinch) uses a larger `k`.
+- **Clamp and anchor:** the target is clamped to `[minZoom, maxZoom]`, kept anchored on the pointer.
+- **Easing:** one `requestAnimationFrame` loop eases the current zoom toward the target with `map.setZoomAround(..., { animate: false })`.
+
+The handler listens on the map container and takes `requestAnimationFrame` from the container's own window, so it works in pop-outs. Double-click and the zoom buttons keep Leaflet's animated whole-step zoom. Features are rendered with vector or `divIcon` layers, so fractional zoom needs nothing extra from them.
+
+*Alternative:* Leaflet.SmoothWheelZoom. Rejected because it is unmaintained and patches globals; the handler is about 100 lines.
+
 **Icon note:** LegendKeeper uses FontAwesome names. v1 uses Obsidian's bundled Lucide icons. `iconGlyph` stores the Lucide name, and an unknown name falls back to a dot.
 
 ### D6. Pop-out windows and sizing

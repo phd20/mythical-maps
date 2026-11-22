@@ -26,6 +26,25 @@ The system SHALL open the map at `viewport` when present and otherwise fit the w
 - **WHEN** the user chooses "Set current view as default"
 - **THEN** the current centre and zoom are saved as `viewport`
 
+### Requirement: Smooth continuous zoom
+The system SHALL zoom continuously, not in discrete steps, when the user zooms with a mouse wheel, a trackpad scroll or a trackpad pinch. Each input event SHALL change the zoom by an amount proportional to its scroll delta, anchored on the pointer, and the result SHALL be clamped to the zoom limits. Zoom levels SHALL NOT be snapped, so any fractional zoom can be reached and saved as `viewport.zoom`. Double-click and the zoom buttons MAY zoom in animated whole steps.
+
+#### Scenario: Trackpad pinch
+- **WHEN** the user pinches slowly on a trackpad over a point on the map
+- **THEN** the image scales smoothly with the gesture, with no visible jumps between zoom levels, and the point under the pointer stays under the pointer
+
+#### Scenario: Mouse wheel
+- **WHEN** the user scrolls a mouse wheel several notches over the map
+- **THEN** the zoom changes by a small amount per notch and eases between them, without jumping a whole zoom level per notch
+
+#### Scenario: Zoom limits
+- **WHEN** the user keeps zooming in or out
+- **THEN** the zoom stops smoothly at the minimum (fit) and maximum (`z + 2`) without overshooting or bouncing
+
+#### Scenario: Pop-out window
+- **WHEN** the map is in a pop-out window
+- **THEN** wheel and pinch zoom behave exactly as in the main window
+
 ### Requirement: Correct sizing
 The system SHALL size the map correctly on first render and after any container size change, including sidebar toggles, split resizing and pop-out windows. It SHALL defer the initial fit until the container has a non-zero size.
 

@@ -95,6 +95,10 @@ Bead conventions (for loop + beads implementation)
   - Depends: 4.3
   - Accept: an external modification of an open, unmodified map re-renders it while keeping pan and zoom
   - Verify: manual: edit the fixture `.map` in a text editor while it's open, and the new pin appears
+- [ ] 4.6 Smooth continuous zoom
+  - Depends: 4.2
+  - Accept: `zoomSnap: 0`; a custom wheel handler replaces `scrollWheelZoom`, changing the zoom in proportion to the normalised wheel delta (larger factor for ctrl-wheel trackpad pinch), anchored on the pointer, clamped to the zoom limits, and eased with one `requestAnimationFrame` loop taken from the container's window; unit tests cover delta normalisation, clamping and the easing step
+  - Verify: manual: trackpad pinch, two-finger scroll and mouse wheel zoom smoothly with no jumps between levels, comparable to LegendKeeper; zoom stops cleanly at both limits; the same holds in a pop-out window
 
 ## 5. Editing
 
@@ -164,11 +168,11 @@ Bead conventions (for loop + beads implementation)
 ## 8. Hardening and release readiness
 
 - [ ] 8.1 Performance check with the 8k image
-  - Depends: 4.3
+  - Depends: 4.3, 4.6
   - Accept: the 8192×6144 fixture with about 200 pins pans and zooms smoothly on desktop; heap usage is recorded in `design.md` under Risks; any problem is filed as a follow-up bead (tiling)
   - Verify: manual
 - [ ] 8.2 Full acceptance pass and README
-  - Depends: 3.3, 4.2, 4.5, 5.3, 5.6, 6.3, 6.5, 6.7, 7.1
+  - Depends: 3.3, 4.2, 4.5, 4.6, 5.3, 5.6, 6.3, 6.5, 6.7, 7.1
   - Accept: every scenario in `specs/` has been walked in `test-vault/` and ticked; README documents the `.map` format, the coordinate frame, the settings and the known limits; the extension decision (Open Question 1) is recorded
   - Verify: manual
 - [ ] 8.3 Mobile smoke test (best effort)
