@@ -49,7 +49,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 2.6
   - Accept: a `MapDocument` with `apply(op)`, `subscribe`, `lock`/`unlock` (when locked, every mutating op is refused and returns an error), and `undo`/`redo`; tests cover the locked-drag refusal, undoing a delete (restores the same id), and redo
   - Verify: auto
-- [ ] 2.8 Link logic (`core/links.ts`)
+- [x] 2.8 Link logic (`core/links.ts`)
   - Depends: 2.2
   - Accept: given an injected `LinkResolver`, provides `collectLinks(map, mapPath)`, `findBroken(map, mapPath)`, and `rewriteForRename(map, mapPath, oldPath, newLinktextFn)`, which changes only the `link` and `image.path` fields; tests cover the note rename, image move, folder rename and "broken stays untouched" scenarios
   - Verify: auto
