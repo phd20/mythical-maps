@@ -37,7 +37,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 2.2
   - Accept: `stringifyMap` uses a fixed key order, 2-space indent, sorting by `(parentId, rank, id)` and a trailing newline; property test: `stringify(parse(stringify(m))) === stringify(m)` for generated maps
   - Verify: auto
-- [ ] 2.5 Ids and ranks (`core/ids.ts`)
+- [x] 2.5 Ids and ranks (`core/ids.ts`)
   - Depends: 1.1
   - Accept: `newId(existing)` matches `^[a-z][0-9a-z]{7}$` and is unique; `rankBetween(a, b)` and `rankAfter(last)` use `fractional-indexing`; tests cover inserting between `a0` and `a1` and repeated inserts
   - Verify: auto
