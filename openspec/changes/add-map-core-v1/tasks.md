@@ -25,7 +25,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 1.1
   - Accept: `zoomFor(w, h)`, `boundsFor(w, h)`, `pixelToPos` and `posToPixel` match the formulas in design D3; tests cover the 8192×6144 corner (`[-192, 256]`, z = 5), images smaller than 256 px (z = 0), and round-trip inverses to within 1e-9
   - Verify: auto
-- [ ] 2.2 Map schema v1 (`core/schema.ts`)
+- [x] 2.2 Map schema v1 (`core/schema.ts`)
   - Depends: 1.1
   - Accept: a zod schema and exported types for the map document and all five feature types; cross-field checks for required geometry per type, `parentId` naming an existing folder, duplicate ids, and `visibilityRange` with 0 ≤ min ≤ max ≤ 1; errors carry JSON paths; tests cover each map-file spec scenario
   - Verify: auto
