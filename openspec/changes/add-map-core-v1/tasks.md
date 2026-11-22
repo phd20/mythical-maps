@@ -10,7 +10,7 @@ Bead conventions (for loop + beads implementation)
 
 ## 1. Project setup
 
-- [ ] 1.1 Scaffold the Obsidian plugin project
+- [x] 1.1 Scaffold the Obsidian plugin project
   - Depends: none
   - Accept: `package.json`, `tsconfig.json` (strict), `esbuild.config.mjs`, `manifest.json` (id `mythical-maps`, `isDesktopOnly: false`), eslint config, and vitest with `obsidian` aliased to `test/mocks/obsidian.ts`; `src/main.ts` loads and unloads cleanly; `npm run check` and `npm run dev` exist; a trivial test passes
   - Verify: auto
