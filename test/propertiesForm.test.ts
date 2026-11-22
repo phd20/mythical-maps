@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { MockElement } from "./mocks/obsidian";
 import { MapStore, type ApplyResult } from "../src/core/document";
 import type { Feature, MapDocument } from "../src/core/schema";
-import { PropertiesForm } from "../src/ui/propertiesForm";
+import { PropertiesForm, type PropertiesFormHost } from "../src/ui/propertiesForm";
 import type { EditOp } from "../src/obsidian/mapView";
 
 // The shared mock element is minimal; add the few DOM members the form touches.
@@ -21,7 +21,7 @@ const pin = (id: string, extra: Partial<Feature> = {}): Feature =>
 const doc = (features: Feature[]): MapDocument =>
   ({ type: "mythical-map", version: 1, image: { path: "a.png", width: 10, height: 10 }, features }) as unknown as MapDocument;
 
-function setup(features: Feature[], selected: string | null = "pinaaaaa") {
+function setup(features: Feature[], selected: string | null = "pinaaaaa", chooseLink?: PropertiesFormHost["chooseLink"]) {
   const store = new MapStore(doc(features));
   const ops: EditOp[] = [];
   const parent = new MockElement() as unknown as HTMLElement;
@@ -30,6 +30,7 @@ function setup(features: Feature[], selected: string | null = "pinaaaaa") {
       ops.push(op);
       return store.apply(op);
     },
+    chooseLink,
   });
   store.subscribe((map) => form.update(map));
   form.update(store.map);
@@ -55,6 +56,43 @@ function setup(features: Feature[], selected: string | null = "pinaaaaa") {
   const stored = (): Feature => store.map.features[0] as Feature;
   return { store, form, ops, root, input, enter, fire, error, stored };
 }
+
+describe("PropertiesForm link picker", () => {
+  const choose = (t: ReturnType<typeof setup>) => {
+    const button = t.root.findAll((e) => e.attributes["data-field-choose"] === "link")[0];
+    if (!button) throw new Error("no choose button");
+    t.fire(button, "click");
+  };
+
+  it("has no Choose button without a picker host", () => {
+    const t = setup([pin("pinaaaaa")]);
+    expect(t.root.findAll((e) => e.attributes["data-field-choose"] === "link")).toHaveLength(0);
+  });
+
+  it("sets the link from the picked linktext through one update op", () => {
+    let seen: string | null = null;
+    const t = setup([pin("pinaaaaa")], "pinaaaaa", (current, done) => {
+      seen = current;
+      done("Places/Westmarch");
+    });
+    choose(t);
+    expect(seen).toBe("");
+    expect(t.ops).toHaveLength(1);
+    expect((t.stored() as { link?: string }).link).toBe("Places/Westmarch");
+    expect(t.input("link").value).toBe("Places/Westmarch");
+  });
+
+  it("clears the link when the picker returns null, and passes the current link", () => {
+    let seen: string | null = null;
+    const t = setup([pin("pinaaaaa", { link: "Inn" } as Partial<Feature>)], "pinaaaaa", (current, done) => {
+      seen = current;
+      done(null);
+    });
+    choose(t);
+    expect(seen).toBe("Inn");
+    expect((t.stored() as { link?: string }).link).toBeUndefined();
+  });
+});
 
 describe("PropertiesForm", () => {
   it("is empty without a selection and shows the selected feature's fields", () => {

@@ -86,6 +86,7 @@ import { FEATURE_TYPES, type FeatureType, type LatLng, type MapDocument, type Vi
 import { stringifyMap } from "../core/serialize";
 import { mountBaseMap, type BaseMapHandle, type MountBaseMap } from "../ui/baseMap";
 import { FeaturePanel } from "../ui/featurePanel";
+import { LinkSuggestModal } from "./linkSuggestModal";
 import { PropertiesForm } from "../ui/propertiesForm";
 import { obsidianIcons } from "../ui/obsidianIcons";
 import type { RenderView } from "../ui/featureRenderer";
@@ -784,7 +785,13 @@ export class MapView extends TextFileView {
         menu.showAtMouseEvent(event);
       },
     });
-    this.propsForm = new PropertiesForm(this.panel.el, { edit: (op) => this.edit(op) });
+    this.propsForm = new PropertiesForm(this.panel.el, {
+      edit: (op) => this.edit(op),
+      chooseLink: (current, done) => {
+        if (!this.file) return;
+        new LinkSuggestModal(this.app, this.file.path, current.trim() !== "", done).open();
+      },
+    });
     this.panel.setSelected(this.selected);
     this.propsForm.setSelected(this.selected);
     this.syncPanel(map);

@@ -34,11 +34,17 @@ import type { EditOp } from "../obsidian/mapView";
 export interface PropertiesFormHost {
   /** Apply an edit op; not-ok results are refused (lock, invalid). */
   edit(op: EditOp): ApplyResult;
+  /**
+   * Open the note picker for a pin link (bead 6.1). `done` gets the chosen
+   * linktext, or null to clear the link. Omitted: no "Choose…" button.
+   */
+  chooseLink?(current: string, done: (linktext: string | null) => void): void;
 }
 
 export const PROPERTIES_TITLE = "Properties";
 export const RANGE_LABEL = "Visible between zoom";
 export const RANGE_KEY = "visibilityRange";
+export const CHOOSE_LINK_LABEL = "Choose…";
 export const DEFAULT_OPTION_LABEL = "Default";
 
 interface Control {
@@ -159,6 +165,8 @@ export class PropertiesForm {
       input = text;
     }
     input.setAttribute("data-field-input", spec.key);
+    const chooseLink = spec.key === "link" ? this.host.chooseLink?.bind(this.host) : undefined;
+    const chooseButton = chooseLink ? field.createEl("button", { cls: "mythical-map-props-choose", text: CHOOSE_LINK_LABEL }) : null;
 
     const control: Control = {
       key: spec.key,
@@ -183,6 +191,14 @@ export class PropertiesForm {
       else this.showError(control, result.error);
     });
     input.addEventListener("change", () => this.commitField(spec, control, read()));
+    chooseButton?.setAttribute("data-field-choose", spec.key);
+    chooseButton?.addEventListener("click", () => {
+      chooseLink?.(input.value, (linktext) => {
+        input.value = linktext ?? "";
+        this.clearError(control);
+        this.commitField(spec, control, input.value);
+      });
+    });
     input.addEventListener("keydown", (evt) => {
       if ((evt as KeyboardEvent).key === "Escape" && spec.kind !== "boolean" && spec.kind !== "enum") this.revert(control);
     });

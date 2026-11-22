@@ -1089,6 +1089,10 @@
   min-width: 0;
 }
 
+.mythical-map-view .mythical-map-props-choose {
+  flex: none;
+}
+
 .mythical-map-view .mythical-map-props-input[type="checkbox"] {
   flex: none;
 }
