@@ -2,7 +2,14 @@ import { Plugin } from "obsidian";
 import { mergeSettings, type MythicalMapsSettings } from "./obsidian/settings";
 import { MythicalMapsSettingTab } from "./obsidian/settingsTab";
 import { MAP_EXTENSION, VIEW_TYPE_MAP } from "./obsidian/constants";
-import { MapView, SET_DEFAULT_VIEW_COMMAND_ID, SET_DEFAULT_VIEW_COMMAND_NAME } from "./obsidian/mapView";
+import {
+  MapView,
+  REDO_COMMAND_ID,
+  SET_DEFAULT_VIEW_COMMAND_ID,
+  SET_DEFAULT_VIEW_COMMAND_NAME,
+  TOGGLE_LOCK_COMMAND_ID,
+  UNDO_COMMAND_ID,
+} from "./obsidian/mapView";
 import { registerMapLinkMaintenance } from "./obsidian/renameListener";
 import type { VaultMapIndex } from "./obsidian/vaultMapIndex";
 import { registerNewMapFromImage } from "./obsidian/newMapCommand";
@@ -38,6 +45,45 @@ export default class MythicalMapsPlugin extends Plugin {
         const view = this.app.workspace.getActiveViewOfType(MapView);
         if (!view?.canSetDefaultView()) return false;
         if (!checking) view.setCurrentViewAsDefault();
+        return true;
+      },
+    });
+    this.registerMapEditCommands();
+  }
+
+  /** Undo, redo and lock as commands on the active map view (the view also binds Mod+Z / Mod+Shift+Z). */
+  private registerMapEditCommands(): void {
+    const activeMapView = (): MapView | null => {
+      const view = this.app.workspace.getActiveViewOfType(MapView);
+      return view?.mapStore ? view : null;
+    };
+    this.addCommand({
+      id: UNDO_COMMAND_ID,
+      name: "Undo map edit",
+      checkCallback: (checking) => {
+        const view = activeMapView();
+        if (!view?.canUndo) return false;
+        if (!checking) view.undo();
+        return true;
+      },
+    });
+    this.addCommand({
+      id: REDO_COMMAND_ID,
+      name: "Redo map edit",
+      checkCallback: (checking) => {
+        const view = activeMapView();
+        if (!view?.canRedo) return false;
+        if (!checking) view.redo();
+        return true;
+      },
+    });
+    this.addCommand({
+      id: TOGGLE_LOCK_COMMAND_ID,
+      name: "Toggle map lock",
+      checkCallback: (checking) => {
+        const view = activeMapView();
+        if (!view) return false;
+        if (!checking) view.toggleLock();
         return true;
       },
     });

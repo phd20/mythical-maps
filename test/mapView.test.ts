@@ -2,16 +2,33 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 // The mock module is what vitest aliases `obsidian` to; import it directly for its test helpers.
-import { App, Menu, MockElement, Modal, TFile, WorkspaceLeaf, type Plugin as MockPlugin } from "./mocks/obsidian";
+import {
+  App,
+  Menu,
+  MockElement,
+  Modal,
+  Scope,
+  Tasks,
+  TFile,
+  WorkspaceLeaf,
+  type Plugin as MockPlugin,
+} from "./mocks/obsidian";
 import MythicalMapsPlugin from "../src/main";
 import manifest from "../manifest.json";
 import { MAP_EXTENSION, VIEW_TYPE_MAP } from "../src/obsidian/constants";
 import {
   CHOOSE_IMAGE_TEXT,
   featureSummary,
+  isTextInputTarget,
+  LOCK_TITLE,
+  LOCKED_NOTICE,
   MapView,
+  REDO_COMMAND_ID,
   SET_DEFAULT_VIEW_COMMAND_ID,
   SET_DEFAULT_VIEW_COMMAND_NAME,
+  TOGGLE_LOCK_COMMAND_ID,
+  UNDO_COMMAND_ID,
+  UNLOCK_TITLE,
 } from "../src/obsidian/mapView";
 import { ImageSuggestModal } from "../src/obsidian/imageSuggestModal";
 import type { MapStore } from "../src/core/document";
@@ -29,6 +46,8 @@ interface FakeMount {
   destroyed: number;
   /** Models passed to `render`, in order. */
   renders: MapDocument[];
+  /** The `RenderView` passed with each render, in order. */
+  renderViews: unknown[];
   /** What the fake map reports as its live view; null = not sized yet. */
   viewport: Viewport | null;
 }
@@ -48,12 +67,23 @@ function open(name = "Maps/test.map", data?: string, app = new App()): Harness {
   const view = new MapView(new WorkspaceLeaf(app) as never);
   const mounts: FakeMount[] = [];
   view.mountMap = (parent, options) => {
-    const m: FakeMount = { parent, options, refreshes: 0, destroyed: 0, renders: [], viewport: { center: [-50, 60.5], zoom: 2.25 } };
+    const m: FakeMount = {
+      parent,
+      options,
+      refreshes: 0,
+      destroyed: 0,
+      renders: [],
+      renderViews: [],
+      viewport: { center: [-50, 60.5], zoom: 2.25 },
+    };
     mounts.push(m);
     return {
       refresh: () => m.refreshes++,
       destroy: () => m.destroyed++,
-      render: (model: MapDocument) => m.renders.push(model),
+      render: (model: MapDocument, renderView?: unknown) => {
+        m.renders.push(model);
+        m.renderViews.push(renderView);
+      },
       currentViewport: () => m.viewport,
     } as unknown as BaseMapHandle;
   };
@@ -350,11 +380,11 @@ describe("Set current view as default", () => {
     const { app, view } = open("Maps/x.map", NO_VIEWPORT);
     const notices: string[] = [];
     view.notify = (m) => notices.push(m);
-    (view as unknown as { store: MapStore }).store.lock();
+    view.setLocked(true);
     expect(view.setCurrentViewAsDefault()).toBe(false);
     await Promise.resolve();
     expect(app.vault.modified).toEqual([]);
-    expect(notices).toEqual(["Map is locked"]);
+    expect(notices).toEqual([LOCKED_NOTICE]);
   });
 
   it("is offered in the pane menu only when available", () => {
@@ -682,5 +712,276 @@ describe("hover preview and opening notes (bead 6.2)", () => {
     hooks.onClick?.(feature, evt);
     expect(selected).toEqual(["ppin0001"]);
     expect(app.workspace.openedLinks).toHaveLength(1);
+  });
+});
+
+describe("document store wiring (bead 5.1)", () => {
+  const storeOf = (view: MapView) => view.mapStore as MapStore;
+  const pinIds = (view: MapView) => {
+    const state = view.mapState;
+    return state.kind === "ok" ? state.map.features.filter((f) => f.type === "pin").map((f) => f.id) : [];
+  };
+  /** Stop the mock's immediate save, so edits stay pending like Obsidian's debounced save. */
+  const debounced = (view: MapView) => {
+    let requests = 0;
+    view.requestSave = () => {
+      requests++;
+    };
+    return () => requests;
+  };
+  const lastWritten = (app: App) => {
+    const parsed = parseMap(app.vault.modified.at(-1)?.data ?? "");
+    if (!parsed.ok) throw new Error("expected a valid written map");
+    return parsed.map;
+  };
+
+  it("edit applies the op through the store, saves canonical JSON and returns the new id", async () => {
+    const { app, view, mounts } = open("Maps/all-types.map", fixture("all-types.map"));
+    const result = view.edit({ type: "insert", feature: { type: "pin", name: "New", pos: [-10, 10] } });
+    expect(result.ok).toBe(true);
+    if (!result.ok || !result.id) throw new Error("expected an id");
+    expect(pinIds(view)).toContain(result.id);
+    expect(mounts[0]?.renders.at(-1)).toBe(storeOf(view).map);
+    await Promise.resolve();
+    expect(app.vault.modified).toHaveLength(1);
+    expect(app.vault.modified[0]?.data).toBe(stringifyMap(storeOf(view).map));
+    expect(lastWritten(app).features.some((f) => f.id === result.id)).toBe(true);
+  });
+
+  it("locked drag: the edit is refused with a notice, the pin snaps back, nothing is written", async () => {
+    const { app, view, mounts } = open("Maps/all-types.map", fixture("all-types.map"));
+    const notices: string[] = [];
+    view.notify = (m) => notices.push(m);
+    view.setLocked(true);
+    const before = storeOf(view).map;
+    const result = view.edit({ type: "update", id: "pwestm01", patch: { pos: [0, 0] } });
+    expect(result).toEqual({ ok: false, error: "Map is locked" });
+    expect(notices).toEqual([LOCKED_NOTICE]);
+    expect(storeOf(view).map).toBe(before);
+    // Re-rendering the unchanged model puts a dragged marker back where the model says.
+    expect(mounts[0]?.renders.at(-1)).toBe(before);
+    await Promise.resolve();
+    await view.flush();
+    expect(app.vault.modified).toEqual([]);
+  });
+
+  it("an invalid op shows its error and changes nothing; edits outside the ok state are refused", async () => {
+    const { app, view } = open("Maps/all-types.map", fixture("all-types.map"));
+    const notices: string[] = [];
+    view.notify = (m) => notices.push(m);
+    const result = view.edit({ type: "delete", id: "nope0000" });
+    expect(result.ok).toBe(false);
+    expect(notices).toHaveLength(1);
+    const bad = open("Maps/bad.map", INVALID_SCHEMA, app);
+    expect(bad.view.edit({ type: "setViewport", viewport: undefined }).ok).toBe(false);
+    expect(bad.view.undo()).toBe(false);
+    await Promise.resolve();
+    expect(app.vault.modified).toEqual([]);
+  });
+
+  it("undo delete: the pin comes back with its id and properties, and is saved; redo deletes it again", async () => {
+    const { app, view } = open("Maps/all-types.map", fixture("all-types.map"));
+    const original = storeOf(view).map.features.find((f) => f.id === "pwestm01");
+    expect(view.edit({ type: "delete", id: "pwestm01" }).ok).toBe(true);
+    await Promise.resolve();
+    expect(lastWritten(app).features.some((f) => f.id === "pwestm01")).toBe(false);
+    expect(view.canUndo).toBe(true);
+    expect(view.undo()).toBe(true);
+    await Promise.resolve();
+    expect(app.vault.modified).toHaveLength(2);
+    expect(lastWritten(app).features.find((f) => f.id === "pwestm01")).toEqual(original);
+    expect(view.canRedo).toBe(true);
+    expect(view.redo()).toBe(true);
+    await Promise.resolve();
+    expect(app.vault.modified).toHaveLength(3);
+    expect(lastWritten(app).features.some((f) => f.id === "pwestm01")).toBe(false);
+    expect(view.redo()).toBe(false);
+  });
+
+  it("undo and redo are refused while locked, with a notice", () => {
+    const { view } = open("Maps/all-types.map", fixture("all-types.map"));
+    const notices: string[] = [];
+    view.notify = (m) => notices.push(m);
+    view.edit({ type: "delete", id: "pwestm01" });
+    view.setLocked(true);
+    expect(view.undo()).toBe(false);
+    expect(view.redo()).toBe(false);
+    expect(notices).toEqual([LOCKED_NOTICE, LOCKED_NOTICE]);
+    expect(pinIds(view)).not.toContain("pwestm01");
+    view.setLocked(false);
+    expect(view.undo()).toBe(true);
+    expect(pinIds(view)).toContain("pwestm01");
+  });
+
+  it("binds Mod+Z and Mod+Shift+Z in the view's own scope, leaving text fields alone", () => {
+    const { app, view } = open("Maps/all-types.map", fixture("all-types.map"));
+    const scope = view.scope as unknown as Scope;
+    expect(scope).toBeInstanceOf(Scope);
+    expect(scope.parent).toBe(app.scope);
+    view.edit({ type: "delete", id: "pwestm01" });
+    expect(scope.trigger(["Mod"], "z", { target: { tagName: "input" } })).toBe(true);
+    expect(pinIds(view)).not.toContain("pwestm01");
+    expect(scope.trigger(["Mod"], "z", { target: { tagName: "DIV" } })).toBe(false);
+    expect(pinIds(view)).toContain("pwestm01");
+    expect(scope.trigger(["Mod", "Shift"], "z", { target: { isContentEditable: true } })).toBe(true);
+    expect(pinIds(view)).toContain("pwestm01");
+    expect(scope.trigger(["Mod", "Shift"], "z", {})).toBe(false);
+    expect(pinIds(view)).not.toContain("pwestm01");
+  });
+
+  it("isTextInputTarget recognises inputs, textareas, selects and contenteditable", () => {
+    expect(isTextInputTarget({ tagName: "TEXTAREA" })).toBe(true);
+    expect(isTextInputTarget({ tagName: "select" })).toBe(true);
+    expect(isTextInputTarget({ tagName: "DIV", isContentEditable: true })).toBe(true);
+    expect(isTextInputTarget({ tagName: "DIV" })).toBe(false);
+    expect(isTextInputTarget(null)).toBe(false);
+    expect(isTextInputTarget("input")).toBe(false);
+  });
+
+  it("the header lock action toggles the lock and reflects it; maps open unlocked and the lock is never saved", async () => {
+    const { app, view, load, content } = open("Maps/all-types.map", fixture("all-types.map"));
+    view.load();
+    const actions = (view as unknown as { actions: Array<{ callback: (e: unknown) => unknown; el: MockElement }> })
+      .actions;
+    expect(actions).toHaveLength(1);
+    const action = actions[0];
+    if (!action) throw new Error("expected a lock action");
+    expect(view.isLocked).toBe(false);
+    expect(action.el.icon).toBe("lock-open");
+    expect(action.el.attributes["aria-label"]).toBe(LOCK_TITLE);
+    action.callback({});
+    expect(view.isLocked).toBe(true);
+    expect(storeOf(view).isLocked).toBe(true);
+    expect(action.el.icon).toBe("lock");
+    expect(action.el.attributes["aria-label"]).toBe(UNLOCK_TITLE);
+    expect(content.hasClass("is-locked")).toBe(true);
+    // A different file opened in the same view gets a new store, still locked.
+    load(fixture("all-types.map"));
+    expect(storeOf(view).isLocked).toBe(true);
+    await view.save();
+    expect(app.vault.modified.at(-1)?.data).not.toMatch(/lock/i);
+    action.callback({});
+    expect(storeOf(view).isLocked).toBe(false);
+    expect(content.hasClass("is-locked")).toBe(false);
+  });
+
+  it("close right after edit: onUnloadFile and onClose write the pending edit before the debounced save", async () => {
+    const { app, view } = open("Maps/all-types.map", fixture("all-types.map"));
+    const requests = debounced(view);
+    view.edit({ type: "update", id: "pwestm01", patch: { pos: [-1, 2] } });
+    expect(requests()).toBe(1);
+    expect(app.vault.modified).toEqual([]);
+    const file = view.file as TFile;
+    await view.onUnloadFile(file as never);
+    expect(app.vault.modified).toHaveLength(1);
+    expect(lastWritten(app).features.find((f) => f.id === "pwestm01")).toMatchObject({ pos: [-1, 2] });
+    expect((view as unknown as { unloadedFiles: TFile[] }).unloadedFiles).toEqual([file]);
+    expect(storeOf(view).dirty).toBe(false);
+    // Clean: closing writes nothing more.
+    await view.onClose();
+    expect(app.vault.modified).toHaveLength(1);
+    view.edit({ type: "update", id: "pwestm01", patch: { pos: [-3, 4] } });
+    await view.onClose();
+    expect(app.vault.modified).toHaveLength(2);
+    expect(lastWritten(app).features.find((f) => f.id === "pwestm01")).toMatchObject({ pos: [-3, 4] });
+  });
+
+  it("flushes on Obsidian's quit event and on unload; never from an error state", async () => {
+    const { app, view } = open("Maps/all-types.map", fixture("all-types.map"));
+    debounced(view);
+    view.load();
+    view.edit({ type: "update", id: "pwestm01", patch: { pos: [-5, 6] } });
+    const tasks = new Tasks();
+    (app.workspace as unknown as { trigger(name: string, ...args: unknown[]): void }).trigger("quit", tasks);
+    await Promise.all(tasks.promises);
+    expect(app.vault.modified).toHaveLength(1);
+    view.edit({ type: "update", id: "pwestm01", patch: { pos: [-7, 8] } });
+    view.unload();
+    await Promise.resolve();
+    expect(app.vault.modified).toHaveLength(2);
+    expect(lastWritten(app).features.find((f) => f.id === "pwestm01")).toMatchObject({ pos: [-7, 8] });
+
+    const bad = open("Maps/bad.map", INVALID_SCHEMA, app);
+    await bad.view.flush();
+    await bad.view.onUnloadFile(bad.view.file as never);
+    bad.view.unload();
+    await Promise.resolve();
+    expect(app.vault.modified).toHaveLength(2);
+  });
+
+  it("renders with the style source after edits, refusals, undo and live reload, and remounts keep interactions", async () => {
+    const app = new App();
+    withFiles(app, ["Maps/fixture-4k.png", "Maps/other.png"]);
+    const { view, mounts } = open("Maps/all-types.map", undefined, app);
+    const styled = { styled: true } as never;
+    view.styleSource = () => styled;
+    (view as unknown as { loadFile(f: TFile, d: string): void }).loadFile(
+      new TFile("Maps/all-types.map"),
+      fixture("all-types.map"),
+    );
+    view.notify = () => {};
+    const mount = () => mounts.at(-1);
+    view.edit({ type: "delete", id: "pwestm01" });
+    expect(mount()?.renderViews.at(-1)).toBe(styled);
+    view.undo();
+    expect(mount()?.renderViews.at(-1)).toBe(styled);
+    view.setLocked(true);
+    view.edit({ type: "delete", id: "pwestm01" });
+    expect(mount()?.renderViews.at(-1)).toBe(styled);
+    view.setLocked(false);
+    // Let the pending saves finish so the store is clean and the external edit reloads.
+    await view.save();
+    const json = JSON.parse(fixture("all-types.map")) as { image: unknown };
+    json.image = { path: "Maps/other.png", width: 4096, height: 3072 };
+    (view as unknown as { modifyExternally(d: string): void }).modifyExternally(JSON.stringify(json));
+    expect(mounts.length).toBeGreaterThan(1);
+    expect(mount()?.renderViews.at(-1)).toBe(styled);
+    expect(mount()?.options.interactions).toBeDefined();
+    expect(mount()?.renderViews.every((v) => v === styled)).toBe(true);
+  });
+
+  it("undoing an image change remounts the base map on the old image", async () => {
+    const app = new App();
+    const [image] = withFiles(app, ["Maps/new.png"]);
+    const { view, mounts } = open("Maps/missing-image.map", fixture("missing-image.map"), app);
+    view.readImageSize = async () => ({ width: 2000, height: 1000 });
+    expect(await view.replaceImage(image as never)).toBe(true);
+    expect(mounts).toHaveLength(2);
+    expect(view.undo()).toBe(true);
+    expect(mounts).toHaveLength(3);
+    expect(mounts[2]?.options.imageUrl).toBeNull();
+    const state = view.mapState;
+    expect(state.kind === "ok" && state.map.image.path).toBe("Maps/does-not-exist.png");
+  });
+});
+
+describe("map edit commands (bead 5.1)", () => {
+  it("undo, redo and lock commands act on the active map view only when available", async () => {
+    const app = new App();
+    const plugin = new MythicalMapsPlugin(app as never, manifest);
+    await plugin.onload();
+    const commands = (plugin as unknown as MockPlugin).commands;
+    const command = (id: string) => commands.find((c) => c.id === id);
+    const undo = command(UNDO_COMMAND_ID);
+    const redo = command(REDO_COMMAND_ID);
+    const lock = command(TOGGLE_LOCK_COMMAND_ID);
+    expect([undo?.name, redo?.name, lock?.name]).toEqual(["Undo map edit", "Redo map edit", "Toggle map lock"]);
+    expect(undo?.checkCallback?.(true)).toBe(false);
+    expect(lock?.checkCallback?.(true)).toBe(false);
+    const { view } = open("Maps/all-types.map", fixture("all-types.map"), app);
+    view.notify = () => {};
+    (app.workspace as unknown as { activeView: unknown }).activeView = view;
+    expect(undo?.checkCallback?.(true)).toBe(false);
+    view.edit({ type: "delete", id: "pwestm01" });
+    expect(undo?.checkCallback?.(true)).toBe(true);
+    expect(redo?.checkCallback?.(true)).toBe(false);
+    undo?.checkCallback?.(false);
+    expect(view.canRedo).toBe(true);
+    redo?.checkCallback?.(false);
+    expect(view.canRedo).toBe(false);
+    expect(lock?.checkCallback?.(true)).toBe(true);
+    lock?.checkCallback?.(false);
+    expect(view.isLocked).toBe(true);
+    expect(undo?.checkCallback?.(true)).toBe(false);
   });
 });

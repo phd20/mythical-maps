@@ -134,10 +134,44 @@ export class Workspace extends MockEvents {
   }
 }
 
+export type Modifier = "Mod" | "Ctrl" | "Meta" | "Shift" | "Alt";
+
+/** Records key handlers; tests fire them with `trigger`. No parent fallback. */
+export class Scope {
+  handlers: Array<{ modifiers: Modifier[]; key: string | null; func: (evt: unknown, ctx: unknown) => unknown }> = [];
+  constructor(public parent?: Scope) {}
+  register(modifiers: Modifier[] | null, key: string | null, func: (evt: never, ctx: never) => unknown): unknown {
+    const handler = { modifiers: modifiers ?? [], key, func: func as (evt: unknown, ctx: unknown) => unknown };
+    this.handlers.push(handler);
+    return handler;
+  }
+  /** Test helper: run the handler registered for exactly these modifiers and key; returns its result. */
+  trigger(modifiers: Modifier[], key: string, evt: unknown = {}): unknown {
+    const same = (a: Modifier[]) => a.length === modifiers.length && a.every((m) => modifiers.includes(m));
+    const handler = this.handlers.find((h) => same(h.modifiers) && h.key?.toLowerCase() === key.toLowerCase());
+    if (!handler) throw new Error(`No handler for ${modifiers.join("+")}+${key}`);
+    return handler.func(evt, {});
+  }
+}
+
+/** Shaped like Obsidian's `Tasks` passed to the workspace "quit" event. */
+export class Tasks {
+  promises: Array<Promise<unknown>> = [];
+  add(callback: () => Promise<unknown>): void {
+    this.promises.push(callback());
+  }
+}
+
 export class App {
   vault = new Vault();
   metadataCache = new MetadataCache();
   workspace = new Workspace();
+  scope = new Scope();
+}
+
+/** Records the icon on a MockElement. */
+export function setIcon(el: HTMLElement, name: string): void {
+  (el as unknown as MockElement).icon = name;
 }
 
 export class TFile {
@@ -277,6 +311,16 @@ export class MockElement {
   hasClass(cls: string): boolean {
     return this.classes.has(cls);
   }
+  toggleClass(cls: string, value: boolean): void {
+    if (value) this.classes.add(cls);
+    else this.classes.delete(cls);
+  }
+  attributes: Record<string, string> = {};
+  setAttribute(name: string, value: string): void {
+    this.attributes[name] = value;
+  }
+  /** Set by the mock `setIcon`. */
+  icon: string | null = null;
   createEl(tag: string, o?: MockElementInfo | string, callback?: (el: MockElement) => void): MockElement {
     const el = new MockElement(tag);
     const info = typeof o === "string" ? { cls: o } : (o ?? {});
@@ -313,6 +357,7 @@ export class MockElement {
 export abstract class View extends Component {
   app: App;
   contentEl = new MockElement() as unknown as HTMLElement;
+  scope: Scope | null = null;
   constructor(public leaf: WorkspaceLeaf) {
     super();
     this.app = leaf.app;
@@ -323,6 +368,26 @@ export abstract class View extends Component {
     return "";
   }
   onPaneMenu(_menu: Menu, _source: string): void {}
+  async onClose(): Promise<void> {}
+  /** Header actions added with `addAction`, in order. */
+  actions: Array<{ icon: string; title: string; callback: (evt: unknown) => unknown; el: MockElement }> = [];
+  addAction(icon: string, title: string, callback: (evt: unknown) => unknown): HTMLElement {
+    const el = new MockElement("a");
+    el.icon = icon;
+    el.attributes["aria-label"] = title;
+    this.actions.push({ icon, title, callback, el });
+    return el as unknown as HTMLElement;
+  }
+  /** Events registered by this view; detached on unload like Obsidian does. */
+  events: EventRef[] = [];
+  registerEvent(ref: EventRef): void {
+    this.events.push(ref);
+    this.register(() => {
+      const owner = ref.owner as MockEvents;
+      // Drop every handler for the event name the view registered (enough for tests).
+      if (owner.handlers) delete owner.handlers[ref.name];
+    });
+  }
 }
 
 /**
@@ -339,6 +404,11 @@ export abstract class TextFileView extends View {
     if (!this.file) return;
     this.data = this.getViewData();
     await this.app.vault.modify(this.file, this.data);
+  }
+  /** Obsidian's base flushes via `save()` and clears; this mock only records the call. */
+  unloadedFiles: TFile[] = [];
+  async onUnloadFile(file: TFile): Promise<void> {
+    this.unloadedFiles.push(file);
   }
   /** Test helper: simulate Obsidian opening `file` with contents `data`. */
   loadFile(file: TFile, data: string): void {

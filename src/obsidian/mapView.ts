@@ -19,7 +19,7 @@
  * `requestSave()`.
  *
  * Bead 4.3: features are drawn by the base map's renderer, once after mount and
- * again on every store change (layers are reused by id). Bead 5.1 takes over the store wiring (undo, lock toggle).
+ * again on every store change (layers are reused by id).
  *
  * Bead 4.5, live reload: Obsidian calls `setViewData(data, false)` when the
  * open file changes on disk. Policy:
@@ -34,9 +34,41 @@
  *   the file changed on disk; the pending save then writes the local version
  *   (last write wins, design "Risks").
  * `save()` marks the store saved once the write finishes, if nothing changed meanwhile.
+ *
+ * Bead 5.1, the store wired to the view (spec map-editing "Lock toggle",
+ * "Saving", "Undo within a session"):
+ * - Edits: every model edit goes through `edit(op)`, which applies the op to the
+ *   `MapStore` and then calls `requestSave()`. A refused op (locked, or an
+ *   invalid op) shows a notice, re-renders the model so a dragged layer snaps
+ *   back, and returns the failed result. The store listener is the only place
+ *   that brings the view in line with the model: it updates the state, then
+ *   re-renders the features and status, or remounts the base map when the
+ *   image changed.
+ * - Lock: a header action toggles it. Lock state belongs to the view (default
+ *   unlocked, never written to the file, design D10) and is carried into each
+ *   new store. The store refuses every edit op, undo and redo while locked;
+ *   that includes "Set current view as default" and "Choose image…", since
+ *   both change the file. Pan, zoom, hover and links keep working.
+ * - Undo/redo: Mod+Z and Mod+Shift+Z in the view's own `Scope`, so they only
+ *   act while this map view is the active one, and never while a text field
+ *   inside it has focus. Each undo or redo is saved. History is per store: a
+ *   live reload (`replace`) or opening another file clears it.
+ * - Flushing: `flush()` writes unsaved edits right away. It runs on
+ *   `onUnloadFile` (file switched or tab closed), on `onClose`, on Obsidian's
+ *   `quit` event and, synchronously, on unload. Nothing is written from an
+ *   error or empty state, or when the store is clean.
  */
-import { Notice, TextFileView, type HoverPopover, type Menu, type TFile, type WorkspaceLeaf } from "obsidian";
-import { MapStore, type Op } from "../core/document";
+import {
+  Notice,
+  Scope,
+  setIcon,
+  TextFileView,
+  type HoverPopover,
+  type Menu,
+  type TFile,
+  type WorkspaceLeaf,
+} from "obsidian";
+import { LOCKED_ERROR, MapStore, type ApplyResult, type Op } from "../core/document";
 import { parseMap, type ParseResult } from "../core/parse";
 import { FEATURE_TYPES, type FeatureType, type MapDocument, type Viewport } from "../core/schema";
 import { stringifyMap } from "../core/serialize";
@@ -51,6 +83,24 @@ import { readImageSizeFromVault, type ImageSize } from "./newMapCommand";
 export const SET_DEFAULT_VIEW_COMMAND_ID = "set-current-view-as-default";
 export const SET_DEFAULT_VIEW_COMMAND_NAME = "Set current view as default";
 export const CHOOSE_IMAGE_TEXT = "Choose image…";
+export const UNDO_COMMAND_ID = "undo-map-edit";
+export const REDO_COMMAND_ID = "redo-map-edit";
+export const TOGGLE_LOCK_COMMAND_ID = "toggle-map-lock";
+export const LOCKED_NOTICE ="This map is locked. Unlock it to edit.";
+export const LOCK_TITLE = "Lock map";
+export const UNLOCK_TITLE = "Unlock map";
+
+/** An op a user edit can apply; `replace` is reserved for reloading from disk. */
+export type EditOp = Exclude<Op, { type: "replace" }>;
+
+/** True when a key event comes from a text field, where Mod+Z must stay the field's own undo. */
+export function isTextInputTarget(target: unknown): boolean {
+  if (target === null || typeof target !== "object") return false;
+  const el = target as { tagName?: unknown; isContentEditable?: unknown };
+  if (el.isContentEditable === true) return true;
+  const tag = typeof el.tagName === "string" ? el.tagName.toUpperCase() : "";
+  return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+}
 
 export type ParseFailure = Extract<ParseResult, { ok: false }>;
 
@@ -109,6 +159,10 @@ export class MapView extends TextFileView {
   private mountedImageKey: string | null = null;
   /** The status line under the map, refreshed in place on reload. */
   private statusEl: HTMLElement | null = null;
+  /** Per-view lock (never saved); applied to every store this view creates. */
+  private locked = false;
+  /** The header lock toggle, once the view is loaded. */
+  private lockActionEl: HTMLElement | null = null;
 
   /** Creates the Leaflet base map. Replaceable so tests can run without a DOM. */
   mountMap: MountBaseMap = mountBaseMap;
@@ -141,6 +195,17 @@ export class MapView extends TextFileView {
       if (this.viewState.kind !== "ok") return;
       baseRequestSave();
     };
+    // View-scoped hotkeys: Obsidian activates this scope only while the view is active.
+    this.scope = new Scope(this.app.scope);
+    this.scope.register(["Mod"], "z", (evt) => this.handleHistoryKey(evt, "undo"));
+    this.scope.register(["Mod", "Shift"], "z", (evt) => this.handleHistoryKey(evt, "redo"));
+  }
+
+  override onload(): void {
+    super.onload();
+    this.lockActionEl = this.addAction("lock-open", LOCK_TITLE, () => this.toggleLock());
+    this.refreshLockUi();
+    this.registerEvent(this.app.workspace.on("quit", (tasks) => tasks.add(() => this.flush())));
   }
 
   /** The mounted Leaflet base map, if the view currently shows one. */
@@ -151,6 +216,24 @@ export class MapView extends TextFileView {
   /** Current parse state (read-only; for tests and later beads). */
   get mapState(): MapViewState {
     return this.viewState;
+  }
+
+  /** The store behind an ok-state map, for reading and subscribing; edit through `edit()`. Null otherwise. */
+  get mapStore(): MapStore | null {
+    return this.store;
+  }
+
+  /** Whether this view is locked (per view, not saved; default unlocked). */
+  get isLocked(): boolean {
+    return this.locked;
+  }
+
+  get canUndo(): boolean {
+    return this.store?.canUndo ?? false;
+  }
+
+  get canRedo(): boolean {
+    return this.store?.canRedo ?? false;
   }
 
   override getViewType(): string {
@@ -194,20 +277,8 @@ export class MapView extends TextFileView {
       this.notify(`${this.file?.basename ?? "This map"} changed on disk, but it has unsaved edits here; keeping this version.`);
       return;
     }
-    if (this.imageKey(map) !== this.mountedImageKey) {
-      const live = this.baseMap?.currentViewport() ?? null;
-      const old = this.viewState.kind === "ok" ? this.viewState.map.image : null;
-      const sameFrame = old !== null && old.width === map.image.width && old.height === map.image.height;
-      this.destroyMap();
-      store.apply({ type: "replace", map });
-      this.viewState = { kind: "ok", map: store.map };
-      this.render(sameFrame && live ? live : undefined);
-      return;
-    }
-    // The store listener re-renders the mounted base map; pan and zoom are untouched.
+    // The store listener re-renders in place, or remounts if the image changed.
     store.apply({ type: "replace", map });
-    this.viewState = { kind: "ok", map: store.map };
-    if (this.statusEl) this.fillStatus(this.statusEl, store.map);
   }
 
   override clear(): void {
@@ -218,9 +289,44 @@ export class MapView extends TextFileView {
   }
 
   override onunload(): void {
+    this.flushNow();
     this.destroyMap();
     this.setStore(null);
+    this.lockActionEl = null;
     super.onunload();
+  }
+
+  /** The file is being switched away from, or the tab closed: write unsaved edits first. */
+  override async onUnloadFile(file: TFile): Promise<void> {
+    await this.flush();
+    await super.onUnloadFile(file);
+  }
+
+  override async onClose(): Promise<void> {
+    await this.flush();
+    await super.onClose();
+  }
+
+  /** Write unsaved edits now instead of waiting for the debounced save. No-op unless ok and dirty. */
+  async flush(): Promise<void> {
+    if (this.viewState.kind !== "ok" || !this.store?.dirty) return;
+    await this.save();
+  }
+
+  /**
+   * Last-chance flush for `onunload`, which cannot await: the canonical text
+   * is taken now, before teardown, and the write is started.
+   */
+  private flushNow(): void {
+    const store = this.store;
+    const file = this.file;
+    if (this.viewState.kind !== "ok" || !store?.dirty || !file) return;
+    const data = this.getViewData();
+    this.data = data;
+    store.markSaved();
+    this.app.vault.modify(file, data).catch((err: unknown) => {
+      console.error("Mythical Maps: could not save on unload", file.path, err);
+    });
   }
 
   /** Obsidian calls this when the pane changes size (split drag, sidebar toggle). */
@@ -246,7 +352,7 @@ export class MapView extends TextFileView {
   setCurrentViewAsDefault(): boolean {
     const viewport = this.viewState.kind === "ok" ? this.baseMap?.currentViewport() : null;
     if (!viewport) return false;
-    if (!this.applyOp({ type: "setViewport", viewport })) return false;
+    if (!this.edit({ type: "setViewport", viewport }).ok) return false;
     this.notify("Saved the current view as this map's default.");
     return true;
   }
@@ -279,9 +385,8 @@ export class MapView extends TextFileView {
     }
     // The file may have been reloaded (or turned invalid) while the image loaded.
     if (this.store !== store) return false;
-    if (!this.applyOp({ type: "setImage", image: { path: file.path, width, height } })) return false;
-    this.render();
-    return true;
+    // The store listener remounts the base map on the new image.
+    return this.edit({ type: "setImage", image: { path: file.path, width, height } }).ok;
   }
 
   override onPaneMenu(menu: Menu, source: string): void {
@@ -318,26 +423,107 @@ export class MapView extends TextFileView {
   }
   // --- end bead 7.1 ---
 
-  /** Apply an edit through the store (which enforces the lock), then schedule a save. Only in the ok state. */
-  private applyOp(op: Exclude<Op, { type: "replace" }>): boolean {
+  /**
+   * The single entry point for model edits (toolbar, drags, panel, delete…).
+   * Applies `op` through the store, which enforces the lock, then schedules a
+   * save; the store listener re-renders. On refusal it shows a notice,
+   * re-renders the unchanged model (so a dragged layer snaps back) and returns
+   * the failed result. A successful insert's result carries the new `id`.
+   */
+  edit(op: EditOp): ApplyResult {
     const store = this.store;
-    if (this.viewState.kind !== "ok" || !store) return false;
+    if (this.viewState.kind !== "ok" || !store) return { ok: false, error: "No map is open" };
     const result = store.apply(op);
     if (!result.ok) {
-      this.notify(result.error);
-      return false;
+      this.notify(result.error === LOCKED_ERROR ? LOCKED_NOTICE : result.error);
+      this.baseMap?.render(store.map, this.renderView());
+      return result;
     }
-    this.viewState = { kind: "ok", map: store.map };
     this.requestSave();
-    return true;
+    return result;
   }
 
-  /** Swap the store, moving the re-render subscription to the new one. */
+  /** Undo the last edit made in this view, then save. False when nothing changed (a notice if locked). */
+  undo(): boolean {
+    return this.stepHistory("undo");
+  }
+
+  /** Redo the last undone edit, then save. False when nothing changed (a notice if locked). */
+  redo(): boolean {
+    return this.stepHistory("redo");
+  }
+
+  setLocked(locked: boolean): void {
+    this.locked = locked;
+    if (locked) this.store?.lock();
+    else this.store?.unlock();
+    this.refreshLockUi();
+  }
+
+  toggleLock(): void {
+    this.setLocked(!this.locked);
+  }
+
+  private stepHistory(direction: "undo" | "redo"): boolean {
+    const store = this.store;
+    if (this.viewState.kind !== "ok" || !store) return false;
+    if (store.isLocked) {
+      this.notify(LOCKED_NOTICE);
+      return false;
+    }
+    const changed = direction === "undo" ? store.undo() : store.redo();
+    if (changed) this.requestSave();
+    return changed;
+  }
+
+  /** Scope handler: returns false (handled, default prevented) unless a text field has focus. */
+  private handleHistoryKey(evt: KeyboardEvent, direction: "undo" | "redo"): boolean {
+    if (isTextInputTarget(evt.target)) return true;
+    if (direction === "undo") this.undo();
+    else this.redo();
+    return false;
+  }
+
+  private refreshLockUi(): void {
+    this.contentEl.toggleClass("is-locked", this.locked);
+    const el = this.lockActionEl;
+    if (!el) return;
+    setIcon(el, this.locked ? "lock" : "lock-open");
+    el.setAttribute("aria-label", this.locked ? UNLOCK_TITLE : LOCK_TITLE);
+    el.toggleClass("is-active", this.locked);
+  }
+
+  /** Swap the store, moving the re-render subscription to the new one and carrying the view's lock over. */
   private setStore(store: MapStore | null): void {
     this.unsubscribe?.();
     this.unsubscribe = null;
     this.store = store;
-    if (store) this.unsubscribe = store.subscribe((map) => this.baseMap?.render(map, this.renderView()));
+    if (!store) return;
+    if (this.locked) store.lock();
+    else store.unlock();
+    this.unsubscribe = store.subscribe((map) => this.onStoreChange(map));
+  }
+
+  /**
+   * Bring the view in line with the store after any change (edit, undo, redo,
+   * reload). Re-renders features and status in place, keeping pan and zoom;
+   * remounts the base map when the image changed, keeping the live view if the
+   * frame size is the same.
+   */
+  private onStoreChange(map: MapDocument): void {
+    const previous = this.viewState.kind === "ok" ? this.viewState.map : null;
+    this.viewState = { kind: "ok", map };
+    const baseMap = this.baseMap;
+    if (!baseMap) return;
+    if (this.imageKey(map) !== this.mountedImageKey) {
+      const live = baseMap.currentViewport();
+      const sameFrame =
+        previous !== null && previous.image.width === map.image.width && previous.image.height === map.image.height;
+      this.render(sameFrame && live ? live : undefined);
+      return;
+    }
+    baseMap.render(map, this.renderView());
+    if (this.statusEl) this.fillStatus(this.statusEl, map);
   }
 
   private destroyMap(): void {
