@@ -75,7 +75,7 @@ Bead conventions (for loop + beads implementation)
 
 ## 4. Map rendering
 
-- [ ] 4.1 SPIKE: Leaflet base map, sizing and pop-out shim
+- [x] 4.1 SPIKE: Leaflet base map, sizing and pop-out shim
   - Depends: 3.2, 2.1, 1.2
   - Accept: Leaflet and its CSS bundled into `styles.css`, scoped under `.mythical-map-view`; the image is shown as an `imageOverlay` on the frame bounds in `CRS.Simple`; a `ResizeObserver` plus `onResize` calls `invalidateSize`; the initial fit waits for a non-zero size; `popoutShim` makes drag work in pop-out windows
   - Verify: manual: (a) open a map in a background tab, then switch to it: it fits correctly; (b) resize the split: no grey areas; (c) move to a pop-out window: panning by drag works and ends on release
