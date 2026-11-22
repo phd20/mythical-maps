@@ -64,7 +64,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 1.1, 2.9
   - Accept: a typed settings object with the defaults from the plugin-settings spec; load and save through `data.json`; the settings tab edits every field; a unit test for merging defaults on load
   - Verify: auto (defaults and merge), plus a manual check that the settings tab renders and saves
-- [ ] 3.2 Map file view (no Leaflet yet)
+- [x] 3.2 Map file view (no Leaflet yet)
   - Depends: 2.3, 2.4
   - Accept: `.map` registered with a `TextFileView`; valid files show a placeholder summary (feature counts); invalid, not-mythical and future-version files show the error states; saving is impossible from an error state; adapter test with the mock confirms `getViewData` returns canonical JSON and no write happens when invalid
   - Verify: auto, plus a manual check that the fixture files show the right states
