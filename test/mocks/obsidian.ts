@@ -30,16 +30,68 @@ export interface PluginManifest {
   isDesktopOnly?: boolean;
 }
 
-/** Records every write so tests can assert that none happened. */
-export class Vault {
+export interface EventRef {
+  name: string;
+}
+
+/** Minimal event emitter, shaped like Obsidian's Events.on/trigger. */
+class MockEvents {
+  handlers: Record<string, Array<(...args: unknown[]) => unknown>> = {};
+  on(name: string, cb: (...args: never[]) => unknown): EventRef {
+    (this.handlers[name] ??= []).push(cb as (...args: unknown[]) => unknown);
+    return { name };
+  }
+  trigger(name: string, ...args: unknown[]): void {
+    for (const cb of this.handlers[name] ?? []) cb(...args);
+  }
+}
+
+/** Records every write so tests can assert that none happened. An empty vault by default. */
+export class Vault extends MockEvents {
   modified: Array<{ file: TFile; data: string }> = [];
   async modify(file: TFile, data: string): Promise<void> {
     this.modified.push({ file, data });
+  }
+  getFiles(): TFile[] {
+    return [];
+  }
+  getFileByPath(_path: string): TFile | null {
+    return null;
+  }
+  async cachedRead(_file: TFile): Promise<string> {
+    return "";
+  }
+  async process(file: TFile, fn: (data: string) => string): Promise<string> {
+    const data = fn("");
+    this.modified.push({ file, data });
+    return data;
+  }
+}
+
+export class MetadataCache extends MockEvents {
+  getFirstLinkpathDest(_linkpath: string, _sourcePath: string): TFile | null {
+    return null;
+  }
+  fileToLinktext(file: TFile, _sourcePath: string, omitMdExtension = true): string {
+    return omitMdExtension && file.extension === "md" ? file.path.slice(0, -3) : file.path;
+  }
+}
+
+export class Workspace extends MockEvents {
+  layoutReadyCallbacks: Array<() => unknown> = [];
+  /** Callbacks are queued; tests call runLayoutReady() to simulate Obsidian finishing its load. */
+  onLayoutReady(cb: () => unknown): void {
+    this.layoutReadyCallbacks.push(cb);
+  }
+  runLayoutReady(): void {
+    for (const cb of this.layoutReadyCallbacks.splice(0)) cb();
   }
 }
 
 export class App {
   vault = new Vault();
+  metadataCache = new MetadataCache();
+  workspace = new Workspace();
 }
 
 export class TFile {
@@ -87,6 +139,11 @@ export class Plugin extends Component {
   extensions: Record<string, string> = {};
   registerExtensions(extensions: string[], viewType: string): void {
     for (const ext of extensions) this.extensions[ext] = viewType;
+  }
+
+  events: EventRef[] = [];
+  registerEvent(ref: EventRef): void {
+    this.events.push(ref);
   }
 }
 
