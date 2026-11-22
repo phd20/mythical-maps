@@ -60,7 +60,7 @@ Bead conventions (for loop + beads implementation)
 
 ## 3. Obsidian integration basics
 
-- [ ] 3.1 Settings and settings tab
+- [x] 3.1 Settings and settings tab
   - Depends: 1.1, 2.9
   - Accept: a typed settings object with the defaults from the plugin-settings spec; load and save through `data.json`; the settings tab edits every field; a unit test for merging defaults on load
   - Verify: auto (defaults and merge), plus a manual check that the settings tab renders and saves
