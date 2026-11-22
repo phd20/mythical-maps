@@ -68,6 +68,11 @@ export function descendants(map: MapDocument, id: string): Feature[] {
   return out;
 }
 
+/** How many features `deleteSubtree(map, id)` would remove besides `id` itself (0 for leaves and unknown ids). */
+export function descendantCount(map: MapDocument, id: string): number {
+  return descendants(map, id).length;
+}
+
 /** Ancestor folders of `id`, nearest first. Empty for root features or unknown ids. */
 export function ancestors(map: MapDocument, id: string): Feature[] {
   const out: Feature[] = [];

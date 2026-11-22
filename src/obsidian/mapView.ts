@@ -79,6 +79,7 @@ import {
   type WorkspaceLeaf,
 } from "obsidian";
 import { createFeatureOp, type CreatableKind } from "../core/create";
+import { descendantCount } from "../core/features";
 import { LOCKED_ERROR, MapStore, type ApplyResult, type Op } from "../core/document";
 import { parseMap, type ParseResult } from "../core/parse";
 import { FEATURE_TYPES, type FeatureType, type LatLng, type MapDocument, type Viewport } from "../core/schema";
@@ -89,6 +90,7 @@ import { obsidianIcons } from "../ui/obsidianIcons";
 import type { RenderView } from "../ui/featureRenderer";
 import { createToolbar, creationKindFor, EDIT_MODES, type EditMode, type ToolbarHandle } from "../ui/toolbar";
 import { VIEW_TYPE_MAP } from "./constants";
+import { confirmDelete } from "./deleteConfirmModal";
 import { ImageSuggestModal, vaultImageFiles } from "./imageSuggestModal";
 import { createLinkInteractions } from "./linkActions";
 import type { NoteMapsLookup } from "./noteMaps";
@@ -104,6 +106,7 @@ export const LOCKED_NOTICE ="This map is locked. Unlock it to edit.";
 export const LOCK_TITLE = "Lock map";
 export const UNLOCK_TITLE = "Unlock map";
 export const ADD_PIN_HERE = "Add pin here";
+export const DELETE_FEATURE = "Delete";
 
 /** An op a user edit can apply; `replace` is reserved for reloading from disk. */
 export type EditOp = Exclude<Op, { type: "replace" }>;
@@ -192,6 +195,10 @@ export class MapView extends TextFileView {
   };
   /** Natural pixel size of an image file. Replaceable for tests. */
   readImageSize = (file: TFile): Promise<ImageSize> => readImageSizeFromVault(this.app, file);
+  /** Asks before a folder with descendants is deleted (bead 5.6). Replaceable for tests. */
+  confirmFolderDelete = (name: string, count: number): Promise<boolean> => confirmDelete(this.app, name, count);
+  /** Context-menu events already handled by a feature menu, so the map menu skips them. */
+  private featureMenuEvents = new WeakSet<object>();
   /** Shows a message to the user. Replaceable for tests. */
   notify = (message: string): void => {
     new Notice(message);
@@ -233,6 +240,9 @@ export class MapView extends TextFileView {
     this.scope = new Scope(this.app.scope);
     this.scope.register(["Mod"], "z", (evt) => this.handleHistoryKey(evt, "undo"));
     this.scope.register(["Mod", "Shift"], "z", (evt) => this.handleHistoryKey(evt, "redo"));
+    // Bead 5.6: Delete (and Backspace, the Delete key on Mac keyboards) removes the selection.
+    this.scope.register([], "Delete", (evt) => this.handleDeleteKey(evt));
+    this.scope.register([], "Backspace", (evt) => this.handleDeleteKey(evt));
   }
 
   override onload(): void {
@@ -304,7 +314,50 @@ export class MapView extends TextFileView {
     if (kind) this.createFeatureAt(kind, pos);
   }
 
+  /**
+   * Delete a feature and its subtree (bead 5.6). A folder with descendants asks
+   * first; cancelling removes nothing. A locked map is refused with a notice
+   * before any dialog. Resolves true when the feature was removed.
+   */
+  async deleteFeature(id: string): Promise<boolean> {
+    const store = this.store;
+    if (this.viewState.kind !== "ok" || !store) return false;
+    if (store.isLocked) {
+      this.notify(LOCKED_NOTICE);
+      return false;
+    }
+    const feature = store.map.features.find((f) => f.id === id);
+    if (!feature) return false;
+    const count = descendantCount(store.map, id);
+    if (count > 0) {
+      const name = feature.name ?? "Untitled folder";
+      if (!(await this.confirmFolderDelete(name, count))) return false;
+      // The map may have been reloaded, swapped or locked while the dialog was open.
+      if (this.store !== store) return false;
+    }
+    return this.edit({ type: "delete", id }).ok;
+  }
+
+  /** Scope handler: delete the selection unless a text field has focus or nothing is selected. */
+  private handleDeleteKey(evt: KeyboardEvent): boolean {
+    if (isTextInputTarget(evt.target) || this.selected === null || this.viewState.kind !== "ok") return true;
+    void this.deleteFeature(this.selected);
+    return false;
+  }
+
+  private addDeleteItem(menu: Menu, id: string): void {
+    menu.addItem((item) =>
+      item
+        .setTitle(DELETE_FEATURE)
+        .setIcon("trash")
+        .onClick(() => {
+          void this.deleteFeature(id);
+        }),
+    );
+  }
+
   private handleMapContextMenu(pos: LatLng, event: MouseEvent): void {
+    if (this.featureMenuEvents.has(event)) return;
     const menu = new Menu();
     menu.addItem((item) =>
       item
@@ -686,6 +739,11 @@ export class MapView extends TextFileView {
         isEditing: () => this.isEditing(),
         onSelect: (id) => this.selectFeature(id),
         notify: (message) => this.notify(message),
+        extendMenu: (feature, menu, event) => {
+          this.featureMenuEvents.add(event);
+          this.addDeleteItem(menu, feature.id);
+          return true;
+        },
         noteMaps: (feature) => {
           const path = this.file?.path;
           return this.noteMaps && path ? this.noteMaps.forPin(feature, path) : [];
@@ -713,6 +771,11 @@ export class MapView extends TextFileView {
       edit: (op) => this.edit(op),
       select: (id) => this.selectFeature(id),
       notify: (message) => this.notify(message),
+      contextMenu: (id, event) => {
+        const menu = new Menu();
+        this.addDeleteItem(menu, id);
+        menu.showAtMouseEvent(event);
+      },
     });
     this.panel.setSelected(this.selected);
     this.syncPanel(map);

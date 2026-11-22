@@ -525,13 +525,20 @@ export class Modal {
   /** Every modal opened, so tests can find and drive it. */
   static opened: Modal[] = [];
   isOpen = false;
+  contentEl = new MockElement();
   constructor(public app: App) {}
+  /** Subclasses override, as in Obsidian. */
+  onOpen(): void {}
+  onClose(): void {}
   open(): void {
     this.isOpen = true;
     Modal.opened.push(this);
+    this.onOpen();
   }
   close(): void {
+    if (!this.isOpen) return;
     this.isOpen = false;
+    this.onClose();
   }
 }
 

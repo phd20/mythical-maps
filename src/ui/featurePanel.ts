@@ -25,6 +25,8 @@ export interface FeaturePanelHost {
   select(id: string): void;
   /** Show a message to the user. */
   notify(message: string): void;
+  /** Show the row's context menu (bead 5.6: Delete). */
+  contextMenu?(id: string, event: MouseEvent): void;
 }
 
 export const PANEL_TITLE = "Features";
@@ -176,6 +178,11 @@ export class FeaturePanel {
     });
 
     rowEl.addEventListener("click", () => this.select(feature.id));
+    rowEl.addEventListener("contextmenu", (evt) => {
+      if (!this.host.contextMenu) return;
+      (evt as Event).preventDefault();
+      this.host.contextMenu(feature.id, evt as MouseEvent);
+    });
     if (isFolder) {
       rowEl.addEventListener("dblclick", () => this.beginRename(feature.id));
     }

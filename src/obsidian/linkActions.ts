@@ -53,6 +53,8 @@ export interface LinkActionContext {
   notify(message: string): void;
   /** The maps listed by a pin's linked note (bead 6.3); omitted means no drill-down. */
   noteMaps?(feature: Feature): NoteMap[];
+  /** Add more items to a feature's context menu (bead 5.6: Delete); true if any were added. */
+  extendMenu?(feature: Feature, menu: Menu, event: MouseEvent): boolean;
 }
 
 /** Title of a drill-down action. */
@@ -160,13 +162,14 @@ export function createLinkInteractions(ctx: LinkActionContext): FeatureInteracti
     },
     onContextMenu(feature, event) {
       const maps = mapsOf(feature);
-      if (maps.length === 0) return;
-      event.preventDefault();
-      closePopup();
       const menu = new Menu();
       for (const map of maps) {
         menu.addItem((item) => item.setTitle(openMapTitle(map)).setIcon("map").onClick((e) => openMap(map, e as MouseEvent)));
       }
+      const extended = ctx.extendMenu?.(feature, menu, event) ?? false;
+      if (maps.length === 0 && !extended) return;
+      event.preventDefault();
+      closePopup();
       menu.showAtMouseEvent(event);
     },
   };

@@ -3,6 +3,7 @@ import {
   ancestors,
   children,
   deleteSubtree,
+  descendantCount,
   descendants,
   effectiveHidden,
   getFeature,
@@ -49,6 +50,21 @@ function ok<T extends { ok: boolean }>(res: T): Extract<T, { ok: true }> {
   if (!res.ok) throw new Error(`expected ok, got ${JSON.stringify(res)}`);
   return res as Extract<T, { ok: true }>;
 }
+
+describe("descendantCount", () => {
+  it("counts the whole subtree, excluding the feature itself", () => {
+    const map = fixture();
+    expect(descendantCount(map, "towns000")).toBe(3);
+    expect(descendantCount(map, "inner000")).toBe(1);
+    expect(descendantCount(map, "deep0000")).toBe(0);
+    expect(descendantCount(map, "nope0000")).toBe(0);
+  });
+  it("matches what deleteSubtree removes", () => {
+    const map = fixture();
+    const res = ok(deleteSubtree(map, "towns000"));
+    expect(res.removed.length).toBe(descendantCount(map, "towns000") + 1);
+  });
+});
 
 describe("queries", () => {
   it("children are sorted by rank then id", () => {
