@@ -927,12 +927,12 @@ describe("document store wiring (bead 5.1)", () => {
     view.notify = () => {};
     const mount = () => mounts.at(-1);
     view.edit({ type: "delete", id: "pwestm01" });
-    expect(mount()?.renderViews.at(-1)).toBe(styled);
+    expect(mount()?.renderViews.at(-1)).toMatchObject(styled);
     view.undo();
-    expect(mount()?.renderViews.at(-1)).toBe(styled);
+    expect(mount()?.renderViews.at(-1)).toMatchObject(styled);
     view.setLocked(true);
     view.edit({ type: "delete", id: "pwestm01" });
-    expect(mount()?.renderViews.at(-1)).toBe(styled);
+    expect(mount()?.renderViews.at(-1)).toMatchObject(styled);
     view.setLocked(false);
     // Let the pending saves finish so the store is clean and the external edit reloads.
     await view.save();
@@ -940,9 +940,9 @@ describe("document store wiring (bead 5.1)", () => {
     json.image = { path: "Maps/other.png", width: 4096, height: 3072 };
     (view as unknown as { modifyExternally(d: string): void }).modifyExternally(JSON.stringify(json));
     expect(mounts.length).toBeGreaterThan(1);
-    expect(mount()?.renderViews.at(-1)).toBe(styled);
+    expect(mount()?.renderViews.at(-1)).toMatchObject(styled);
     expect(mount()?.options.interactions).toBeDefined();
-    expect(mount()?.renderViews.every((v) => v === styled)).toBe(true);
+    expect(mount()?.renderViews.every((v) => (v as { styled?: boolean }).styled === true)).toBe(true);
   });
 
   it("undoing an image change remounts the base map on the old image", async () => {

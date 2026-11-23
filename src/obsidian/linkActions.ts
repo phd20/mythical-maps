@@ -11,7 +11,8 @@
  * - Click (edit modes, bead 5.2 decides when): selects the feature instead.
  * - A broken link (does not resolve) never creates a note: clicking shows a
  *   "Note not found" notice, and hovering shows no preview. The link itself is
- *   left untouched (the badge and "Relink…" are bead 6.6).
+ *   left untouched. Bead 6.6: hovering or right-clicking a broken pin offers
+ *   "Relink…" (`ctx.relink`), and the renderer draws the broken badge.
  * - Features without a link do nothing in view mode.
  *
  * Drill-down (bead 6.3, spec note-links "Drill-down into a note's maps"): when
@@ -53,12 +54,17 @@ export interface LinkActionContext {
   notify(message: string): void;
   /** The maps listed by a pin's linked note (bead 6.3); omitted means no drill-down. */
   noteMaps?(feature: Feature): NoteMap[];
+  /** Bead 6.6: pick a new note for a broken pin and save it ("Relink…"); omitted disables the action. */
+  relink?(feature: Feature): void;
   /** Add more items to a feature's context menu (bead 5.6: Delete); true if any were added. */
   extendMenu?(feature: Feature, menu: Menu, event: MouseEvent): boolean;
 }
 
 /** Title of a drill-down action. */
 export const openMapTitle = (map: NoteMap): string => `Open map: ${map.name}`;
+
+/** Title of the relink action on a broken pin (bead 6.6). */
+export const RELINK_TITLE = "Relink…";
 
 /** Delay before the drill-down popup closes after the pointer leaves, in ms. */
 export const POPUP_CLOSE_DELAY = 250;
@@ -99,21 +105,27 @@ export function createLinkInteractions(ctx: LinkActionContext): FeatureInteracti
     if (closeTimer !== null) clearTimeout(closeTimer);
     closeTimer = null;
   };
-  /** A small popup under the pin listing "Open map: <name>" buttons; closes when the pointer leaves it and the pin. */
-  function showPopup(maps: NoteMap[], targetEl: HTMLElement): void {
+  /** Whether a feature is a pin whose link does not resolve (bead 6.6). */
+  const isBroken = (feature: Feature): boolean => {
+    const link = linkOf(feature);
+    const sourcePath = ctx.sourcePath();
+    return link !== null && sourcePath !== null && !linkResolves(ctx.app, link, sourcePath);
+  };
+  /** A small popup under the pin listing "Open map: <name>" and "Relink…" buttons; closes when the pointer leaves it and the pin. */
+  function showPopup(items: { title: string; run: (e: MouseEvent) => void }[], targetEl: HTMLElement): void {
     closePopup();
     const root = targetEl.closest<HTMLElement>(".mythical-map-view");
     if (!root) return;
     const doc = targetEl.ownerDocument;
     const box = doc.createElement("div");
     box.className = "mythical-map-drilldown-popup";
-    for (const map of maps) {
+    for (const item of items) {
       const button = doc.createElement("button");
       button.className = "mythical-map-drilldown-item";
-      button.textContent = openMapTitle(map);
+      button.textContent = item.title;
       button.addEventListener("click", (e) => {
         closePopup();
-        openMap(map, e);
+        item.run(e);
       });
       box.appendChild(button);
     }
@@ -130,9 +142,11 @@ export function createLinkInteractions(ctx: LinkActionContext): FeatureInteracti
   return {
     onHover(feature, event, targetEl) {
       const maps = mapsOf(feature);
-      if (maps.length > 0 && targetEl) {
+      const items = maps.map((map) => ({ title: openMapTitle(map), run: (e: MouseEvent) => openMap(map, e) }));
+      if (ctx.relink && isBroken(feature)) items.push({ title: RELINK_TITLE, run: () => ctx.relink?.(feature) });
+      if (items.length > 0 && targetEl) {
         cancelClose();
-        showPopup(maps, targetEl);
+        showPopup(items, targetEl);
       }
       const link = linkOf(feature);
       const sourcePath = ctx.sourcePath();
@@ -166,8 +180,13 @@ export function createLinkInteractions(ctx: LinkActionContext): FeatureInteracti
       for (const map of maps) {
         menu.addItem((item) => item.setTitle(openMapTitle(map)).setIcon("map").onClick((e) => openMap(map, e as MouseEvent)));
       }
+      let relinkable = false;
+      if (ctx.relink && isBroken(feature)) {
+        relinkable = true;
+        menu.addItem((item) => item.setTitle(RELINK_TITLE).setIcon("link").onClick(() => ctx.relink?.(feature)));
+      }
       const extended = ctx.extendMenu?.(feature, menu, event) ?? false;
-      if (maps.length === 0 && !extended) return;
+      if (maps.length === 0 && !relinkable && !extended) return;
       event.preventDefault();
       closePopup();
       menu.showAtMouseEvent(event);

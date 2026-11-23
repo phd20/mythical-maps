@@ -1320,3 +1320,25 @@
   width: 18px;
 }
 /* END leaflet-geoman.css */
+
+/* Bead 6.6: broken-link badge */
+.mythical-map-view .mythical-map-pin-broken-badge {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  width: 14px;
+  height: 14px;
+  padding: 1px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background: var(--text-error);
+  color: var(--text-on-accent);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.mythical-map-view .mythical-map-pin-broken-badge svg {
+  width: 100%;
+  height: 100%;
+}

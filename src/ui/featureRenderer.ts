@@ -54,6 +54,8 @@ export interface RenderView {
   isVisible?: (feature: Feature) => boolean;
   /** Whether a pin shows the "has map" indicator (bead 6.3: its note lists maps); defaults to none. */
   hasMap?: (feature: Feature) => boolean;
+  /** Whether a pin shows the broken-link badge (bead 6.6: its `link` does not resolve); defaults to none. */
+  isBroken?: (feature: Feature) => boolean;
 }
 
 /** Pointer hooks on drawn features (bead 6.2). Each receives the feature as of the latest render. */
@@ -168,13 +170,19 @@ export function createFeatureRenderer(map: L.Map, deps: FeatureRendererDeps): Fe
     return node;
   }
 
-  function pinIcon(style: ResolvedPinStyle, hasMap: boolean): L.DivIcon {
+  function pinIcon(style: ResolvedPinStyle, hasMap: boolean, broken: boolean): L.DivIcon {
     const size = PIN_SIZES[style.iconSize];
     const root = el("div", `mythical-map-pin mythical-map-pin-${style.iconShape} mythical-map-pin-${style.iconSize}`);
     if (hasMap) {
       root.className += " mythical-map-pin-has-map";
       const badge = el("div", "mythical-map-pin-map-badge");
       if (deps.icons.has("map")) deps.icons.set(badge, "map");
+      root.appendChild(badge);
+    }
+    if (broken) {
+      root.className += " mythical-map-pin-broken";
+      const badge = el("div", "mythical-map-pin-broken-badge");
+      if (deps.icons.has("unlink")) deps.icons.set(badge, "unlink");
       root.appendChild(badge);
     }
     root.style.setProperty("--mythical-map-pin-color", style.iconColor);
@@ -224,18 +232,18 @@ export function createFeatureRenderer(map: L.Map, deps: FeatureRendererDeps): Fe
     });
   }
 
-  function drawPin(f: PinFeature, style: ResolvedPinStyle, hasMap: boolean, prev: Entry | undefined): Entry {
-    const key = JSON.stringify([style, hasMap]);
+  function drawPin(f: PinFeature, style: ResolvedPinStyle, hasMap: boolean, broken: boolean, prev: Entry | undefined): Entry {
+    const key = JSON.stringify([style, hasMap, broken]);
     if (prev && prev.kind === "pin") {
       const marker = prev.layer as L.Marker;
       marker.setLatLng(f.pos);
       if (prev.iconKey !== key) {
-        marker.setIcon(pinIcon(style, hasMap));
+        marker.setIcon(pinIcon(style, hasMap, broken));
         prev.iconKey = key;
       }
       return prev;
     }
-    const marker = L.marker(f.pos, { icon: pinIcon(style, hasMap), keyboard: false });
+    const marker = L.marker(f.pos, { icon: pinIcon(style, hasMap, broken), keyboard: false });
     return { kind: "pin", layer: marker, iconKey: key, tooltipKey: "" };
   }
 
@@ -283,11 +291,12 @@ export function createFeatureRenderer(map: L.Map, deps: FeatureRendererDeps): Fe
     f: Exclude<Feature, { type: "folder" }>,
     style: ResolvedStyle,
     hasMap: boolean,
+    broken: boolean,
     prev: Entry | undefined,
   ): Entry {
     switch (f.type) {
       case "pin": {
-        const entry = drawPin(f, style as ResolvedPinStyle, hasMap, prev);
+        const entry = drawPin(f, style as ResolvedPinStyle, hasMap, broken, prev);
         syncTooltip(entry, f, DEFAULT_STYLES.label);
         return entry;
       }
@@ -352,7 +361,7 @@ export function createFeatureRenderer(map: L.Map, deps: FeatureRendererDeps): Fe
         keep.add(f.id);
         current.set(f.id, f);
         const prev = entries.get(f.id);
-        const entry = draw(f, resolve(f), f.type === "pin" && (view.hasMap?.(f) ?? false), prev);
+        const entry = draw(f, resolve(f), f.type === "pin" && (view.hasMap?.(f) ?? false), f.type === "pin" && (view.isBroken?.(f) ?? false), prev);
         if (entry !== prev) {
           prev?.layer.remove();
           attachInteractions(f.id, entry.layer);

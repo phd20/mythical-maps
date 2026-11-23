@@ -13,6 +13,7 @@ import {
 import { registerMapLinkMaintenance } from "./obsidian/renameListener";
 import type { VaultMapIndex } from "./obsidian/vaultMapIndex";
 import { registerNewMapFromImage } from "./obsidian/newMapCommand";
+import { registerBrokenLinks } from "./obsidian/brokenLinks";
 import { registerNoteMaps, type NoteMaps } from "./obsidian/noteMaps";
 import { registerStyleOverrides, type StyleOverrides } from "./obsidian/styleOverrides";
 import { registerLinkHoverSource } from "./obsidian/linkActions";
@@ -33,6 +34,8 @@ export default class MythicalMapsPlugin extends Plugin {
     // Bead 7.1: style overrides; views get their resolver and re-render on note/settings changes.
     this.styleOverrides = registerStyleOverrides(this, this.app, () => this.settings, () => this.openMapViews());
     this.noteMaps = registerNoteMaps(this, this.app, () => this.settings, () => this.openMapViews());
+    // Bead 6.6: the broken badge follows note create/rename/delete; after layout ready so startup indexing does not fire it per file.
+    this.app.workspace.onLayoutReady(() => registerBrokenLinks(this, this.app, () => this.openMapViews()));
     this.registerView(VIEW_TYPE_MAP, (leaf) => {
       const view = new MapView(leaf);
       view.noteMaps = this.noteMaps.lookup;

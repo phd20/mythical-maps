@@ -82,7 +82,7 @@ import { createFeatureOp, createShapeOp, type CreatableKind, type DrawableKind, 
 import { descendantCount } from "../core/features";
 import { LOCKED_ERROR, MapStore, type ApplyResult, type Op } from "../core/document";
 import { parseMap, type ParseResult } from "../core/parse";
-import { FEATURE_TYPES, type FeatureType, type LatLng, type MapDocument, type Viewport } from "../core/schema";
+import { FEATURE_TYPES, type Feature, type FeatureType, type LatLng, type MapDocument, type Viewport } from "../core/schema";
 import { stringifyMap } from "../core/serialize";
 import { mountBaseMap, type BaseMapHandle, type MountBaseMap } from "../ui/baseMap";
 import { FeaturePanel } from "../ui/featurePanel";
@@ -94,7 +94,7 @@ import { createToolbar, creationKindFor, EDIT_MODES, type EditMode, type Toolbar
 import { VIEW_TYPE_MAP } from "./constants";
 import { confirmDelete } from "./deleteConfirmModal";
 import { ImageSuggestModal, vaultImageFiles } from "./imageSuggestModal";
-import { createLinkInteractions } from "./linkActions";
+import { createLinkInteractions, linkOf, linkResolves } from "./linkActions";
 import type { NoteMapsLookup } from "./noteMaps";
 import { readImageSizeFromVault, type ImageSize } from "./newMapCommand";
 
@@ -597,7 +597,24 @@ export class MapView extends TextFileView {
     const path = this.file?.path;
     const base: RenderView = this.styleSource && path ? this.styleSource(path) : {};
     const lookup = this.noteMaps;
-    return lookup && path ? { ...base, hasMap: (f) => lookup.forPin(f, path).length > 0 } : base;
+    const withMaps: RenderView = lookup && path ? { ...base, hasMap: (f) => lookup.forPin(f, path).length > 0 } : base;
+    // Bead 6.6: pins whose link does not resolve get the broken badge; the link itself is never touched.
+    return path ? { ...withMaps, isBroken: (f) => this.isBrokenPin(f, path) } : withMaps;
+  }
+
+  /** Bead 6.6: a linked pin whose `link` does not resolve to a vault file. */
+  private isBrokenPin(feature: Feature, path: string): boolean {
+    const link = linkOf(feature);
+    return link !== null && !linkResolves(this.app, link, path);
+  }
+
+  /** Bead 6.6: pick a note and set the pin's `link` through `edit()` (lock enforced). Never clears. */
+  relinkPin(id: string): void {
+    const file = this.file;
+    if (!file) return;
+    new LinkSuggestModal(this.app, file.path, false, (linktext) => {
+      if (linktext !== null) this.edit({ type: "update", id, patch: { link: linktext } });
+    }).open();
   }
 
   /** Bead 6.3: which maps a pin's note lists (drill-down); set by the plugin. Null disables it. */
@@ -772,6 +789,7 @@ export class MapView extends TextFileView {
           this.addDeleteItem(menu, feature.id);
           return true;
         },
+        relink: (feature) => this.relinkPin(feature.id),
         noteMaps: (feature) => {
           const path = this.file?.path;
           return this.noteMaps && path ? this.noteMaps.forPin(feature, path) : [];
