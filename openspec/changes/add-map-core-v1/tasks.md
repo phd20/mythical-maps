@@ -110,7 +110,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 5.1
   - Accept: Select, Pin, Label, Region and Path modes plus Fit; clicking in Pin or Label mode creates the feature; Shift-click and context menu "Add pin here"; new features go into the selected folder as its last child, and are selected
   - Verify: manual: the add-pin scenario
-- [ ] 5.3 Geometry: draw regions and paths, drag and reshape
+- [x] 5.3 Geometry: draw regions and paths, drag and reshape
   - Depends: 5.2
   - Accept: Geoman (free) bundled and scoped; drawing a region or path creates the feature; too few vertices creates nothing; in Select mode, pins and labels can be dragged and vertices moved, added or removed, all saved through `MapDocument`
   - Verify: manual: the draw-region, too-few-vertices and drag-pin scenarios, also tried once in a pop-out window
