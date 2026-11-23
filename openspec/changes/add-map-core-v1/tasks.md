@@ -129,7 +129,7 @@ Bead conventions (for loop + beads implementation)
 
 ## 6. Note links
 
-- [ ] 6.1 Link picker
+- [x] 6.1 Link picker
   - Depends: 5.5
   - Accept: a fuzzy note picker in the pin form sets `link` via `fileToLinktext` (shortest unambiguous); the link can be cleared
   - Verify: manual: the set-link-with-picker scenario
