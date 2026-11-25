@@ -89,8 +89,34 @@ function setup(opts: { zoom?: number; min?: number; max?: number } = {}) {
       listeners.delete(type);
     },
   };
-  const calls: { point: unknown; zoom: number; options: unknown }[] = [];
+  const calls: { zoom: number; options: unknown }[] = [];
+  // CRS.Simple: one map unit is 2^zoom pixels, with latitude pointing up.
+  const size = { x: 801, y: 601 };
   const map = {
+    center: { lat: -96, lng: 128 },
+    getCenter() {
+      return { ...this.center };
+    },
+    getSize() {
+      return size;
+    },
+    project(c: { lat: number; lng: number }, zoom: number) {
+      return { x: c.lng * 2 ** zoom, y: -c.lat * 2 ** zoom };
+    },
+    unproject([x, y]: [number, number], zoom: number) {
+      return { lat: -y / 2 ** zoom, lng: x / 2 ** zoom };
+    },
+    /** Container pixel of a map position in the current view. */
+    pixelOf(c: { lat: number; lng: number }) {
+      const p = this.project(c, this.zoom);
+      const mid = this.project(this.center, this.zoom);
+      return { x: p.x - mid.x + size.x / 2, y: p.y - mid.y + size.y / 2 };
+    },
+    /** Map position under a container pixel in the current view. */
+    at(x: number, y: number) {
+      const mid = this.project(this.center, this.zoom);
+      return this.unproject([mid.x + x - size.x / 2, mid.y + y - size.y / 2], this.zoom);
+    },
     zoom: opts.zoom ?? 3,
     min: opts.min ?? 1,
     max: opts.max ?? 6,
@@ -106,8 +132,9 @@ function setup(opts: { zoom?: number; min?: number; max?: number } = {}) {
     mouseEventToContainerPoint(e: MouseEvent) {
       return { x: e.clientX, y: e.clientY };
     },
-    setZoomAround(point: unknown, zoom: number, options: unknown) {
-      calls.push({ point, zoom, options });
+    setView(center: { lat: number; lng: number }, zoom: number, options: unknown) {
+      calls.push({ zoom, options });
+      this.center = center;
       this.zoom = Math.min(this.max, Math.max(this.min, zoom));
     },
   };
@@ -151,6 +178,7 @@ describe("attachSmoothWheelZoom", () => {
 
   it("eases toward the target over several frames with one rAF loop, anchored on the pointer", () => {
     const t = setup({ zoom: 3 });
+    const under = t.map.at(120, 80);
     t.wheel(-60, { clientX: 120, clientY: 80 });
     t.wheel(-60, { clientX: 120, clientY: 80 });
     // Two events, still one pending frame.
@@ -164,10 +192,46 @@ describe("attachSmoothWheelZoom", () => {
     expect(t.map.zoom).toBeCloseTo(target, 2);
     expect(t.frames.size).toBe(0);
     expect(t.calls.every((c) => (c.options as { animate: boolean }).animate === false)).toBe(true);
-    expect(t.calls.at(-1)?.point).toEqual({ x: 120, y: 80 });
+    expect(t.map.pixelOf(under).x).toBeCloseTo(120, 6);
+    expect(t.map.pixelOf(under).y).toBeCloseTo(80, 6);
     // Zoom is monotonic: no bounce.
     const zooms = t.calls.map((c) => c.zoom);
     expect(zooms).toEqual([...zooms].sort((a, b) => a - b));
+  });
+
+  it("keeps the same map position under the pointer through a long, slow pinch", () => {
+    const t = setup({ zoom: 2, max: 6 });
+    const under = t.map.at(600, 450);
+    for (let i = 0; i < 120; i++) {
+      t.wheel(-1, { ctrlKey: true, clientX: 600, clientY: 450 });
+      t.frame();
+    }
+    t.runAll();
+    expect(t.map.zoom).toBeCloseTo(3.2, 2);
+    expect(t.map.pixelOf(under).x).toBeCloseTo(600, 6);
+    expect(t.map.pixelOf(under).y).toBeCloseTo(450, 6);
+  });
+
+  it("anchors again when the pointer moves during a gesture", () => {
+    const t = setup({ zoom: 3 });
+    t.wheel(-60, { clientX: 100, clientY: 100 });
+    t.frame();
+    const under = t.map.at(500, 400);
+    t.wheel(-60, { clientX: 500, clientY: 400 });
+    t.runAll();
+    expect(t.map.pixelOf(under).x).toBeCloseTo(500, 6);
+    expect(t.map.pixelOf(under).y).toBeCloseTo(400, 6);
+  });
+
+  it("follows a pan made while easing instead of jumping back", () => {
+    const t = setup({ zoom: 3 });
+    t.wheel(-120, { clientX: 100, clientY: 100 });
+    t.frame();
+    t.map.center = { lat: -10, lng: 20 };
+    const under = t.map.at(100, 100);
+    t.runAll();
+    expect(t.map.pixelOf(under).x).toBeCloseTo(100, 6);
+    expect(t.map.pixelOf(under).y).toBeCloseTo(100, 6);
   });
 
   it("clamps the target to the limits so zoom stops at max and min without overshoot", () => {

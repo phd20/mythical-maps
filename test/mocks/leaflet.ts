@@ -39,10 +39,16 @@ export class MockMap {
   // 4.2 viewport & zoom limits. `center`/`zoom` track setView only (fitBounds leaves them unchanged).
   center: [number, number] = [0, 0];
   zoom = 0;
-  setView(center: [number, number], zoom: number, ...rest: unknown[]): this {
+  /** Like Leaflet, a non-animated zoom change (`_resetView`) fires `zoom` then `zoomend` synchronously. */
+  setView(center: [number, number] | { lat: number; lng: number }, zoom: number, ...rest: unknown[]): this {
     this.calls.push({ name: "setView", args: [center, zoom, ...rest] });
-    this.center = center;
+    const reset = (rest[0] as { animate?: boolean } | undefined)?.animate === false && zoom !== this.zoom;
+    this.center = Array.isArray(center) ? center : [center.lat, center.lng];
     this.zoom = zoom;
+    if (reset) {
+      this.fire("zoom");
+      this.fire("zoomend");
+    }
     return this;
   }
   setMinZoom(zoom: number): this {
@@ -92,14 +98,15 @@ export class MockMap {
   mouseEventToContainerPoint(): { x: number; y: number } {
     return { x: 0, y: 0 };
   }
-  /** Like Leaflet's non-animated `setView` → `_resetView`: fires `zoom` then `zoomend` synchronously. */
-  setZoomAround(_point: unknown, zoom: number, ...rest: unknown[]): this {
-    this.calls.push({ name: "setZoomAround", args: [_point, zoom, ...rest] });
-    const changed = zoom !== this.zoom;
-    this.zoom = zoom;
-    if (changed) this.fire("zoom");
-    this.fire("zoomend");
-    return this;
+  getSize(): { x: number; y: number } {
+    return { x: 0, y: 0 };
+  }
+  /** `CRS.Simple`: one map unit is 2^zoom pixels, latitude pointing up. */
+  project(c: { lat: number; lng: number }, zoom: number): { x: number; y: number } {
+    return { x: c.lng * 2 ** zoom, y: -c.lat * 2 ** zoom };
+  }
+  unproject([x, y]: [number, number], zoom: number): { lat: number; lng: number } {
+    return { lat: -y / 2 ** zoom, lng: x / 2 ** zoom };
   }
 }
 

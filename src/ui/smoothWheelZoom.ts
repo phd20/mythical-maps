@@ -6,12 +6,16 @@
  * - Per event: the target zoom moves by `normaliseWheelDelta(event)`, which is
  *   proportional to the wheel delta (pixel, line and page modes behave alike; a
  *   `ctrlKey` wheel, i.e. a trackpad pinch, uses a larger factor).
- * - Clamp and anchor: the target is clamped to the map's current
- *   `[minZoom, maxZoom]` on every event and every frame (so a `minZoom` change
- *   on resize re-clamps it), and zoom stays anchored on the last pointer point.
+ * - Clamp: the target is clamped to the map's current `[minZoom, maxZoom]` on
+ *   every event and every frame (so a `minZoom` change on resize re-clamps it).
+ * - Anchor: the map position under the pointer is captured once (again only if
+ *   the pointer moves or something else moves the map), and every frame derives
+ *   the centre from it. `setZoomAround` is not used: it reads the current view
+ *   through Leaflet's pixel origin, which is rounded to whole pixels, so the
+ *   point under the pointer drifts over the many small steps of a slow pinch.
  * - Easing: one `requestAnimationFrame` loop, taken from the container's own
  *   window (pop-outs), eases the zoom toward the target with
- *   `setZoomAround(point, z, { animate: false })` and stops once it arrives.
+ *   `setView(centre, z, { animate: false })` and stops once it arrives.
  *   Exponential easing never overshoots, so zoom stops cleanly at the limits.
  *
  * The math is pure and exported for unit tests; `attachSmoothWheelZoom` is the
@@ -63,13 +67,27 @@ export function stepToward(current: number, target: number, dtMs: number, tauMs:
   return Math.abs(target - next) < EPSILON ? target : next;
 }
 
-/** The parts of `L.Map` the handler uses; `P` is Leaflet's `Point`. */
-export interface SmoothZoomMap<P> {
+export interface XY {
+  x: number;
+  y: number;
+}
+
+/** The parts of `L.Map` the handler uses; `C` is Leaflet's `LatLng`. */
+export interface SmoothZoomMap<C extends { lat: number; lng: number }> {
   getZoom(): number;
   getMinZoom(): number;
   getMaxZoom(): number;
-  mouseEventToContainerPoint(e: MouseEvent): P;
-  setZoomAround(point: P, zoom: number, options: { animate: boolean }): unknown;
+  getCenter(): C;
+  getSize(): XY;
+  project(latlng: C, zoom: number): XY;
+  unproject(point: [number, number], zoom: number): C;
+  mouseEventToContainerPoint(e: MouseEvent): XY;
+  setView(center: C, zoom: number, options: { animate: boolean }): unknown;
+}
+
+/** Offset of a container point from the container's centre, in pixels. */
+function fromCentre(point: XY, size: XY): XY {
+  return { x: point.x - size.x / 2, y: point.y - size.y / 2 };
 }
 
 export interface SmoothWheelZoomHandle {
@@ -86,12 +104,19 @@ interface FrameWindow {
  * Listen for `wheel` on `container` and ease the map's zoom. The map must be
  * created with `scrollWheelZoom: false` so Leaflet's own handler is off.
  */
-export function attachSmoothWheelZoom<P>(map: SmoothZoomMap<P>, container: HTMLElement): SmoothWheelZoomHandle {
+export function attachSmoothWheelZoom<C extends { lat: number; lng: number }>(
+  map: SmoothZoomMap<C>,
+  container: HTMLElement,
+): SmoothWheelZoomHandle {
   const win = container.ownerDocument?.defaultView as FrameWindow | null | undefined;
   const limits = (): ZoomLimits => ({ min: map.getMinZoom(), max: map.getMaxZoom() });
 
   let target = 0;
-  let point: P | null = null;
+  let point: XY | null = null;
+  /** The map position that stays under `point`. */
+  let anchor: C | null = null;
+  /** The centre last seen or set here; a different one means something else moved the map. */
+  let seen: C | null = null;
   let frame: number | null = null;
   let lastTime: number | null = null;
   let destroyed = false;
@@ -102,6 +127,31 @@ export function attachSmoothWheelZoom<P>(map: SmoothZoomMap<P>, container: HTMLE
     lastTime = null;
   };
 
+  const movedElsewhere = (): boolean => {
+    const c = map.getCenter();
+    return seen === null || c.lat !== seen.lat || c.lng !== seen.lng;
+  };
+
+  /** Capture the map position now under `at`. */
+  const takeAnchor = (at: XY): void => {
+    const zoom = map.getZoom();
+    seen = map.getCenter();
+    const centre = map.project(seen, zoom);
+    const offset = fromCentre(at, map.getSize());
+    anchor = map.unproject([centre.x + offset.x, centre.y + offset.y], zoom);
+    point = at;
+  };
+
+  /** Zoom to `zoom`, keeping the anchor under the pointer. */
+  const zoomTo = (at: XY, zoom: number): void => {
+    if (movedElsewhere()) takeAnchor(at);
+    if (anchor === null) return;
+    const projected = map.project(anchor, zoom);
+    const offset = fromCentre(at, map.getSize());
+    map.setView(map.unproject([projected.x - offset.x, projected.y - offset.y], zoom), zoom, { animate: false });
+    seen = map.getCenter();
+  };
+
   const tick = (time: number): void => {
     frame = null;
     if (destroyed || point === null) return;
@@ -110,7 +160,7 @@ export function attachSmoothWheelZoom<P>(map: SmoothZoomMap<P>, container: HTMLE
     target = clampZoom(target, limits());
     const current = map.getZoom();
     const next = clampZoom(stepToward(current, target, dt), limits());
-    if (next !== current) map.setZoomAround(point, next, { animate: false });
+    if (next !== current) zoomTo(point, next);
     const reached = map.getZoom();
     // Stop once at the target, or if the map refused to move (e.g. mid-animation).
     if (Math.abs(target - reached) < EPSILON || reached === current) {
@@ -127,7 +177,8 @@ export function attachSmoothWheelZoom<P>(map: SmoothZoomMap<P>, container: HTMLE
     // A fresh gesture starts from wherever the map is now (buttons, double-click, resize).
     const base = frame === null ? map.getZoom() : target;
     target = clampZoom(base + dz, limits());
-    point = map.mouseEventToContainerPoint(e);
+    const at = map.mouseEventToContainerPoint(e);
+    if (frame === null || point === null || at.x !== point.x || at.y !== point.y || movedElsewhere()) takeAnchor(at);
     if (frame === null && win) frame = win.requestAnimationFrame(tick);
   };
 
