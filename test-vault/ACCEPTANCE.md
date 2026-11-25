@@ -1,6 +1,6 @@
 # Acceptance checklist (task 8.2)
 
-Walk every scenario of `openspec/changes/add-map-core-v1/specs/*/spec.md` in this vault and tick it. 63 scenarios: map-file 15, map-view 16, map-editing 13, note-links 12, plugin-settings 7.
+Walk every scenario of `openspec/changes/add-map-core-v1/specs/*/spec.md` in this vault and tick it. 65 scenarios: map-file 15, map-view 16, map-editing 15, note-links 12, plugin-settings 7.
 
 ## Setup
 
@@ -123,6 +123,11 @@ Use a scratch copy of `all-types.map` for this section unless noted.
 - [ ] **Move into folder.** WHEN a pin is dragged onto the folder "Towns" THEN its `parentId` is the folder's id, it becomes the last child, and it is saved. Fixture: drag "Westmarch" onto "Towns".
 - [ ] **No cycles.** WHEN a folder is dragged into one of its own descendants THEN the move is refused and the tree is unchanged. Fixture: create folder "Inner" inside "Towns", then drag "Towns" onto "Inner". Also create, rename, hide and delete a folder from the panel.
 
+### Requirement: Reveal from the feature panel
+
+- [ ] **Click a pin in the panel.** WHEN zoomed in elsewhere and a pin's row is clicked THEN it is selected, the map centres on it and the zoom is unchanged. Fixture: `all-types.map`; also try a region and a path row.
+- [ ] **Click a folder in the panel.** WHEN a folder's row is clicked THEN it is selected and the view does not move. Fixture: "Towns" in `all-types.map`.
+
 ### Requirement: Lock toggle
 
 - [ ] **Locked drag.** WHEN the view is locked and a pin is dragged THEN it does not move and the file is not modified. Fixture: lock via the header action, drag a pin, try to delete, rename, draw and drag in the panel (all refused with the lock notice); pan, zoom, hover and clicking a link still work. Reopen the tab: it is unlocked (lock is not saved).
@@ -187,6 +192,6 @@ Use a scratch copy of `all-types.map` for this section unless noted.
 
 ## Sign-off
 
-- [ ] All 63 scenarios above ticked (or failures filed as beads).
+- [ ] All 65 scenarios above ticked (or failures filed as beads).
 - [ ] `npm run check` passes on the commit that was tested.
 - [ ] Scratch files removed and `git status test-vault` clean (apart from intended fixture changes).

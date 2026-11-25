@@ -79,7 +79,7 @@ import {
   type WorkspaceLeaf,
 } from "obsidian";
 import { createFeatureOp, createShapeOp, type CreatableKind, type DrawableKind, type LatLngLike } from "../core/create";
-import { descendantCount } from "../core/features";
+import { descendantCount, featureCenter } from "../core/features";
 import { LOCKED_ERROR, MapStore, type ApplyResult, type Op } from "../core/document";
 import { parseMap, type ParseResult } from "../core/parse";
 import { FEATURE_TYPES, type Feature, type FeatureType, type LatLng, type MapDocument, type Viewport } from "../core/schema";
@@ -271,8 +271,16 @@ export class MapView extends TextFileView {
     this.pendingFocus = null;
     const feature = this.viewState.map.features.find((f) => f.id === id);
     if (feature?.type !== "pin") return;
-    this.baseMap.centerOn(feature.pos);
+    this.centerOnFeature(id);
     this.setSelected(id);
+  }
+
+  /** Pan to a feature at the current zoom; folders have nowhere to go. */
+  private centerOnFeature(id: string): void {
+    if (this.viewState.kind !== "ok") return;
+    const feature = this.viewState.map.features.find((f) => f.id === id);
+    const center = feature ? featureCenter(feature) : null;
+    if (center) this.baseMap?.centerOn(center);
   }
 
   /** The mounted Leaflet base map, if the view currently shows one. */
@@ -846,7 +854,10 @@ export class MapView extends TextFileView {
     this.fillStatus(this.statusEl, map);
     this.panel = new FeaturePanel(el, {
       edit: (op) => this.edit(op),
-      select: (id) => this.selectFeature(id),
+      select: (id) => {
+        this.selectFeature(id);
+        this.centerOnFeature(id);
+      },
       notify: (message) => this.notify(message),
       contextMenu: (id, event) => {
         const menu = new Menu();

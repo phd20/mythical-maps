@@ -55,6 +55,17 @@ The feature panel SHALL show all features as a tree ordered by `rank`, and SHALL
 - **WHEN** the user drags a folder into one of its own descendants
 - **THEN** the move is refused and the tree is unchanged
 
+### Requirement: Reveal from the feature panel
+Clicking a pin, label, region or path in the feature panel SHALL select it and centre the map on it without changing the zoom. For a region or path, the centre is the middle of its bounding box. Clicking a folder, or selecting a feature on the map, SHALL NOT move the view.
+
+#### Scenario: Click a pin in the panel
+- **WHEN** the user is zoomed in elsewhere and clicks a pin's row in the feature panel
+- **THEN** the pin is selected, the map pans to centre on it, and the zoom is unchanged
+
+#### Scenario: Click a folder in the panel
+- **WHEN** the user clicks a folder's row
+- **THEN** the folder is selected and the view does not move
+
 ### Requirement: Lock toggle
 The system SHALL provide a lock toggle per open view. While locked, every create, edit, move, reshape, reorder and delete action SHALL be refused at the model layer, while pan, zoom, hover and clicking links keep working. The lock state SHALL NOT be stored in the file.
 

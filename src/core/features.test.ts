@@ -6,6 +6,7 @@ import {
   descendantCount,
   descendants,
   effectiveHidden,
+  featureCenter,
   getFeature,
   hiddenIds,
   insert,
@@ -327,5 +328,35 @@ describe("immutability", () => {
     expect(patch).toEqual(patchSnap);
     expect(newFeature).toEqual(newSnap);
     expect(del.removed).toEqual(removedSnap);
+  });
+});
+
+describe("featureCenter", () => {
+  const center = (f: object) => featureCenter({ id: "aaaaaaaa", parentId: null, rank: "a0", ...f } as unknown as Feature);
+
+  it("is a pin or label's position", () => {
+    expect(center({ type: "pin", pos: [-10, 20] })).toEqual([-10, 20]);
+    expect(center({ type: "label", pos: [-1, 2] })).toEqual([-1, 2]);
+  });
+
+  it("is the middle of a path's bounding box", () => {
+    expect(center({ type: "path", polyline: [[0, 0], [-10, 40], [-4, 10]] })).toEqual([-5, 20]);
+  });
+
+  it("covers every ring of a region, in both forms", () => {
+    expect(center({ type: "region", polygon: [[0, 0], [0, 10], [-10, 10]] })).toEqual([-5, 5]);
+    expect(
+      center({
+        type: "region",
+        polygons: [
+          [[0, 0], [0, 10], [-10, 10]],
+          [[-30, 30], [-30, 40], [-40, 40]],
+        ],
+      }),
+    ).toEqual([-20, 20]);
+  });
+
+  it("is null for a folder", () => {
+    expect(center({ type: "folder" })).toBeNull();
   });
 });

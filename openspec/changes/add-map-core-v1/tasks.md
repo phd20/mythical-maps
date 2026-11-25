@@ -126,6 +126,10 @@ Bead conventions (for loop + beads implementation)
   - Depends: 5.4
   - Accept: Delete key and context menu; deleting a folder with descendants asks for confirmation, then cascades; cancelling removes nothing
   - Verify: manual: the delete-folder and cancel scenarios
+- [ ] 5.7 Clicking a panel row centres the map on that feature
+  - Depends: 5.4
+  - Accept: clicking a pin, label, region or path row selects it and centres the map on it at the current zoom; folder rows only select; selecting from the map does not move the view
+  - Verify: manual: the click-a-pin and click-a-folder panel scenarios
 
 ## 6. Note links
 
@@ -172,7 +176,7 @@ Bead conventions (for loop + beads implementation)
   - Accept: the 8192×6144 fixture with about 200 pins pans and zooms smoothly on desktop; heap usage is recorded in `design.md` under Risks; any problem is filed as a follow-up bead (tiling)
   - Verify: manual
 - [ ] 8.2 Full acceptance pass and README
-  - Depends: 3.3, 4.2, 4.5, 4.6, 5.3, 5.6, 6.3, 6.5, 6.7, 7.1
+  - Depends: 3.3, 4.2, 4.5, 4.6, 5.3, 5.6, 5.7, 6.3, 6.5, 6.7, 7.1
   - Accept: every scenario in `specs/` has been walked in `test-vault/` and ticked; README documents the `.map` format, the coordinate frame, the settings and the known limits; the extension decision (Open Question 1) is recorded
   - Verify: manual
 - [ ] 8.3 Mobile smoke test (best effort)

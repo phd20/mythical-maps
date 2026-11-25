@@ -314,3 +314,27 @@ export function restore(map: MapDocument, removed: readonly Feature[]): OpResult
   }
   return { ok: true, map: { ...map, features: [...map.features, ...removed] } };
 }
+
+/**
+ * Where to look to see a feature: a pin or label's position, or the middle of a
+ * region's or path's bounding box. Null for folders, which have no geometry.
+ */
+export function featureCenter(feature: Feature): [number, number] | null {
+  if (feature.type === "pin" || feature.type === "label") return [feature.pos[0], feature.pos[1]];
+  if (feature.type === "folder") return null;
+  const min: [number, number] = [Infinity, Infinity];
+  const max: [number, number] = [-Infinity, -Infinity];
+  const visit = (node: readonly unknown[]): void => {
+    const [a, b] = node;
+    if (typeof a === "number" && typeof b === "number") {
+      min[0] = Math.min(min[0], a);
+      min[1] = Math.min(min[1], b);
+      max[0] = Math.max(max[0], a);
+      max[1] = Math.max(max[1], b);
+      return;
+    }
+    for (const child of node) if (Array.isArray(child)) visit(child);
+  };
+  visit(feature.type === "path" ? feature.polyline : [feature.polygon ?? [], ...(feature.polygons ?? [])]);
+  return Number.isFinite(min[0]) ? [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2] : null;
+}
