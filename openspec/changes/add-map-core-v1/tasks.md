@@ -145,7 +145,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 2.8, 2.3
   - Accept: `VaultMapIndex` built on layout ready from all `.map` files; updated on create, modify, delete and rename of `.map` files; exposes the maps referencing a path; adapter tests with the mock vault
   - Verify: auto
-- [ ] 6.5 Rename listener
+- [x] 6.5 Rename listener
   - Depends: 6.4
   - Accept: on `vault.on('rename')`, every affected map is rewritten via `vault.process` using `rewriteForRename` (links and `image.path` only); adapter tests cover the note rename, image move and folder rename scenarios
   - Verify: auto, plus a manual note rename in the test vault
