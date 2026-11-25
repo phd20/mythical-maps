@@ -153,7 +153,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 6.1, 4.3
   - Accept: unresolved pins drawn with a badge; popup "Relink…" opens the picker and saves; `link` is never cleared automatically
   - Verify: manual: the renamed-outside-Obsidian and relink scenarios (rename a note in Finder)
-- [ ] 6.7 "Find broken pins" command
+- [x] 6.7 "Find broken pins" command
   - Depends: 6.4, 6.6
   - Accept: scans every map through the index and the resolver; a modal groups broken pins by map with "Open map" (centred on the pin) and "Relink…"; shows "No broken pins" when there are none
   - Verify: auto (the scan function), plus a manual check of the modal
