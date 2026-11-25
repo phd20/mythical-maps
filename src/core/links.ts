@@ -32,7 +32,7 @@ export function splitLinktext(link: string): { path: string; subpath: string } {
 }
 
 /** Resolve a full linktext (subpath stripped) with the given resolver. */
-function resolveLink(link: string, mapPath: string, resolver: LinkResolver): string | null {
+export function resolveLink(link: string, mapPath: string, resolver: LinkResolver): string | null {
   const { path } = splitLinktext(link);
   if (path === "") return null; // same-file subpath; a map has no headings
   return resolver.resolve(path, mapPath);

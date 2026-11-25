@@ -1342,3 +1342,32 @@
   width: 100%;
   height: 100%;
 }
+
+/* Bead 6.7: Find broken pins modal (its contentEl also carries .mythical-map-view for scoping). */
+.mythical-map-view.mythical-broken-pins .mythical-broken-pins-group {
+  margin-bottom: 12px;
+}
+
+.mythical-map-view.mythical-broken-pins .mythical-broken-pins-map {
+  margin: 0 0 4px;
+}
+
+.mythical-map-view.mythical-broken-pins .mythical-broken-pins-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.mythical-map-view.mythical-broken-pins .mythical-broken-pins-link {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-error);
+}
+
+.mythical-map-view.mythical-broken-pins .mythical-broken-pins-empty {
+  color: var(--text-muted);
+}

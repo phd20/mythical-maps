@@ -76,6 +76,8 @@ export interface BaseMapHandle {
   setEditState(state: EditState): void;
   /** Draw the model's features, reusing layers by id (see `featureRenderer.ts`). No-op after destroy. */
   render(model: MapDocument, view?: RenderView): void;
+  /** Pan to `pos`, keeping the zoom (clamped to the limits). Before the first size is known, applied once it is. No-op after destroy. */
+  centerOn(pos: LatLng): void;
   /** Fit the whole image in view (animated). No-op after destroy. */
   fit(): void;
   /** Re-check the container size: `invalidateSize`, plus the deferred initial fit. */
@@ -145,6 +147,7 @@ export const mountBaseMap: MountBaseMap = (parent, options) => {
   map.on("zoom", onZoom);
   map.on("zoomend", onZoom);
   let viewSet = false;
+  let pendingCenter: LatLng | null = null;
   const gate = new SizeGate({
     getSize: () => ({ width: container.clientWidth, height: container.clientHeight }),
     onResize: () => {
@@ -158,6 +161,8 @@ export const mountBaseMap: MountBaseMap = (parent, options) => {
     onFirstSize: () => {
       if (viewport && limits) map.setView(viewport.center, clampZoom(viewport.zoom, limits), { animate: false });
       else map.fitBounds(bounds, { animate: false });
+      if (pendingCenter) map.setView(pendingCenter, map.getZoom(), { animate: false });
+      pendingCenter = null;
       viewSet = true;
       visibility.update();
       syncGeometry();
@@ -188,6 +193,11 @@ export const mountBaseMap: MountBaseMap = (parent, options) => {
       visibility.render(model, view);
       lastModel = model;
       syncGeometry();
+    },
+    centerOn: (pos) => {
+      if (destroyed) return;
+      if (viewSet && limits) map.setView(pos, clampZoom(map.getZoom(), limits), { animate: false });
+      else pendingCenter = pos;
     },
     fit: () => {
       if (!destroyed) map.fitBounds(bounds);

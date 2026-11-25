@@ -256,6 +256,25 @@ export class MapView extends TextFileView {
     this.registerEvent(this.app.workspace.on("quit", (tasks) => tasks.add(() => this.flush())));
   }
 
+  /** Bead 6.7: a pin to centre and select once the map is mounted ("Open map" in Find broken pins). */
+  private pendingFocus: string | null = null;
+
+  /** Bead 6.7: centre the map on a pin (keeping the zoom) and select it. Applied after load if the map is not mounted yet. */
+  focusFeature(id: string): void {
+    this.pendingFocus = id;
+    this.applyPendingFocus();
+  }
+
+  private applyPendingFocus(): void {
+    const id = this.pendingFocus;
+    if (id === null || this.viewState.kind !== "ok" || !this.baseMap) return;
+    this.pendingFocus = null;
+    const feature = this.viewState.map.features.find((f) => f.id === id);
+    if (feature?.type !== "pin") return;
+    this.baseMap.centerOn(feature.pos);
+    this.setSelected(id);
+  }
+
   /** The mounted Leaflet base map, if the view currently shows one. */
   get mapHandle(): BaseMapHandle | null {
     return this.baseMap;
@@ -459,6 +478,7 @@ export class MapView extends TextFileView {
   override clear(): void {
     this.destroyMap();
     this.viewState = { kind: "empty" };
+    this.pendingFocus = null;
     this.setSelected(null);
     this.setStore(null);
     this.contentEl.empty();
@@ -844,6 +864,7 @@ export class MapView extends TextFileView {
     this.panel.setSelected(this.selected);
     this.propsForm.setSelected(this.selected);
     this.syncPanel(map);
+    this.applyPendingFocus();
   }
 
   private fillStatus(status: HTMLElement, map: MapDocument): void {

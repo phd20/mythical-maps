@@ -17,6 +17,7 @@ import { registerBrokenLinks } from "./obsidian/brokenLinks";
 import { registerNoteMaps, type NoteMaps } from "./obsidian/noteMaps";
 import { registerStyleOverrides, type StyleOverrides } from "./obsidian/styleOverrides";
 import { registerLinkHoverSource } from "./obsidian/linkActions";
+import { registerFindBrokenPins } from "./obsidian/findBrokenPins";
 
 /** Mythical Maps plugin entry point. Features are registered by later beads. */
 export default class MythicalMapsPlugin extends Plugin {
@@ -45,6 +46,7 @@ export default class MythicalMapsPlugin extends Plugin {
     this.registerExtensions([MAP_EXTENSION], VIEW_TYPE_MAP);
     this.mapIndex = registerMapLinkMaintenance(this, this.app);
     registerNewMapFromImage(this, this.app);
+    registerFindBrokenPins(this, this.app, () => this.mapIndex); // bead 6.7
     registerLinkHoverSource(this); // bead 6.2: page preview on pins
     this.addCommand({
       id: SET_DEFAULT_VIEW_COMMAND_ID,
