@@ -25,6 +25,7 @@ import { Keymap, Menu, type App, type HoverParent, type Plugin } from "obsidian"
 import { splitLinktext } from "../core/links";
 import type { Feature } from "../core/schema";
 import type { FeatureInteractions } from "../ui/featureRenderer";
+import { placePopup } from "../ui/popupPosition";
 import type { NoteMap } from "../core/noteMaps";
 
 /** Hover link source id, shown under Settings → Page preview. */
@@ -111,7 +112,7 @@ export function createLinkInteractions(ctx: LinkActionContext): FeatureInteracti
     const sourcePath = ctx.sourcePath();
     return link !== null && sourcePath !== null && !linkResolves(ctx.app, link, sourcePath);
   };
-  /** A small popup under the pin listing "Open map: <name>" and "Relink…" buttons; closes when the pointer leaves it and the pin. */
+  /** A small popup beside the pin (clear of the page preview) listing "Open map: <name>" and "Relink…" buttons; closes when the pointer leaves it and the pin. */
   function showPopup(items: { title: string; run: (e: MouseEvent) => void }[], targetEl: HTMLElement): void {
     closePopup();
     const root = targetEl.closest<HTMLElement>(".mythical-map-view");
@@ -129,15 +130,21 @@ export function createLinkInteractions(ctx: LinkActionContext): FeatureInteracti
       });
       box.appendChild(button);
     }
-    const anchor = targetEl.getBoundingClientRect();
-    const host = root.getBoundingClientRect();
-    box.style.left = `${anchor.left - host.left}px`;
-    box.style.top = `${anchor.bottom - host.top}px`;
     box.addEventListener("mouseenter", cancelClose);
     box.addEventListener("mouseleave", scheduleClose);
     targetEl.addEventListener("mouseleave", scheduleClose, { once: true });
+    // Appended before placing, so its size can be measured.
     root.appendChild(box);
     popup = box;
+    const host = root.getBoundingClientRect();
+    const { left, top } = placePopup(
+      targetEl.getBoundingClientRect(),
+      host,
+      { width: box.offsetWidth, height: box.offsetHeight },
+      doc.defaultView?.innerHeight ?? host.bottom,
+    );
+    box.style.left = `${left}px`;
+    box.style.top = `${top}px`;
   }
   return {
     onHover(feature, event, targetEl) {

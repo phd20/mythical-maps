@@ -119,6 +119,8 @@ describe("hover popup", () => {
     style: Record<string, string> = {};
     className = "";
     textContent = "";
+    offsetWidth = 0;
+    offsetHeight = 0;
     parent: FakeEl | null = null;
     ownerDocument = { createElement: () => new FakeEl() };
     addEventListener(t: string, fn: (e: unknown) => void): void {
@@ -133,7 +135,7 @@ describe("hover popup", () => {
       if (this.parent) this.parent.children = this.parent.children.filter((c) => c !== this);
     }
     getBoundingClientRect() {
-      return { left: 10, bottom: 50, top: 20 };
+      return { left: 10, right: 42, bottom: 50, top: 20 };
     }
     closest(sel: string): FakeEl | null {
       return sel === ".mythical-map-view" ? root : null;
@@ -145,7 +147,7 @@ describe("hover popup", () => {
     root.children = [];
   });
 
-  it("lists Open map buttons under the pin and opens one on click", () => {
+  it("lists Open map buttons beside the pin and opens one on click", () => {
     const h = harness();
     h.hooks.onHover?.(pin("Westmarch"), evt(), pinEl as unknown as HTMLElement);
     const popup = root.children[0]!;
