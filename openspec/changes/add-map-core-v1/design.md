@@ -144,15 +144,15 @@ A toolbar in the view header offers Select, Pin, Label, Region, Path, Lock and F
 
   | Measure | Result |
   | --- | --- |
-  | Machine / OS / Obsidian version | |
-  | Baseline heap (MB) | |
-  | Heap after open (MB) | |
-  | Heap after pan/zoom (MB) | |
-  | Heap after close (MB) | |
-  | Render time, 200 pins (ms) | |
-  | Pan feels smooth (yes/no, fps) | |
-  | Zoom feels smooth (yes/no, fps) | |
-  | Notes | |
+  | Machine / OS / Obsidian version | Not recorded (skipped) |
+  | Baseline heap (MB) | 30.9 |
+  | Heap after open (MB) | 42 |
+  | Heap after pan/zoom (MB) | Not measured (skipped) |
+  | Heap after close (MB) | Not measured (skipped) |
+  | Render time, 200 pins (ms) | 59.2 (188 features drawn; the rest are hidden by `visibilityRange` at fit zoom) |
+  | Pan feels smooth (yes/no, fps) | Not recorded (skipped) |
+  | Zoom feels smooth (yes/no, fps) | Not recorded (skipped) |
+  | Notes | Partial check by the maintainer: open cost is about 11 MB for the 8k image plus 200 pins, with no problem found. The interaction and leak measurements were skipped, so no tiling bead was filed. |
 
   Rule: any problem (dropped frames, stutter, heap well above about 400 MB, memory not released on close) becomes a follow-up bead for tiling (the image pyramid the coordinate frame already supports), not a fix inside 8.1.
 - [Renames outside Obsidian break links silently] → broken links are always visible (badge plus command) and never deleted; Relink repairs them.
