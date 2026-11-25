@@ -149,7 +149,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 6.4
   - Accept: on `vault.on('rename')`, every affected map is rewritten via `vault.process` using `rewriteForRename` (links and `image.path` only); adapter tests cover the note rename, image move and folder rename scenarios
   - Verify: auto, plus a manual note rename in the test vault
-- [ ] 6.6 Broken-link badge and Relink
+- [x] 6.6 Broken-link badge and Relink
   - Depends: 6.1, 4.3
   - Accept: unresolved pins drawn with a badge; popup "Relink…" opens the picker and saves; `link` is never cleared automatically
   - Verify: manual: the renamed-outside-Obsidian and relink scenarios (rename a note in Finder)
