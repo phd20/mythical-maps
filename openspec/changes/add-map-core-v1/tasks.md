@@ -126,7 +126,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 5.4
   - Accept: Delete key and context menu; deleting a folder with descendants asks for confirmation, then cascades; cancelling removes nothing
   - Verify: manual: the delete-folder and cancel scenarios
-- [ ] 5.7 Clicking a panel row centres the map on that feature
+- [x] 5.7 Clicking a panel row centres the map on that feature
   - Depends: 5.4
   - Accept: clicking a pin, label, region or path row selects it and centres the map on it at the current zoom; folder rows only select; selecting from the map does not move the view
   - Verify: manual: the click-a-pin and click-a-folder panel scenarios
