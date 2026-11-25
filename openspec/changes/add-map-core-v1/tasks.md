@@ -167,7 +167,7 @@ Bead conventions (for loop + beads implementation)
 
 ## 8. Hardening and release readiness
 
-- [ ] 8.1 Performance check with the 8k image
+- [x] 8.1 Performance check with the 8k image
   - Depends: 4.3, 4.6
   - Accept: the 8192×6144 fixture with about 200 pins pans and zooms smoothly on desktop; heap usage is recorded in `design.md` under Risks; any problem is filed as a follow-up bead (tiling)
   - Verify: manual
