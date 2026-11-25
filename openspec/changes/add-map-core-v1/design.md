@@ -167,6 +167,6 @@ Greenfield, so no migration. `schema.version = 1` with a `migrate()` stub establ
 
 ## Open Questions
 
-1. Is the final file extension `.map`, or something more distinctive (for example `.mmap`)? This is decided by a constant before release.
+1. ~~Is the final file extension `.map`, or something more distinctive (for example `.mmap`)?~~ **Decided (task 8.2, pending maintainer review): keep `.map` for v1.** The extension is a single constant, `MAP_EXTENSION` in `src/obsidian/constants.ts`, so changing it later is essentially a one-line edit (plus renaming the fixtures and docs; two hard-coded copies of `map` remain to update: the `MAP_EXT` regex in `src/core/noteMaps.ts` and the default `extension` argument of `newMapPath` in `src/core/newMap.ts`); the `"type": "mythical-map"` marker already protects against clashes with JavaScript source maps.
 2. Should "Open map" from a pin replace the current tab or open a new one by default? The proposal is to replace, with modifiers for a new tab or split.
 3. Does Obsidian's `setIcon` (Lucide) cover enough TTRPG glyphs, or is a custom SVG icon set needed later?
