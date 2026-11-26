@@ -94,6 +94,8 @@ Making the copies: resampling with `resizeQuality: "high"` held the main thread 
 
 Process memory samples were too noisy to compare the chain with a single canvas: part is in a GPU process shared with other windows. Not verified: a screen without Retina resolution (emulating one did not change the real raster scale), a smallest copy actually displayed (it needs a pane smaller than the ones tested), and flashing as seen by eye.
 
+**Manual checks.** The user reports that the 1.3 check (a real trackpad) and the 1.4 check (zoomed-out quality) pass in their own vault.
+
 ## Risks / Trade-offs
 
 - [About 5.3 bytes per pixel held per open map with D6, roughly 270 MB at 50 megapixels] → size limits, release on close, documented. Several large maps add up.

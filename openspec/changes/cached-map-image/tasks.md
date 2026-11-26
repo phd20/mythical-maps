@@ -4,4 +4,4 @@
 - [x] 1.2 Canvas image layer
 - [x] 1.3 Use the canvas layer in the map view
 - [x] 1.4 Smooth zoomed-out rendering
-- [ ] 1.5 Document cached images
+- [x] 1.5 Document cached images

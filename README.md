@@ -69,6 +69,7 @@ A pin linked to that note shows a map badge. Hover or right-click the pin and ch
 
 - Renaming or moving notes and images **inside Obsidian** updates your maps. Renaming them outside Obsidian leaves a broken-link badge; run **Find broken pins** to repair them.
 - Pin links don't appear in Obsidian's backlinks or graph.
+- Large images are held in memory while their map is open: about 270 MB for a 6144 × 8192 image, so several large maps add up. They appear a moment after the pins.
 - Maps can't be embedded in notes (`![[X.map]]` does nothing useful yet).
 - There is no fog of war, measuring tool, grid or image overlay.
 - The `.map` extension is also used by JavaScript source maps. If your vault contains code, those files open as "not a Mythical map" and are left untouched.
