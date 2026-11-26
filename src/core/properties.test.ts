@@ -1,3 +1,4 @@
+import { linkPatch, noteNameFromLinktext } from "./properties";
 import { describe, expect, it } from "vitest";
 import { update } from "./features";
 import { buildPatch, buildRangePatch, fieldsFor, fieldValue, rangeValue, validateField, validateRange } from "./properties";
@@ -128,5 +129,22 @@ describe("buildPatch", () => {
     const withRange = { ...pin, visibilityRange: [0.1, 0.9] } as Feature;
     const cleared = update(doc([withRange]), pin.id, buildRangePatch(undefined));
     expect(cleared.ok && "visibilityRange" in (cleared.map.features[0] ?? {})).toBe(false);
+  });
+});
+
+describe("linkPatch", () => {
+  const pin = (name?: string) => ({ id: "ppin0001", type: "pin", rank: "a0", pos: [0, 0], ...(name === undefined ? {} : { name }) }) as Parameters<typeof linkPatch>[0];
+
+  it("takes the note's name without folders, heading or extension", () => {
+    expect(noteNameFromLinktext("Places/Westmarch.md#Docks")).toBe("Westmarch");
+    expect(linkPatch(pin(), "Places/Westmarch")).toEqual({ link: "Places/Westmarch", name: "Westmarch" });
+    expect(linkPatch(pin("  "), "Inn")).toEqual({ link: "Inn", name: "Inn" });
+    expect(linkPatch(pin("New pin"), "Inn")).toEqual({ link: "Inn", name: "Inn" });
+  });
+
+  it("never replaces a name, and clearing changes only the link", () => {
+    expect(linkPatch(pin("Keep"), "Inn")).toEqual({ link: "Inn" });
+    expect(linkPatch(pin(), null)).toEqual({ link: undefined });
+    expect(linkPatch(pin(), "#Heading")).toEqual({ link: "#Heading" });
   });
 });

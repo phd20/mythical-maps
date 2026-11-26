@@ -21,6 +21,7 @@ import {
   buildRangePatch,
   fieldsFor,
   fieldValue,
+  linkPatch,
   rangeValue,
   validateField,
   validateRange,
@@ -196,7 +197,7 @@ export class PropertiesForm {
       chooseLink?.(input.value, (linktext) => {
         input.value = linktext ?? "";
         this.clearError(control);
-        this.commitField(spec, control, input.value);
+        this.commitLink(control, linktext);
       });
     });
     input.addEventListener("keydown", (evt) => {
@@ -289,6 +290,19 @@ export class PropertiesForm {
       return;
     }
     this.applyEdit(feature.id, buildPatch(feature, spec, result.value), control);
+  }
+
+  /** A note chosen (or cleared) in the picker; may also name an unnamed pin. */
+  private commitLink(control: Control, linktext: string | null): void {
+    const feature = this.current();
+    if (!feature) return;
+    const patch = linkPatch(feature, linktext);
+    const stored = (feature as { link?: string }).link ?? null;
+    if (linktext === stored && patch.name === undefined) {
+      control.sync(feature);
+      return;
+    }
+    this.applyEdit(feature.id, patch, control);
   }
 
   private commitRange(control: Control, minRaw: string, maxRaw: string): void {

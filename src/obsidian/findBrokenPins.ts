@@ -10,6 +10,7 @@
 import { Modal, Notice, type App, type Plugin } from "obsidian";
 import { relinkInText, scanBrokenPins, type BrokenPinGroup, type BrokenPinSource } from "../core/brokenPins";
 import type { LinkResolver } from "../core/links";
+import { linkPatch } from "../core/properties";
 import { VIEW_TYPE_MAP } from "./constants";
 import { LinkSuggestModal } from "./linkSuggestModal";
 import { MapView } from "./mapView";
@@ -55,7 +56,10 @@ export async function openMapAtPin(app: App, mapPath: string, featureId: string)
 /** Set a pin's link. True when it was saved or applied to the open view. */
 export async function relinkPin(app: App, mapPath: string, featureId: string, linktext: string): Promise<boolean> {
   const view = openViewFor(app, mapPath);
-  if (view) return view.edit({ type: "update", id: featureId, patch: { link: linktext } }).ok;
+  if (view) {
+    const pin = view.styledMap()?.map.features.find((f) => f.id === featureId);
+    return pin ? view.edit({ type: "update", id: featureId, patch: linkPatch(pin, linktext) }).ok : false;
+  }
   const file = app.vault.getFileByPath(mapPath);
   if (!file) return false;
   let changed = false;

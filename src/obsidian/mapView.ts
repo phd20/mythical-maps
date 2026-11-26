@@ -84,6 +84,7 @@ import { createFeatureOp, createShapeOp, type CreatableKind, type DrawableKind, 
 import { descendantCount, featureCenter } from "../core/features";
 import { LOCKED_ERROR, MapStore, type ApplyResult, type Op } from "../core/document";
 import { parseMap, type ParseResult } from "../core/parse";
+import { linkPatch } from "../core/properties";
 import { FEATURE_TYPES, type Feature, type FeatureType, type LatLng, type MapDocument, type Viewport } from "../core/schema";
 import { stringifyMap } from "../core/serialize";
 import { mountBaseMap, type BaseMapHandle, type MountBaseMap } from "../ui/baseMap";
@@ -651,7 +652,8 @@ export class MapView extends TextFileView {
     const file = this.file;
     if (!file) return;
     new LinkSuggestModal(this.app, file.path, false, (linktext) => {
-      if (linktext !== null) this.edit({ type: "update", id, patch: { link: linktext } });
+      const pin = this.styledMap()?.map.features.find((f) => f.id === id);
+      if (linktext !== null && pin) this.edit({ type: "update", id, patch: linkPatch(pin, linktext) });
     }).open();
   }
 
