@@ -33,7 +33,9 @@
  * - with unsaved edits (store dirty), the local map is kept and a notice says
  *   the file changed on disk; the pending save then writes the local version
  *   (last write wins, design "Risks").
- * `save()` marks the store saved once the write finishes, if nothing changed meanwhile.
+ * `save()` writes only when there are unsaved edits (opening and leaving a map
+ * never rewrites it) and marks the store saved once the write finishes, if
+ * nothing changed meanwhile.
  *
  * Bead 5.1, the store wired to the view (spec map-editing "Lock toggle",
  * "Saving", "Undo within a session"):
@@ -538,13 +540,21 @@ export class MapView extends TextFileView {
     this.baseMap?.refresh();
   }
 
-  /** Never write from an error (or empty) state: the file must stay untouched. */
+  /**
+   * Never write from an error (or empty) state, or without unsaved edits: the
+   * file must stay untouched, even when it is not in canonical form. Obsidian
+   * calls `save(true)` when the file is unloaded, which also clears the view.
+   */
   override async save(clear?: boolean): Promise<void> {
     if (this.viewState.kind !== "ok") return;
     const store = this.store;
-    const saving = store?.map;
+    if (!store?.dirty) {
+      if (clear) this.clear();
+      return;
+    }
+    const saving = store.map;
     await super.save(clear);
-    if (store && this.store === store && store.map === saving) store.markSaved();
+    if (this.store === store && store.map === saving) store.markSaved();
   }
 
   /** True when the view shows a map whose live view can be saved as `viewport`. */

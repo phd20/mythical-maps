@@ -152,12 +152,29 @@ describe("valid map", () => {
     expect(view.getViewData()).not.toBe(raw);
   });
 
-  it("save writes canonical JSON", async () => {
+  it("save writes canonical JSON after an edit", async () => {
     const raw = fixture("all-types.map");
     const { app, view } = open("Maps/all-types.map", raw);
+    view.requestSave = () => {};
+    view.edit({ type: "insert", feature: { type: "pin", name: "New", pos: [-10, 10] } });
     await view.save();
     expect(app.vault.modified).toHaveLength(1);
     expect(app.vault.modified[0]?.data).toBe(view.getViewData());
+  });
+
+  it("never rewrites an unedited map, even one that is not canonical (mm-b1f.39)", async () => {
+    const raw = fixture("all-types.map");
+    const { app, view, load } = open("Maps/all-types.map", raw);
+    await view.save();
+    view.requestSave();
+    await view.flush();
+    // A reload from disk is not an edit either.
+    view.setViewData(raw.replace("Westmarch", "Eastmarch"), false);
+    await view.save();
+    load(raw);
+    await view.save(true);
+    expect(app.vault.modified).toEqual([]);
+    expect(view.mapState.kind).toBe("empty");
   });
 });
 
@@ -227,6 +244,8 @@ describe("transitions", () => {
     expect(view.mapState.kind).toBe("ok");
     expect(content.findAll((el) => el.hasClass("mythical-map-error"))).toEqual([]);
     expect(content.textContent).toContain("3 pins");
+    view.requestSave = () => {};
+    view.edit({ type: "insert", feature: { type: "pin", name: "New", pos: [-10, 10] } });
     await view.save();
     expect(app.vault.modified).toHaveLength(1);
   });
@@ -863,11 +882,14 @@ describe("document store wiring (bead 5.1)", () => {
     // A different file opened in the same view gets a new store, still locked.
     load(fixture("all-types.map"));
     expect(storeOf(view).isLocked).toBe(true);
-    await view.save();
-    expect(app.vault.modified.at(-1)?.data).not.toMatch(/lock/i);
     action.callback({});
     expect(storeOf(view).isLocked).toBe(false);
     expect(content.hasClass("is-locked")).toBe(false);
+    // Lock again after an edit: the saved file holds no lock state.
+    view.edit({ type: "insert", feature: { type: "pin", name: "New", pos: [-10, 10] } });
+    action.callback({});
+    await view.save();
+    expect(app.vault.modified.at(-1)?.data).not.toMatch(/lock/i);
   });
 
   it("close right after edit: onUnloadFile and onClose write the pending edit before the debounced save", async () => {
