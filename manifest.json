@@ -1,7 +1,7 @@
 {
   "id": "mythical-maps",
   "name": "Mythical Maps",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "minAppVersion": "1.5.0",
   "description": "TTRPG maps as first-class .map files: pins, labels, regions and paths linked to your notes, with no code blocks in notes.",
   "author": "PhD20",
