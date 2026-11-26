@@ -3,7 +3,7 @@
 Interactive tabletop RPG maps inside [Obsidian](https://obsidian.md). Drop pins, labels, regions and paths on a map image, link pins to your notes, and open city maps from a world map.
 
 > [!WARNING]
-> **Beta software (version 0.1.1).** Expect bugs and rough edges, and expect things to change, possibly including the `.map` file format. **Back up your vault before using it**, or try it in a test vault first. It is provided as is, without warranty. Please [report problems](https://github.com/PhD20/mythical-maps/issues).
+> **Beta software (version 0.1.2).** Expect bugs and rough edges, and expect things to change, possibly including the `.map` file format. **Back up your vault before using it**, or try it in a test vault first. It is provided as is, without warranty. Please [report problems](https://github.com/PhD20/mythical-maps/issues).
 
 ## Why
 
