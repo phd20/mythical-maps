@@ -78,7 +78,6 @@ import {
   TextFileView,
   type HoverPopover,
   type TFile,
-  type ViewStateResult,
   type WorkspaceLeaf,
 } from "obsidian";
 import { createFeatureOp, createShapeOp, type CreatableKind, type DrawableKind, type LatLngLike } from "../core/create";
@@ -89,15 +88,12 @@ import { linkPatch } from "../core/properties";
 import { FEATURE_TYPES, type Feature, type FeatureType, type LatLng, type MapDocument, type Viewport } from "../core/schema";
 import { stringifyMap } from "../core/serialize";
 import { mountBaseMap, type BaseMapHandle, type MountBaseMap } from "../ui/baseMap";
-import { FeaturePanel } from "../ui/featurePanel";
 import { LinkSuggestModal } from "./linkSuggestModal";
-import { PropertiesForm } from "../ui/propertiesForm";
 import { obsidianIcons } from "../ui/obsidianIcons";
 import type { RenderView } from "../ui/featureRenderer";
 import { createToolbar, creationKindFor, EDIT_MODES, type EditMode, type ToolbarHandle } from "../ui/toolbar";
 import { VIEW_TYPE_MAP } from "./constants";
 import { confirmDelete } from "./deleteConfirmModal";
-import { IconSuggest } from "./iconSuggest";
 import { ImageSuggestModal, vaultImageFiles } from "./imageSuggestModal";
 import { createLinkInteractions, linkOf, linkResolves } from "./linkActions";
 import type { NoteMapsLookup } from "./noteMaps";
@@ -114,12 +110,7 @@ export const LOCK_TITLE = "Lock map";
 export const UNLOCK_TITLE = "Unlock map";
 export const ADD_PIN_HERE = "Add pin here";
 export const DELETE_FEATURE = "Delete";
-export const TOGGLE_PANEL_COMMAND_ID = "toggle-feature-panel";
-export const TOGGLE_PANEL_COMMAND_NAME = "Show or hide the feature panel";
-export const HIDE_PANEL_TITLE = "Hide feature panel";
-export const SHOW_PANEL_TITLE = "Show feature panel";
-/** Key of the hidden-panel flag in the view state kept with the workspace layout. */
-export const PANEL_HIDDEN_STATE = "mythicalPanelHidden";
+export const SHOW_PANEL_TITLE = "Show map panel";
 
 /** An op a user edit can apply; `replace` is reserved for reloading from disk. */
 export type EditOp = Exclude<Op, { type: "replace" }>;
@@ -199,10 +190,6 @@ export class MapView extends TextFileView {
   private selectionListeners = new Set<(id: string | null) => void>();
   /** The header lock toggle, once the view is loaded. */
   private lockActionEl: HTMLElement | null = null;
-  /** Whether the feature panel is hidden; per tab, kept in the view state, never in the file. */
-  private panelHidden = false;
-  /** The header panel toggle, once the view is loaded. */
-  private panelActionEl: HTMLElement | null = null;
 
   /** Creates the Leaflet base map. Replaceable so tests can run without a DOM. */
   mountMap: MountBaseMap = mountBaseMap;
@@ -230,10 +217,10 @@ export class MapView extends TextFileView {
   selectFeature = (featureId: string): void => this.setSelected(featureId);
   // --- end bead 6.2 ---
 
-  // --- Bead 5.4: selection and the feature panel (see ui/featurePanel.ts) ---
-  private panel: FeaturePanel | null = null;
-  /** Bead 5.5: the properties form, shown inside the feature panel. */
-  private propsForm: PropertiesForm | null = null;
+  // --- Bead 5.4: selection and the feature panel (see panelView.ts) ---
+  private changeListeners = new Set<() => void>();
+  /** Adds the sidebar panel (`reveal`: also bring it into view); set by the plugin. */
+  panelHost: { opened(): void; reveal(): void } | null = null;
 
   /** The selected feature's id, or null. Dropped automatically when the feature is deleted. */
   get selection(): string | null {
@@ -268,8 +255,7 @@ export class MapView extends TextFileView {
     super.onload();
     this.lockActionEl = this.addAction("lock-open", LOCK_TITLE, () => this.toggleLock());
     this.refreshLockUi();
-    this.panelActionEl = this.addAction("panel-right", HIDE_PANEL_TITLE, () => this.togglePanel());
-    this.refreshPanelUi();
+    this.addAction("panel-right", SHOW_PANEL_TITLE, () => this.panelHost?.reveal());
     this.registerEvent(this.app.workspace.on("quit", (tasks) => tasks.add(() => this.flush())));
   }
 
@@ -331,16 +317,38 @@ export class MapView extends TextFileView {
     return () => this.selectionListeners.delete(listener);
   }
 
+  /** Called when the shown map or the selection changes; returns an unsubscribe function. */
+  onViewChange(listener: () => void): () => void {
+    this.changeListeners.add(listener);
+    return () => this.changeListeners.delete(listener);
+  }
+
+  private emitChange(): void {
+    for (const listener of [...this.changeListeners]) listener();
+  }
+
+  /** Select a feature from the panel and centre the map on it. */
+  revealFeature(id: string): void {
+    this.selectFeature(id);
+    this.centerOnFeature(id);
+  }
+
+  /** The context menu of a panel row (bead 5.6: Delete). */
+  showFeatureMenu(id: string, event: MouseEvent): void {
+    const menu = new Menu();
+    this.addDeleteItem(menu, id);
+    menu.showAtMouseEvent(event);
+  }
+
   /** Select a feature (or clear with null). Unknown ids clear the selection. */
   setSelected(id: string | null): void {
     const map = this.viewState.kind === "ok" ? this.viewState.map : null;
     const next = id !== null && map?.features.some((f) => f.id === id) ? id : null;
     if (next === this.selected) return;
     this.selected = next;
-    this.panel?.setSelected(next);
-    this.propsForm?.setSelected(next);
     if (this.statusEl && map) this.fillStatus(this.statusEl, map);
     for (const listener of [...this.selectionListeners]) listener(next);
+    this.emitChange();
   }
 
   setEditMode(mode: EditMode): void {
@@ -406,8 +414,8 @@ export class MapView extends TextFileView {
     return this.edit({ type: "delete", id }).ok;
   }
 
-  /** Scope handler: delete the selection unless a text field has focus or nothing is selected. */
-  private handleDeleteKey(evt: KeyboardEvent): boolean {
+  /** Key handler (here and in the panel): delete the selection unless a text field has focus or nothing is selected. */
+  handleDeleteKey(evt: KeyboardEvent): boolean {
     if (isTextInputTarget(evt.target) || this.selected === null || this.viewState.kind !== "ok") return true;
     void this.deleteFeature(this.selected);
     return false;
@@ -507,14 +515,16 @@ export class MapView extends TextFileView {
     this.setSelected(null);
     this.setStore(null);
     this.contentEl.empty();
+    this.emitChange();
   }
 
   override onunload(): void {
     this.flushNow();
     this.destroyMap();
     this.setStore(null);
+    this.viewState = { kind: "empty" };
+    this.emitChange();
     this.lockActionEl = null;
-    this.panelActionEl = null;
     super.onunload();
   }
 
@@ -717,44 +727,6 @@ export class MapView extends TextFileView {
     this.setLocked(!this.locked);
   }
 
-  /** Whether the feature panel (with the properties form) is hidden. */
-  get isPanelHidden(): boolean {
-    return this.panelHidden;
-  }
-
-  setPanelHidden(hidden: boolean): void {
-    if (hidden === this.panelHidden) return;
-    this.panelHidden = hidden;
-    this.refreshPanelUi();
-    this.app.workspace.requestSaveLayout();
-  }
-
-  togglePanel(): void {
-    this.setPanelHidden(!this.panelHidden);
-  }
-
-  override getState(): Record<string, unknown> {
-    return { ...super.getState(), [PANEL_HIDDEN_STATE]: this.panelHidden };
-  }
-
-  override async setState(state: unknown, result: ViewStateResult): Promise<void> {
-    const hidden = (state as Record<string, unknown> | null)?.[PANEL_HIDDEN_STATE];
-    // A state without the flag (opening another file in this tab) keeps the current choice.
-    if (typeof hidden === "boolean") {
-      this.panelHidden = hidden;
-      this.refreshPanelUi();
-    }
-    await super.setState(state, result);
-  }
-
-  private refreshPanelUi(): void {
-    this.contentEl.toggleClass("is-panel-hidden", this.panelHidden);
-    const el = this.panelActionEl;
-    if (!el) return;
-    el.setAttribute("aria-label", this.panelHidden ? SHOW_PANEL_TITLE : HIDE_PANEL_TITLE);
-    el.toggleClass("is-active", !this.panelHidden);
-  }
-
   private stepHistory(direction: "undo" | "redo"): boolean {
     const store = this.store;
     if (this.viewState.kind !== "ok" || !store) return false;
@@ -767,8 +739,8 @@ export class MapView extends TextFileView {
     return changed;
   }
 
-  /** Scope handler: returns false (handled, default prevented) unless a text field has focus. */
-  private handleHistoryKey(evt: KeyboardEvent, direction: "undo" | "redo"): boolean {
+  /** Key handler (here and in the panel): returns false (handled, default prevented) unless a text field has focus. */
+  handleHistoryKey(evt: KeyboardEvent, direction: "undo" | "redo"): boolean {
     if (isTextInputTarget(evt.target)) return true;
     if (direction === "undo") this.undo();
     else this.redo();
@@ -817,21 +789,10 @@ export class MapView extends TextFileView {
     }
     baseMap.render(map, this.renderView());
     if (this.statusEl) this.fillStatus(this.statusEl, map);
-    this.syncPanel(map);
-  }
-
-  /** Drop a selection whose feature is gone, then refresh the feature panel. */
-  private syncPanel(map: MapDocument): void {
-    if (this.selected !== null && !map.features.some((f) => f.id === this.selected)) this.setSelected(null);
-    this.panel?.update(map);
-    this.propsForm?.update(map);
+    this.emitChange();
   }
 
   private destroyMap(): void {
-    this.propsForm?.destroy();
-    this.propsForm = null;
-    this.panel?.destroy();
-    this.panel = null;
     this.baseMap?.destroy();
     this.baseMap = null;
     this.toolbar = null;
@@ -848,6 +809,8 @@ export class MapView extends TextFileView {
     const state = this.viewState;
     if (state.kind === "ok") this.renderMap(el, state.map, keepView);
     else if (state.kind === "error") this.renderError(el, state.failure);
+    this.emitChange();
+    if (state.kind === "ok") this.panelHost?.opened();
   }
 
   private imageKey(map: MapDocument): string {
@@ -917,35 +880,6 @@ export class MapView extends TextFileView {
     if (!imageUrl) this.renderMissingImage(el, map.image.path);
     this.statusEl = el.createDiv({ cls: "mythical-map-status" });
     this.fillStatus(this.statusEl, map);
-    this.refreshPanelUi();
-    this.panel = new FeaturePanel(el, {
-      hide: () => this.setPanelHidden(true),
-      edit: (op) => this.edit(op),
-      select: (id) => {
-        this.selectFeature(id);
-        this.centerOnFeature(id);
-      },
-      notify: (message) => this.notify(message),
-      contextMenu: (id, event) => {
-        const menu = new Menu();
-        this.addDeleteItem(menu, id);
-        menu.showAtMouseEvent(event);
-      },
-    });
-    this.propsForm = new PropertiesForm(this.panel.el, {
-      suggestIcons: (input, pick) => {
-        const suggest = new IconSuggest(this.app, input, pick);
-        return () => suggest.close();
-      },
-      edit: (op) => this.edit(op),
-      chooseLink: (current, done) => {
-        if (!this.file) return;
-        new LinkSuggestModal(this.app, this.file.path, current.trim() !== "", done).open();
-      },
-    });
-    this.panel.setSelected(this.selected);
-    this.propsForm.setSelected(this.selected);
-    this.syncPanel(map);
     this.applyPendingFocus();
   }
 

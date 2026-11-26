@@ -22,13 +22,21 @@ Every colour field in the properties form SHALL offer a colour picker beside its
 - **WHEN** the user empties the hex text box
 - **THEN** the stored colour is removed and the picker shows the default colour
 
-### Requirement: Hide the feature panel
-The system SHALL let the user hide the feature panel, including the properties form, and show it again, from the map tab and with a command. Hiding SHALL work on a locked map, SHALL NOT change the `.map` file, and SHALL be remembered for that tab.
+### Requirement: Map panel in the sidebar
+The system SHALL show the feature tree and the properties form in a tab of Obsidian's right sidebar, not over the map. The tab SHALL follow the map last used in the main area or a pop-out window, and SHALL say that no map is open when that tab is not a map. The system SHALL add the tab, without taking focus, the first time a map is opened, SHALL NOT add it again once the user closes it, and SHALL reveal it from the map tab and with a command. Undo, redo and delete SHALL work while the panel has focus.
 
-#### Scenario: Hide and show
-- **WHEN** the user hides the panel and then shows it
-- **THEN** the map is uncovered while hidden, and the panel returns with the same selection
+#### Scenario: First map
+- **WHEN** the user opens a map for the first time
+- **THEN** a map panel tab appears in the right sidebar, the map keeps focus, and nothing covers the map
 
-#### Scenario: Reload
-- **WHEN** the user hides the panel and reopens Obsidian with that tab
-- **THEN** the panel is still hidden
+#### Scenario: Follow the map
+- **WHEN** the user switches from one map to another, and then to a note
+- **THEN** the panel shows the first map, then the second, then a message that no map is open
+
+#### Scenario: Work in the panel
+- **WHEN** the user clicks in the panel, deletes the selected pin and presses Mod+Z
+- **THEN** the panel still shows the same map and the pin is deleted and then restored
+
+#### Scenario: Closed stays closed
+- **WHEN** the user closes the panel tab and opens another map
+- **THEN** the tab is not added again, and the map header button brings it back

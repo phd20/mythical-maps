@@ -18,6 +18,7 @@ describe("mergeSettings", () => {
       mapsProperty: "maps",
       overrides: { enabled: false, iconProperty: "", colorProperty: "", shapeProperty: "" },
       defaultPinStyle: { iconGlyph: "map-pin", iconColor: "#A7A7A7", iconShape: "pin", iconSize: "medium" },
+      panelAdded: false,
       settingsVersion: 1,
     });
     expect(s.defaultPinStyle).toEqual(DEFAULT_STYLES.pin);
@@ -53,6 +54,7 @@ describe("mergeSettings", () => {
       mapsProperty: "atlas",
       overrides: { enabled: true, iconProperty: "i", colorProperty: "c", shapeProperty: "s" },
       defaultPinStyle: { iconGlyph: "castle", iconColor: "#aa2233", iconShape: "flag", iconSize: "small" },
+      panelAdded: true,
       settingsVersion: 1,
     };
     expect(mergeSettings(full)).toEqual(full);
@@ -86,7 +88,7 @@ describe("mergeSettings", () => {
       overrides: { enabled: true, extra: "x" },
       defaultPinStyle: { iconColor: "#112233", glow: true },
     }) as unknown as Record<string, Record<string, unknown>>;
-    expect(Object.keys(s).sort()).toEqual(["defaultPinStyle", "mapsProperty", "overrides", "settingsVersion"]);
+    expect(Object.keys(s).sort()).toEqual(["defaultPinStyle", "mapsProperty", "overrides", "panelAdded", "settingsVersion"]);
     expect(Object.keys(s.overrides!).sort()).toEqual(["colorProperty", "enabled", "iconProperty", "shapeProperty"]);
     expect(Object.keys(s.defaultPinStyle!).sort()).toEqual(["iconColor", "iconGlyph", "iconShape", "iconSize"]);
   });
@@ -197,7 +199,7 @@ describe("MythicalMapsSettingTab", () => {
       mapsProperty: "region-maps",
       overrides: { enabled: true, iconProperty: "map-icon", colorProperty: "faction-color", shapeProperty: "map-shape" },
       defaultPinStyle: { iconGlyph: "castle", iconColor: "#AA2233", iconShape: "diamond", iconSize: "small" },
-      settingsVersion: 1,
+      panelAdded: false, settingsVersion: 1,
     });
   });
 

@@ -110,11 +110,6 @@ export class Workspace extends MockEvents {
   getActiveFile(): TFile | null {
     return this.activeFile;
   }
-  /** Counts layout save requests. */
-  layoutSaves = 0;
-  requestSaveLayout(): void {
-    this.layoutSaves++;
-  }
   /** Every leaf handed out by `getLeaf`, so tests can see what was opened. */
   leaves: WorkspaceLeaf[] = [];
   getLeaf(_newLeaf?: unknown): WorkspaceLeaf {
@@ -127,9 +122,22 @@ export class Workspace extends MockEvents {
   getActiveViewOfType<T>(type: abstract new (...args: never[]) => T): T | null {
     return this.activeView instanceof type ? this.activeView : null;
   }
+  /** The most recently used main-area leaf; tests set it directly. */
+  mostRecentLeaf: WorkspaceLeaf | null = null;
+  getMostRecentLeaf(): WorkspaceLeaf | null {
+    return this.mostRecentLeaf;
+  }
+  /** Sidebar leaves are ordinary leaves here. */
+  getRightLeaf(_split: boolean): WorkspaceLeaf {
+    return this.getLeaf();
+  }
+  revealed: WorkspaceLeaf[] = [];
+  async revealLeaf(leaf: WorkspaceLeaf): Promise<void> {
+    this.revealed.push(leaf);
+  }
   /** Leaves (from `leaves`) whose `view` has the given type. */
   getLeavesOfType(type: string): WorkspaceLeaf[] {
-    return this.leaves.filter((leaf) => leaf.view?.getViewType() === type);
+    return this.leaves.filter((leaf) => (leaf.view?.getViewType() ?? leaf.viewState?.type) === type);
   }
   /** Bead 6.2: every `openLinkText` call, in order. */
   openedLinks: Array<{ linktext: string; sourcePath: string; newLeaf: unknown }> = [];
@@ -252,6 +260,11 @@ export class WorkspaceLeaf {
   }
   /** The view shown in this leaf; tests set it directly. */
   view: View | null = null;
+  /** The last `setViewState` argument. */
+  viewState: { type: string; active?: boolean } | null = null;
+  async setViewState(state: { type: string; active?: boolean }): Promise<void> {
+    this.viewState = state;
+  }
 }
 
 export interface Command {
@@ -402,6 +415,8 @@ export abstract class View extends Component {
   }
 }
 
+export abstract class ItemView extends View {}
+
 /**
  * Minimal TextFileView: `requestSave` saves immediately (no debounce), and
  * `save()` writes `getViewData()` through `vault.modify`, as Obsidian does.
@@ -422,10 +437,6 @@ export abstract class TextFileView extends View {
   async onUnloadFile(file: TFile): Promise<void> {
     this.unloadedFiles.push(file);
   }
-  getState(): Record<string, unknown> {
-    return this.file ? { file: this.file.path } : {};
-  }
-  async setState(_state: unknown, _result: unknown): Promise<void> {}
   /** Test helper: simulate Obsidian opening `file` with contents `data`. */
   loadFile(file: TFile, data: string): void {
     this.file = file;

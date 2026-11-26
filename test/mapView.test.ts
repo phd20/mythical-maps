@@ -30,7 +30,6 @@ import {
   UNDO_COMMAND_ID,
   UNLOCK_TITLE,
 } from "../src/obsidian/mapView";
-import { PANEL_HIDDEN_STATE, SHOW_PANEL_TITLE } from "../src/obsidian/mapView";
 import { ImageSuggestModal } from "../src/obsidian/imageSuggestModal";
 import type { MapStore } from "../src/core/document";
 import type { MapDocument, Viewport } from "../src/core/schema";
@@ -868,7 +867,7 @@ describe("document store wiring (bead 5.1)", () => {
     view.load();
     const actions = (view as unknown as { actions: Array<{ callback: (e: unknown) => unknown; el: MockElement }> })
       .actions;
-    expect(actions).toHaveLength(2); // lock, then the panel toggle
+    expect(actions).toHaveLength(2); // lock, then "Show map panel"
     const action = actions[0];
     if (!action) throw new Error("expected a lock action");
     expect(view.isLocked).toBe(false);
@@ -1011,35 +1010,5 @@ describe("map edit commands (bead 5.1)", () => {
     lock?.checkCallback?.(false);
     expect(view.isLocked).toBe(true);
     expect(undo?.checkCallback?.(true)).toBe(false);
-  });
-});
-
-describe("MapView hidden feature panel", () => {
-  it("toggles from the header action without touching the file, and saves the layout", () => {
-    const { app, view } = open();
-    view.onload();
-    const action = (view as unknown as { actions: Array<{ icon: string; callback: (e: unknown) => void; el: MockElement }> }).actions.find((a) => a.icon === "panel-right")!;
-    const content = view.contentEl as unknown as MockElement;
-    view.setLocked(true);
-    action.callback({});
-    expect(view.isPanelHidden).toBe(true);
-    expect(content.hasClass("is-panel-hidden")).toBe(true);
-    expect(action.el.attributes["aria-label"]).toBe(SHOW_PANEL_TITLE);
-    expect(app.workspace.layoutSaves).toBe(1);
-    action.callback({});
-    expect(content.hasClass("is-panel-hidden")).toBe(false);
-    expect(app.vault.modified).toEqual([]);
-  });
-
-  it("is kept in the view state; a state without the flag leaves it alone", async () => {
-    const first = open().view;
-    first.setPanelHidden(true);
-    const state = first.getState();
-    expect(state[PANEL_HIDDEN_STATE]).toBe(true);
-    const second = open().view;
-    await second.setState(state, {} as never);
-    expect(second.isPanelHidden).toBe(true);
-    await second.setState({ file: "Maps/other.map" }, {} as never);
-    expect(second.isPanelHidden).toBe(true);
   });
 });
