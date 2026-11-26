@@ -1043,6 +1043,14 @@
   visibility: hidden;
 }
 
+.mythical-map-view .mythical-map-panel-title {
+  flex: 1;
+}
+
+.mythical-map-view.is-panel-hidden .mythical-map-panel {
+  display: none;
+}
+
 /* Icon suggestions: rendered in Obsidian's popup, outside the map view. */
 .mythical-map-view.mythical-map-icon-suggestion {
   display: flex;

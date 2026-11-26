@@ -110,6 +110,11 @@ export class Workspace extends MockEvents {
   getActiveFile(): TFile | null {
     return this.activeFile;
   }
+  /** Counts layout save requests. */
+  layoutSaves = 0;
+  requestSaveLayout(): void {
+    this.layoutSaves++;
+  }
   /** Every leaf handed out by `getLeaf`, so tests can see what was opened. */
   leaves: WorkspaceLeaf[] = [];
   getLeaf(_newLeaf?: unknown): WorkspaceLeaf {
@@ -417,6 +422,10 @@ export abstract class TextFileView extends View {
   async onUnloadFile(file: TFile): Promise<void> {
     this.unloadedFiles.push(file);
   }
+  getState(): Record<string, unknown> {
+    return this.file ? { file: this.file.path } : {};
+  }
+  async setState(_state: unknown, _result: unknown): Promise<void> {}
   /** Test helper: simulate Obsidian opening `file` with contents `data`. */
   loadFile(file: TFile, data: string): void {
     this.file = file;

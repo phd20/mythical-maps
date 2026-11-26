@@ -27,6 +27,8 @@ export interface FeaturePanelHost {
   notify(message: string): void;
   /** Show the row's context menu (bead 5.6: Delete). */
   contextMenu?(id: string, event: MouseEvent): void;
+  /** Hide the whole panel. Omitted: no hide button. */
+  hide?(): void;
 }
 
 export const PANEL_TITLE = "Features";
@@ -36,6 +38,7 @@ export const EMPTY_TEXT = "No features yet";
 export const HIDE_LABEL = "Hide";
 export const SHOW_LABEL = "Show";
 export const RENAME_LABEL = "Rename folder";
+export const HIDE_PANEL_LABEL = "Hide panel";
 
 const TYPE_ICONS: Record<FeatureType, string> = {
   pin: "map-pin",
@@ -80,6 +83,13 @@ export class FeaturePanel {
     add.setAttribute("aria-label", NEW_FOLDER_LABEL);
     setIcon(add, "folder-plus");
     add.addEventListener("click", () => this.createFolder());
+    const hide = this.host.hide?.bind(this.host);
+    if (hide) {
+      const button = header.createEl("button", { cls: "mythical-map-panel-button mythical-map-panel-hide clickable-icon" });
+      button.setAttribute("aria-label", HIDE_PANEL_LABEL);
+      setIcon(button, "panel-right-close");
+      button.addEventListener("click", () => hide());
+    }
     this.listEl = this.el.createDiv({ cls: "mythical-map-panel-list" });
     // Dropping on the empty area below the rows moves the feature to the end of the root.
     this.listEl.addEventListener("dragover", (evt) => {

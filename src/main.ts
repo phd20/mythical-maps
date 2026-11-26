@@ -8,6 +8,8 @@ import {
   SET_DEFAULT_VIEW_COMMAND_ID,
   SET_DEFAULT_VIEW_COMMAND_NAME,
   TOGGLE_LOCK_COMMAND_ID,
+  TOGGLE_PANEL_COMMAND_ID,
+  TOGGLE_PANEL_COMMAND_NAME,
   UNDO_COMMAND_ID,
 } from "./obsidian/mapView";
 import { registerMapLinkMaintenance } from "./obsidian/renameListener";
@@ -94,6 +96,16 @@ export default class MythicalMapsPlugin extends Plugin {
         const view = activeMapView();
         if (!view) return false;
         if (!checking) view.toggleLock();
+        return true;
+      },
+    });
+    this.addCommand({
+      id: TOGGLE_PANEL_COMMAND_ID,
+      name: TOGGLE_PANEL_COMMAND_NAME,
+      checkCallback: (checking) => {
+        const view = activeMapView();
+        if (!view) return false;
+        if (!checking) view.togglePanel();
         return true;
       },
     });

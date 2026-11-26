@@ -78,6 +78,7 @@ import {
   TextFileView,
   type HoverPopover,
   type TFile,
+  type ViewStateResult,
   type WorkspaceLeaf,
 } from "obsidian";
 import { createFeatureOp, createShapeOp, type CreatableKind, type DrawableKind, type LatLngLike } from "../core/create";
@@ -113,6 +114,12 @@ export const LOCK_TITLE = "Lock map";
 export const UNLOCK_TITLE = "Unlock map";
 export const ADD_PIN_HERE = "Add pin here";
 export const DELETE_FEATURE = "Delete";
+export const TOGGLE_PANEL_COMMAND_ID = "toggle-feature-panel";
+export const TOGGLE_PANEL_COMMAND_NAME = "Show or hide the feature panel";
+export const HIDE_PANEL_TITLE = "Hide feature panel";
+export const SHOW_PANEL_TITLE = "Show feature panel";
+/** Key of the hidden-panel flag in the view state kept with the workspace layout. */
+export const PANEL_HIDDEN_STATE = "mythicalPanelHidden";
 
 /** An op a user edit can apply; `replace` is reserved for reloading from disk. */
 export type EditOp = Exclude<Op, { type: "replace" }>;
@@ -192,6 +199,10 @@ export class MapView extends TextFileView {
   private selectionListeners = new Set<(id: string | null) => void>();
   /** The header lock toggle, once the view is loaded. */
   private lockActionEl: HTMLElement | null = null;
+  /** Whether the feature panel is hidden; per tab, kept in the view state, never in the file. */
+  private panelHidden = false;
+  /** The header panel toggle, once the view is loaded. */
+  private panelActionEl: HTMLElement | null = null;
 
   /** Creates the Leaflet base map. Replaceable so tests can run without a DOM. */
   mountMap: MountBaseMap = mountBaseMap;
@@ -257,6 +268,8 @@ export class MapView extends TextFileView {
     super.onload();
     this.lockActionEl = this.addAction("lock-open", LOCK_TITLE, () => this.toggleLock());
     this.refreshLockUi();
+    this.panelActionEl = this.addAction("panel-right", HIDE_PANEL_TITLE, () => this.togglePanel());
+    this.refreshPanelUi();
     this.registerEvent(this.app.workspace.on("quit", (tasks) => tasks.add(() => this.flush())));
   }
 
@@ -501,6 +514,7 @@ export class MapView extends TextFileView {
     this.destroyMap();
     this.setStore(null);
     this.lockActionEl = null;
+    this.panelActionEl = null;
     super.onunload();
   }
 
@@ -703,6 +717,44 @@ export class MapView extends TextFileView {
     this.setLocked(!this.locked);
   }
 
+  /** Whether the feature panel (with the properties form) is hidden. */
+  get isPanelHidden(): boolean {
+    return this.panelHidden;
+  }
+
+  setPanelHidden(hidden: boolean): void {
+    if (hidden === this.panelHidden) return;
+    this.panelHidden = hidden;
+    this.refreshPanelUi();
+    this.app.workspace.requestSaveLayout();
+  }
+
+  togglePanel(): void {
+    this.setPanelHidden(!this.panelHidden);
+  }
+
+  override getState(): Record<string, unknown> {
+    return { ...super.getState(), [PANEL_HIDDEN_STATE]: this.panelHidden };
+  }
+
+  override async setState(state: unknown, result: ViewStateResult): Promise<void> {
+    const hidden = (state as Record<string, unknown> | null)?.[PANEL_HIDDEN_STATE];
+    // A state without the flag (opening another file in this tab) keeps the current choice.
+    if (typeof hidden === "boolean") {
+      this.panelHidden = hidden;
+      this.refreshPanelUi();
+    }
+    await super.setState(state, result);
+  }
+
+  private refreshPanelUi(): void {
+    this.contentEl.toggleClass("is-panel-hidden", this.panelHidden);
+    const el = this.panelActionEl;
+    if (!el) return;
+    el.setAttribute("aria-label", this.panelHidden ? SHOW_PANEL_TITLE : HIDE_PANEL_TITLE);
+    el.toggleClass("is-active", !this.panelHidden);
+  }
+
   private stepHistory(direction: "undo" | "redo"): boolean {
     const store = this.store;
     if (this.viewState.kind !== "ok" || !store) return false;
@@ -865,7 +917,9 @@ export class MapView extends TextFileView {
     if (!imageUrl) this.renderMissingImage(el, map.image.path);
     this.statusEl = el.createDiv({ cls: "mythical-map-status" });
     this.fillStatus(this.statusEl, map);
+    this.refreshPanelUi();
     this.panel = new FeaturePanel(el, {
+      hide: () => this.setPanelHidden(true),
       edit: (op) => this.edit(op),
       select: (id) => {
         this.selectFeature(id);
