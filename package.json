@@ -17,6 +17,8 @@
     "css": "node scripts/scope-leaflet-css.mjs"
   },
   "license": "MIT",
+  "author": "PhD20",
+  "repository": { "type": "git", "url": "git+https://github.com/PhD20/mythical-maps.git" },
   "dependencies": {
     "@geoman-io/leaflet-geoman-free": "2.20.8",
     "fractional-indexing": "4.0.0",

@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "minAppVersion": "1.5.0",
   "description": "TTRPG maps as first-class .map files: pins, labels, regions and paths linked to your notes, with no code blocks in notes.",
-  "author": "Mythical Maps",
+  "author": "PhD20",
+  "authorUrl": "https://github.com/PhD20",
   "isDesktopOnly": false
 }

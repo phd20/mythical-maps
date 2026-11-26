@@ -1,167 +1,82 @@
 # Mythical Maps
 
-An Obsidian plugin for tabletop RPG maps. A map is its own `.map` file (versioned JSON) holding one image and its pins, labels, regions and paths. The `.map` file is the only source of the map's data: nothing is stored in your notes, and there is no code-block syntax. Pins link to notes by linktext, so hovering a pin shows Obsidian's page preview and clicking it opens the note.
+Interactive tabletop RPG maps inside [Obsidian](https://obsidian.md). Drop pins, labels, regions and paths on a map image, link pins to your notes, and open city maps from a world map.
 
-The coordinate frame matches [LegendKeeper](https://www.legendkeeper.com/)'s, so tiling or imports can be added later without changing stored coordinates. LegendKeeper is a design reference only: there is no integration.
+> [!WARNING]
+> **Beta software (version 0.1.0).** Expect bugs and rough edges, and expect things to change, possibly including the `.map` file format. **Back up your vault before using it**, or try it in a test vault first. It is provided as is, without warranty. Please [report problems](https://github.com/PhD20/mythical-maps/issues).
 
-Status: version 0.1.0, pre-release. Desktop is the target.
+## Why
 
-## Install and develop
+- **Your notes stay clean.** A map is its own `.map` file. There is no code-block syntax, and no map data is ever written into your notes.
+- **Linked to your world.** Hover a pin to preview its note; click it to open the note.
+- **Plain files.** A `.map` file is readable JSON that works with git and sync tools.
 
-Requirements: Node.js and Obsidian 1.5.0 or newer.
+## Requirements
 
-```bash
-npm install
-npm run fixtures   # fixture images for the test vault (gitignored)
-npm run dev        # watch build into test-vault/.obsidian/plugins/mythical-maps/
-npm run check      # tsc --noEmit + eslint + vitest + production build
-```
+- Obsidian 1.5.0 or newer on desktop. Mobile is untested.
+- A map image: png, jpg, jpeg, webp, gif, bmp, avif or svg. Images up to about 8000 pixels wide are the target.
 
-Open `test-vault/` as a vault in Obsidian (Open folder as vault) and enable the plugin; see `test-vault/README.md` for the fixture list. To use the plugin in another vault, run `npm run build` and copy `main.js`, `manifest.json` and `styles.css` into `<vault>/.obsidian/plugins/mythical-maps/`.
+## Install
 
-Layout:
+Mythical Maps is not in Obsidian's community plugin directory, so install it by hand:
 
-```
-src/core/      pure TypeScript (no obsidian/leaflet imports): schema, parse/serialize, frame, ids,
-               feature tree, document store (lock + undo), links, style resolution
-src/obsidian/  plugin entry pieces: settings, the .map view, commands, vault map index, rename listener
-src/ui/        Leaflet layers, Geoman editing, toolbar, feature panel
-test-vault/    manual-test vault; ACCEPTANCE.md is the acceptance checklist
-```
+1. Open the [latest release](https://github.com/PhD20/mythical-maps/releases) and download `main.js`, `manifest.json` and `styles.css`.
+2. In your vault folder, create `.obsidian/plugins/mythical-maps/` and put the three files in it. `.obsidian` is a hidden folder (on macOS, press Cmd+Shift+. in Finder to show it).
+3. In Obsidian, open **Settings → Community plugins**. Turn off Restricted mode if it is on, refresh the list, and enable **Mythical Maps**.
 
-Requirements live in `openspec/specs/`; the v1 proposal and design are in `openspec/changes/archive/2026-11-26-add-map-core-v1/`.
+To update, replace the three files and reload Obsidian.
 
-## Using it
+## Make your first map
 
-- **Create a map.** Run **New map from image** from the command palette with an image file active, or right-click an image in the file explorer. It creates `<image name>.map` next to the image (`<name> 1.map`, `<name> 2.map` and so on if the name is taken), sized to the image, and opens it. Supported images: png, jpg, jpeg, webp, gif, bmp, avif, svg.
-- **Navigate.** Mouse wheel and trackpad pinch zoom continuously around the pointer; drag pans; double-click and the zoom buttons zoom in animated steps. Zoom runs from the level that fits the whole image up to native zoom `z + 2`. The **Fit map to view** toolbar button refits.
-- **Edit.** The toolbar has Select, Pin, Label, Region and Path modes. Pin and Label click a position. Region and Path draw vertices: a region needs at least 3 and a path at least 2, otherwise nothing is created. Shift-click, or the map context menu, adds a pin at that spot in any mode. New features go into the selected folder (or the root) as the last sibling. In Select mode, drag pins and labels, and drag, add or remove vertices of regions and paths. The feature panel (a sidebar inside the view) shows the folder tree (drag to reorder or reparent, eye toggle to hide) and the selected feature's properties: name, link, style fields, label visibility, hidden flag and visibility range. Delete or Backspace removes the selection; deleting a folder with descendants asks first.
-- **Lock.** The lock action in the view header (or **Toggle map lock**) refuses every create, edit, move, reshape, reorder and delete, enforced in the document model rather than only in the UI. Pan, zoom, hover and following links keep working. Lock state belongs to the open view: it is never saved in the file and each view starts unlocked.
-- **Undo and redo.** Mod+Z and Mod+Shift+Z while the map view is active (not while a text field has focus), or the **Undo map edit** and **Redo map edit** commands. History is per open view, up to 200 steps, and is cleared when the file is reloaded from disk or another file is opened.
-- **Saving.** Edits are saved to the `.map` file through Obsidian's debounced save, in canonical form, and are flushed when the tab closes, the file is switched or Obsidian quits. A file that failed to parse or validate is never written to.
-- **Live reload.** If the open file changes on disk (Claude, git, sync) and the view has no unsaved edits, the map re-renders in place and keeps its pan and zoom. With unsaved edits the local version is kept, a notice says the file changed, and the pending save wins (last write wins).
+1. **Add an image** to your vault.
+2. **Create the map.** Right-click the image in the file explorer and choose **New map from image**. A `.map` file appears next to the image and opens.
+3. **Look around.** Drag to pan; scroll or pinch to zoom.
+4. **Add a pin.** Choose **Pin** in the toolbar and click the map. **Label**, **Region** and **Path** work the same way; for a region or path, click each corner, then click the first or last point to finish.
+5. **Name and link it.** Choose **Select** and click the pin. In the **Properties** panel, set its name, then use **Choose…** to pick a note.
+6. **Use the map.** Click the lock icon at the top of the tab. A locked map can't be changed by accident, and **clicking a pin now opens its note**.
 
-### Commands
+> [!TIP]
+> If clicking a pin only selects it, the map is unlocked. Lock it to open notes by clicking. Every map opens unlocked.
 
-| Command | Notes |
+## Everyday controls
+
+| To do this | Do this |
 | --- | --- |
-| New map from image | Available when the active file is an image; also on the file-menu of image files |
-| Set current view as default | Saves the current centre and zoom as `viewport`; active map view only |
-| Undo map edit / Redo map edit | Active map view with something to undo or redo |
-| Toggle map lock | Active map view |
-| Find broken pins | Scans every `.map` file in the vault and lists pins whose link does not resolve, grouped by map, with **Open map** (centres on and selects the pin) and **Relink…**. Shows "No broken pins" when clean |
+| Move a pin or label | Unlocked, in Select mode, drag it |
+| Reshape a region or path | Unlocked, in Select mode, drag its points |
+| Add a pin from any mode | Shift-click, or right-click the map and choose **Add pin here** |
+| Delete the selected item | Delete or Backspace |
+| Undo / redo | Cmd/Ctrl+Z / Cmd/Ctrl+Shift+Z |
+| Organise items | In the **Features** panel, create folders, drag items into them, and use the eye icon to hide them |
+| Find an item | Click it in the **Features** panel to centre the map on it |
+| Save the opening view | Run **Set current view as default** |
+| Show the whole map | **Fit map to view** in the toolbar |
 
-### Links and the maps property
+## Link maps together
 
-A pin's `link` is Obsidian linktext (no brackets, optionally `Note#Heading`), resolved the way a wikilink in the map file would be, so moving a note to another folder keeps the link working as long as the note name is unique. The feature panel has a fuzzy note picker that stores the shortest unambiguous linktext.
+Give a note a `maps` property that lists `.map` files:
 
-- **Hover and click.** Hovering a linked pin triggers Obsidian's page preview (when the Page Preview core plugin is on). Clicking opens the note, honouring Obsidian's modifier keys for a new tab or split. In an edit mode, a click selects the pin instead.
-- **Drill-down.** If a pin's linked note has a frontmatter list under the maps property (default `maps`) with links to `.map` files, the pin shows a "has map" indicator and its popup and context menu list **Open map: <name>** for each entry that resolves. Entries that don't resolve to a `.map` file are ignored silently. Example frontmatter: `maps: ["[[Westmarch.map]]", "[[Westmarch Sewers.map]]"]` (an alias after `|` is used as the displayed name).
-- **Rename listener.** When a note, image or folder is renamed or moved inside Obsidian, every `.map` file that linked to it is rewritten atomically (`vault.process`): each affected pin `link` becomes the new shortest linktext and a matching `image.path` is updated. Nothing else in those files changes.
-- **Broken links.** A link that does not resolve (for example the note was renamed outside Obsidian) is shown with a broken-link badge and a **Relink…** action in the pin's popup. The plugin never clears or deletes a link because it does not resolve. Use **Find broken pins** to review the whole vault.
-
-Map links are not part of Obsidian's backlinks or graph.
-
-### Style overrides
-
-Off by default. When **Enable frontmatter style overrides** is on and a property name is configured, a linked pin takes its icon, colour or shape from the linked note's frontmatter instead of its stored style, for example a faction colour from `faction-color: "#AA2233"`. Only valid values count (`#RRGGBB` for colour, a known shape name, a non-empty icon name); anything invalid falls back to the pin's stored style. A one-element list is read as its single value. Overrides apply to linked pins only, never change the `.map` file, and update live when the note's frontmatter changes.
-
-Each style field resolves in this order: valid frontmatter override, the feature's stored style, the plugin default for that feature type.
-
-## Settings
-
-Settings are stored in the plugin's `data.json` and contain no map data. Invalid stored values fall back to the default.
-
-| Setting | Default | Notes |
-| --- | --- | --- |
-| Maps property | `maps` | Frontmatter property listing a note's `.map` files (drill-down). Cannot be empty |
-| Enable frontmatter style overrides | off | Master switch for the three properties below |
-| Icon property | empty (disabled) | Frontmatter property read as a Lucide icon name |
-| Colour property | empty (disabled) | Frontmatter property read as `#RRGGBB` |
-| Shape property | empty (disabled) | Frontmatter property read as a pin shape |
-| Default pin glyph | `map-pin` | Lucide icon name used when a pin stores none |
-| Default pin colour | `#A7A7A7` | `#RRGGBB` |
-| Default pin shape | `pin` | One of `pin`, `diamond`, `flag`, `marker`, `shield`, `circle`, `banner`, `arch`, `none` |
-| Default pin size | `medium` | `medium` or `small` |
-
-Defaults for other feature types are fixed (no settings): labels are `md`, `#FFFFFF` with a `#000000` outline; regions `#3B82F6`, fill opacity 0.3, solid fill and border; paths `#3B82F6`, width 3, solid, opacity 1.
-
-## The `.map` file format
-
-A `.map` file is pretty-printed JSON (2-space indent, trailing newline). The plugin always writes it in one canonical form: fixed key order, features sorted by `parentId`, then `rank`, then `id`, and coordinate pairs on one line. Loading a canonical file and saving it with no edits changes nothing, which keeps git diffs clean and makes the file safe for Claude or scripts to edit. Unknown keys are rejected, and a file that fails validation is shown with every issue and its JSON path and is never overwritten.
-
-Top-level fields:
-
-| Field | Meaning |
-| --- | --- |
-| `type` | Must be `"mythical-map"`. A file without it is reported as "not a Mythical map" and left untouched |
-| `version` | Integer, currently `1`. Older versions go through `migrate()`; a newer version is refused with an "upgrade the plugin" message |
-| `image` | `{ "path", "width", "height" }`: vault-relative image path and its pixel size |
-| `viewport` | Optional `{ "center": [lat, lng], "zoom" }` opening view. Without it the map opens fitted |
-| `features` | Flat array of features; hierarchy is expressed through `parentId` |
-
-Every feature has `id` (8 characters matching `^[a-z][0-9a-z]{7}$`; 24-character cuid2 ids are also accepted), `type`, `rank` (a fractional-index string that orders siblings), and optionally `name`, `parentId` (must name a `folder`), `isHidden`, `visibilityRange` (`[min, max]` within 0 to 1, mapped linearly onto the map's min to max zoom) and `labelVisibility` (`always`, `hover` or `never`). Field names follow LegendKeeper's Feature schema, except `link` (Obsidian linktext) in place of `uri`.
-
-| Type | Geometry and extra fields | `style` fields |
-| --- | --- | --- |
-| `pin` | `pos: [lat, lng]`, optional `link` | `iconGlyph` (Lucide name), `iconColor`, `iconShape`, `iconSize` |
-| `label` | `pos` | `labelSize`, `textColor`, `textEffect`, `textEffectColor` |
-| `region` | `polygon` (3 or more vertices) or `polygons` | `color`, `fillOpacity`, `fillStyle`, `borderStyle`, plus the text fields |
-| `path` | `polyline` (2 or more vertices) | `color`, `strokeWidth`, `strokeStyle`, `strokeOpacity`, plus the text fields |
-| `folder` | none; groups children and can be hidden | none |
-
-Colours are `#RRGGBB`. A hidden folder hides every descendant. An unknown `iconGlyph` renders as a dot.
-
-Example (from `test-vault/Maps/all-types.map`, trimmed):
-
-```json
-{
-  "type": "mythical-map",
-  "version": 1,
-  "image": { "path": "Maps/fixture-4k.png", "width": 4096, "height": 3072 },
-  "viewport": { "center": [-96, 128], "zoom": 2 },
-  "features": [
-    { "id": "ftowns01", "type": "folder", "name": "Towns", "rank": "a0", "isHidden": false },
-    { "id": "pwestm01", "type": "pin", "name": "Westmarch", "rank": "a1",
-      "pos": [-96, 128], "link": "Westmarch",
-      "style": { "iconGlyph": "castle", "iconColor": "#3366CC", "iconShape": "pin", "iconSize": "medium" } },
-    { "id": "rdarkf01", "type": "region", "name": "Dark Forest", "rank": "a3",
-      "polygon": [[-32, 160], [-32, 224], [-96, 224], [-96, 160]],
-      "style": { "color": "#2E7D32", "fillOpacity": 0.35, "borderStyle": "solid" } },
-    { "id": "prusty01", "type": "pin", "name": "Rusty Flagon", "parentId": "ftowns01", "rank": "a0",
-      "pos": [-64, 96], "link": "Rusty Flagon" }
-  ]
-}
+```yaml
+---
+maps: ["[[Westmarch.map]]", "[[Westmarch Sewers.map]]"]
+---
 ```
 
-(The hand-written fixtures use compact one-line features; the plugin rewrites them in canonical form the first time it saves.)
+A pin linked to that note shows a map badge. Hover or right-click the pin and choose **Open map**.
 
-## Coordinate frame
+## Good to know
 
-The frame is identical to LegendKeeper's, using Leaflet's `CRS.Simple`. For an image of `w` by `h` pixels:
+- Renaming or moving notes and images **inside Obsidian** updates your maps. Renaming them outside Obsidian leaves a broken-link badge; run **Find broken pins** to repair them.
+- Pin links don't appear in Obsidian's backlinks or graph.
+- Maps can't be embedded in notes (`![[X.map]]` does nothing useful yet).
+- There is no fog of war, measuring tool, grid or image overlay.
+- The `.map` extension is also used by JavaScript source maps. If your vault contains code, those files open as "not a Mythical map" and are left untouched.
 
-- native zoom `z = max(0, ceil(log2(max(w, h) / 256)))`
-- image pixel `(x, y)`, measured from the top-left, maps to `pos = [-y / 2^z, x / 2^z]` (`[lat, lng]`: latitude is negative downwards, so Y points up)
-- the image covers bounds `[[-h / 2^z, 0], [0, w / 2^z]]`
+## Learn more
 
-For example, an 8192 by 6144 image has `z = 5`, and its bottom-right pixel `(8192, 6144)` is `pos = [-192, 256]`. A 4096 by 3072 image has `z = 4` and the same bounds. Zoom runs from the fit-to-view level up to `z + 2`, and zoom is continuous (`zoomSnap: 0`), so `viewport.zoom` can be fractional. The conversion functions (`pixelToPos`, `posToPixel`) are exact inverses; see `src/core/frame.ts`.
+- [Reference](docs/reference.md): features, settings, style overrides, the file format and all known limits
+- [Development](docs/development.md): build from source and run the tests
 
-The map is a single `imageOverlay` (no tiling). A later tile pyramid would fit the same frame with no data change.
+## Credits and license
 
-## Known limits
-
-- **No tiling.** The whole image is decoded in memory. Images up to about 8k pixels are the target. A partial check on an 8192 by 6144 image with 200 pins showed about 11 MB heap growth on open, with no problem found; pan, zoom and leak measurements were not taken (see design.md, Risks).
-- **Mobile is untested.** The manifest allows mobile (`isDesktopOnly: false`) but nothing is verified there; touch drawing and editing are best effort.
-- **Pop-out windows.** Pan, zoom and dragging work through a Leaflet shim. Geoman's optional keyboard shortcuts (Esc, Enter) do not work in pop-outs: finish a shape by clicking its first or last vertex, and switch mode to cancel.
-- **Icons are Lucide, not FontAwesome.** `iconGlyph` stores a Lucide icon name from Obsidian's bundled set; an unknown name falls back to a dot. LegendKeeper's FontAwesome names will not match.
-- **One base image per map.** No overlays, fog of war, distance measurement, scale, grids or free drawing.
-- **No embeds.** `![[X.map]]` in a note is not supported.
-- **Not in backlinks or the graph.** Pin links are stored in the `.map` file, not in a note.
-- **Renames outside Obsidian** (Claude, git, a file manager) are not rewritten; affected pins show the broken-link badge and keep their link until you relink them. The "Find broken pins" list shows each pin's link text, not the pin's name.
-- **Concurrent edits.** If the same map is open in two panes or edited externally while the view has unsaved changes, the last write wins.
-- **Undo history** is per open view, capped at 200 steps, and cleared by an external reload.
-- **Extension.** The `.map` extension can clash with JavaScript source-map files in vaults that contain code. Such files open as "not a Mythical map" and are never modified. See design.md, Open Question 1.
-
-## License
-
-MIT
+[MIT](LICENSE) © 2026 PhD20. Bundles Leaflet, Leaflet-Geoman, Zod, fractional-indexing and their dependencies; see [third-party notices](THIRD-PARTY-NOTICES.md). The map coordinate system matches [LegendKeeper](https://www.legendkeeper.com/)'s as a design reference. This project is not affiliated with LegendKeeper or Obsidian.
