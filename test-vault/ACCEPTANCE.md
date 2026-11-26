@@ -1,6 +1,6 @@
 # Acceptance checklist (task 8.2)
 
-Walk every scenario of `openspec/changes/add-map-core-v1/specs/*/spec.md` in this vault and tick it. 65 scenarios: map-file 15, map-view 16, map-editing 15, note-links 12, plugin-settings 7.
+Walk every scenario of `openspec/specs/*/spec.md` in this vault and tick it. 65 scenarios: map-file 15, map-view 16, map-editing 15, note-links 12, plugin-settings 7.
 
 ## Setup
 

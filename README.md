@@ -29,7 +29,7 @@ src/ui/        Leaflet layers, Geoman editing, toolbar, feature panel
 test-vault/    manual-test vault; ACCEPTANCE.md is the acceptance checklist
 ```
 
-Design and requirements live in `openspec/changes/add-map-core-v1/`.
+Requirements live in `openspec/specs/`; the v1 proposal and design are in `openspec/changes/archive/2026-11-26-add-map-core-v1/`.
 
 ## Using it
 

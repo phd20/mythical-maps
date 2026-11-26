@@ -104,7 +104,7 @@ test/mocks/obsidian.ts   hand-written mock, aliased for vitest
 test-vault/              manual-test vault with fixture images and .map files
 ```
 
-See `openspec/changes/add-map-core-v1/design.md` (D1–D11) for the reasoning.
+See `openspec/changes/archive/2026-11-26-add-map-core-v1/design.md` (D1–D11) for the reasoning.
 
 ## Conventions & Patterns
 
