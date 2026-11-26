@@ -175,7 +175,7 @@ Bead conventions (for loop + beads implementation)
   - Depends: 4.3, 4.6
   - Accept: the 8192×6144 fixture with about 200 pins pans and zooms smoothly on desktop; heap usage is recorded in `design.md` under Risks; any problem is filed as a follow-up bead (tiling)
   - Verify: manual
-- [ ] 8.2 Full acceptance pass and README
+- [x] 8.2 Full acceptance pass and README
   - Depends: 3.3, 4.2, 4.5, 4.6, 5.3, 5.6, 5.7, 6.3, 6.5, 6.7, 7.1
   - Accept: every scenario in `specs/` has been walked in `test-vault/` and ticked; README documents the `.map` format, the coordinate frame, the settings and the known limits; the extension decision (Open Question 1) is recorded
   - Verify: manual
