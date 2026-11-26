@@ -32,7 +32,7 @@ To update, replace the three files and reload Obsidian.
 2. **Create the map.** Right-click the image in the file explorer and choose **New map from image**. A `.map` file appears next to the image and opens.
 3. **Look around.** Drag to pan; scroll or pinch to zoom.
 4. **Add a pin.** Choose **Pin** in the toolbar and click the map. **Label**, **Region** and **Path** work the same way; for a region or path, click each corner, then click the first or last point to finish.
-5. **Name and link it.** Choose **Select** and click the pin. In the **Properties** panel, set its name, then use **Choose…** to pick a note.
+5. **Name and link it.** Choose **Select** and click the pin. In the **Properties** panel, use **Choose…** to pick a note; an unnamed pin takes the note's name. Type in **Icon** to search icons, and use the swatch beside a colour to pick it.
 6. **Use the map.** Click the lock icon at the top of the tab. A locked map can't be changed by accident, and **clicking a pin now opens its note**.
 
 > [!TIP]
@@ -49,6 +49,7 @@ To update, replace the three files and reload Obsidian.
 | Undo / redo | Cmd/Ctrl+Z / Cmd/Ctrl+Shift+Z |
 | Organise items | In the **Features** panel, create folders, drag items into them, and use the eye icon to hide them |
 | Find an item | Click it in the **Features** panel to centre the map on it |
+| Hide or show the panel | The panel icon at the top of the tab, or run **Show or hide the feature panel** |
 | Save the opening view | Run **Set current view as default** |
 | Show the whole map | **Fit map to view** in the toolbar |
 
