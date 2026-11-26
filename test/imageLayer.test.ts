@@ -9,16 +9,37 @@ const bounds: Bounds = [
   [0, 192],
 ];
 
+class FakeClassList {
+  names = new Set<string>();
+  add(c: string): void {
+    this.names.add(c);
+  }
+  toggle(c: string, on: boolean): void {
+    if (on) this.names.add(c);
+    else this.names.delete(c);
+  }
+}
+
+class FakeDiv {
+  classList = new FakeClassList();
+  children: FakeCanvas[] = [];
+  appendChild(c: FakeCanvas): void {
+    this.children.push(c);
+  }
+}
+
 class FakeCanvas {
   width = 300;
   height = 150;
-  classes: string[] = [];
+  classList = new FakeClassList();
+  get shown(): boolean {
+    return this.classList.names.has("mythical-map-image-shown");
+  }
   drawn: unknown[][] = [];
   context: { drawImage: (...args: unknown[]) => void } | null = {
     drawImage: (...args) => void this.drawn.push(args),
   };
   listeners: Record<string, Array<() => void>> = {};
-  classList = { add: (c: string) => void this.classes.push(c) };
   getContext(): FakeCanvas["context"] {
     return this.context;
   }
@@ -44,12 +65,18 @@ class FakeBitmap {
   }
 }
 
-function setup(options: { bitmap?: [number, number]; noContext?: boolean; throwOnDraw?: boolean; decodeFails?: boolean } = {}) {
+function setup(options: { bitmap?: [number, number]; noContext?: boolean; throwOnDraw?: boolean; decodeFails?: boolean; dpr?: number } = {}) {
   const canvases: FakeCanvas[] = [];
+  const divs: FakeDiv[] = [];
   const bitmaps: FakeBitmap[] = [];
   const blobs: Blob[] = [];
   const ownerDocument = {
-    createElement(tag: string): FakeCanvas {
+    createElement(tag: string): FakeCanvas | FakeDiv {
+      if (tag === "div") {
+        const div = new FakeDiv();
+        divs.push(div);
+        return div;
+      }
       expect(tag).toBe("canvas");
       const c = new FakeCanvas();
       if (options.noContext) c.context = null;
@@ -64,8 +91,21 @@ function setup(options: { bitmap?: [number, number]; noContext?: boolean; throwO
       return c;
     },
     defaultView: {
-      createImageBitmap(blob: Blob): Promise<FakeBitmap> {
-        blobs.push(blob);
+      devicePixelRatio: options.dpr ?? 1,
+      setTimeout(fn: () => void): void {
+        setTimeout(fn, 0);
+      },
+      createImageBitmap(from: Blob | FakeBitmap, resize?: ImageBitmapOptions): Promise<FakeBitmap> {
+        if (from instanceof FakeBitmap) {
+          expect(resize?.resizeQuality).toBe("low");
+          // Each copy is made from the one twice its size.
+          expect(from.closed).toBe(false);
+          expect(from.width).toBe((resize?.resizeWidth ?? 0) * 2);
+          const copy = new FakeBitmap(resize?.resizeWidth ?? 0, resize?.resizeHeight ?? 0);
+          bitmaps.push(copy);
+          return Promise.resolve(copy);
+        }
+        blobs.push(from);
         if (options.decodeFails) return Promise.reject(new Error("bad image"));
         const bitmap = new FakeBitmap(...(options.bitmap ?? [6144, 8192]));
         bitmaps.push(bitmap);
@@ -77,7 +117,7 @@ function setup(options: { bitmap?: [number, number]; noContext?: boolean; throwO
   const container = { ownerDocument } as unknown as HTMLElement;
   const add = (source: ImageSource | undefined, width = 6144, height = 8192) =>
     addImageLayer(map as never, container, { imageUrl: "app://map.webp", bounds, width, height, ...(source ? { source } : {}) });
-  return { map, add, canvases, bitmaps, blobs };
+  return { map, add, canvases, divs, bitmaps, blobs };
 }
 
 /** A source whose read resolves when the test says so. */
@@ -95,7 +135,10 @@ function source(extension = "webp", bytes: ArrayBuffer = new ArrayBuffer(8)) {
   };
 }
 
-const settle = () => new Promise((r) => setTimeout(r, 0));
+/** Several turns of the event loop: the layer yields between copies. */
+const settle = async () => {
+  for (let i = 0; i < 10; i++) await new Promise((r) => setTimeout(r, 0));
+};
 const urls = (map: MockMap) => map.layers.map((l) => l.url);
 
 let warn: ReturnType<typeof vi.spyOn>;
@@ -106,42 +149,82 @@ beforeEach(() => {
 afterEach(() => warn.mockRestore());
 
 describe("addImageLayer: cached image", () => {
-  it("shows nothing until the canvas is drawn, then adds the canvas overlay", async () => {
+  it("shows nothing until the canvases are drawn, then adds one overlay holding them", async () => {
     const t = setup();
     t.add(source());
     expect(t.map.layers).toEqual([]);
     await settle();
-    const [canvas] = t.canvases;
+    const [element] = t.divs;
     expect(t.map.layers).toHaveLength(1);
     const layer = t.map.layers[0] as MockImageOverlay;
-    expect(layer._image).toBe(canvas);
+    expect(layer._image).toBe(element);
     expect(layer.bounds).toEqual(bounds);
     expect(layer.options).toEqual({ interactive: false, pane: "tilePane" });
-    expect(canvas?.classes).toEqual(["leaflet-image-layer", "leaflet-zoom-animated"]);
+    expect([...(element?.classList.names ?? [])]).toEqual(["mythical-map-image-levels", "leaflet-image-layer", "leaflet-zoom-animated"]);
+    expect(element?.children).toEqual(t.canvases);
   });
 
-  it("sizes the canvas to the decoded image, draws it once and closes the bitmap", async () => {
+  it("draws the image and its halved copies once and closes every bitmap", async () => {
     const t = setup({ bitmap: [6000, 8000] });
     t.add(source("jpg"));
     await settle();
-    const [canvas] = t.canvases;
-    expect([canvas?.width, canvas?.height]).toEqual([6000, 8000]);
-    expect(canvas?.drawn).toEqual([[t.bitmaps[0], 0, 0]]);
-    expect(t.bitmaps[0]?.closed).toBe(true);
+    expect(t.canvases.map((c) => [c.width, c.height])).toEqual([
+      [6000, 8000],
+      [3000, 4000],
+      [1500, 2000],
+      [750, 1000],
+    ]);
+    expect(t.canvases.map((c) => c.drawn)).toEqual(t.bitmaps.map((b) => [[b, 0, 0]]));
+    expect(t.bitmaps.every((b) => b.closed)).toBe(true);
     expect(t.blobs[0]?.type).toBe("image/jpeg");
     expect(t.blobs[0]?.size).toBe(8);
   });
 
-  it("redraws into the same canvas when its context is restored", async () => {
+  // The bounds are 192 map units wide for 6144 pixels, so zoom 5 is native size.
+  it.each([
+    [5, 1, 0],
+    [4, 1, 1],
+    [3, 1, 2],
+    [2, 1, 3],
+    [-3, 1, 3],
+    [7, 1, 0],
+    [3, 2, 1],
+  ])("at zoom %d with pixel ratio %d displays copy %d only", async (zoom, dpr, shown) => {
+    const t = setup({ dpr });
+    t.map.zoom = zoom;
+    t.add(source());
+    await settle();
+    expect(t.canvases.map((c) => c.shown)).toEqual(t.canvases.map((_c, i) => i === shown));
+  });
+
+  it("changes the displayed copy as the map zooms, moves or resizes", async () => {
+    const t = setup();
+    t.map.zoom = 5;
+    t.add(source());
+    await settle();
+    for (const [event, zoom, level] of [
+      ["zoom", 3.5, 1],
+      ["zoomend", 2.5, 2],
+      ["moveend", 4.5, 0],
+      ["resize", 2, 3],
+    ] as const) {
+      t.map.zoom = zoom;
+      t.map.fire(event);
+      expect(t.canvases.map((c) => c.shown)).toEqual(t.canvases.map((_c, i) => i === level));
+    }
+  });
+
+  it("redraws into the same canvases when a context is restored", async () => {
     const t = setup();
     const from = source();
     t.add(from);
     await settle();
-    t.canvases[0]?.fire("contextrestored");
+    t.canvases[2]?.fire("contextrestored");
     await settle();
     expect(from.reads).toBe(2);
-    expect(t.canvases).toHaveLength(1);
-    expect(t.canvases[0]?.drawn).toHaveLength(2);
+    expect(t.canvases).toHaveLength(4);
+    expect(t.canvases.every((c) => c.drawn.length === 2)).toBe(true);
+    expect(t.divs).toHaveLength(1);
     expect(t.map.layers).toHaveLength(1);
     expect(t.bitmaps.every((b) => b.closed)).toBe(true);
   });
@@ -242,17 +325,36 @@ describe("addImageLayer: destroy", () => {
     expect(warn).not.toHaveBeenCalled();
   });
 
-  it("removes the layer, frees the canvas and stops listening", async () => {
+  it("stops between copies when destroyed", async () => {
+    const t = setup();
+    let handle: { destroy(): void } | null = null;
+    const original = FakeCanvas.prototype.getContext;
+    // Destroy just after the first canvas has been drawn.
+    const spy = vi.spyOn(FakeCanvas.prototype, "getContext").mockImplementation(function (this: FakeCanvas) {
+      queueMicrotask(() => handle?.destroy());
+      return original.call(this);
+    });
+    handle = t.add(source());
+    await settle();
+    spy.mockRestore();
+    expect(t.canvases).toHaveLength(1);
+    expect(t.map.layers).toEqual([]);
+    expect(t.bitmaps.every((b) => b.closed)).toBe(true);
+    expect(t.canvases[0]?.width).toBe(0);
+  });
+
+  it("removes the layer, frees every canvas and stops listening", async () => {
     const t = setup();
     const from = source();
     const handle = t.add(from);
     await settle();
     handle.destroy();
     handle.destroy();
-    const [canvas] = t.canvases;
     expect(t.map.layers).toEqual([]);
-    expect([canvas?.width, canvas?.height]).toEqual([0, 0]);
-    expect(canvas?.listeners.contextrestored).toEqual([]);
+    expect(t.canvases).toHaveLength(4);
+    expect(t.canvases.every((c) => c.width === 0 && c.height === 0)).toBe(true);
+    expect(t.canvases.every((c) => c.listeners.contextrestored?.length === 0)).toBe(true);
+    expect(Object.values(t.map.listeners).flat()).toEqual([]);
   });
 
   it("removes an ordinary image too", () => {

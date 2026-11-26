@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { CACHE_MAX_PIXELS, CACHE_MAX_SIDE, CACHE_MIN_PIXELS, isAnimatedImage, isCacheableSize, mayCacheImage } from "./imageCache";
+import {
+  CACHE_MAX_PIXELS,
+  CACHE_MAX_SIDE,
+  CACHE_MIN_PIXELS,
+  isAnimatedImage,
+  isCacheableSize,
+  levelFor,
+  LEVEL_MIN_SIDE,
+  levelSizes,
+  mayCacheImage,
+} from "./imageCache";
 
 const text = (s: string): number[] => [...s].map((c) => c.charCodeAt(0));
 const u32 = (n: number): number[] => [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255];
@@ -76,5 +86,53 @@ describe("isAnimatedImage", () => {
     expect(isAnimatedImage(new Uint8Array(text("GIF89a and the rest")))).toBe(false);
     // A length that points far past the end.
     expect(isAnimatedImage(png([...u32(0xffffffff), ...text("IHDR")]))).toBe(false);
+  });
+});
+
+describe("levelSizes", () => {
+  it("halves until the longest side is small enough", () => {
+    expect(levelSizes(6144, 8192)).toEqual([
+      { width: 6144, height: 8192 },
+      { width: 3072, height: 4096 },
+      { width: 1536, height: 2048 },
+      { width: 768, height: 1024 },
+    ]);
+  });
+
+  it("rounds odd sizes up", () => {
+    expect(levelSizes(4001, 3001).map((s) => [s.width, s.height])).toEqual([
+      [4001, 3001],
+      [2001, 1501],
+      [1001, 751],
+    ]);
+  });
+
+  it("keeps only the image when it is already small", () => {
+    expect(levelSizes(LEVEL_MIN_SIDE, 10)).toEqual([{ width: LEVEL_MIN_SIDE, height: 10 }]);
+  });
+});
+
+describe("levelFor", () => {
+  it("picks the smallest copy with at least one pixel per device pixel", () => {
+    // The measured cases in design D6.
+    expect([0.25, 0.35, 0.49, 0.69, 0.98].map((s) => levelFor(s, 4))).toEqual([2, 1, 1, 0, 0]);
+  });
+
+  it("switches exactly at each halving", () => {
+    expect(levelFor(0.5, 4)).toBe(1);
+    expect(levelFor(0.501, 4)).toBe(0);
+    expect(levelFor(0.125, 4)).toBe(3);
+    expect(levelFor(0.126, 4)).toBe(2);
+  });
+
+  it("stays within the copies there are", () => {
+    expect(levelFor(4, 4)).toBe(0);
+    expect(levelFor(0.001, 4)).toBe(3);
+    expect(levelFor(0.001, 1)).toBe(0);
+  });
+
+  it("shows the full image when the scale is unknown", () => {
+    expect(levelFor(Number.NaN, 4)).toBe(0);
+    expect(levelFor(0, 4)).toBe(0);
   });
 });

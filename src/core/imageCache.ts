@@ -12,6 +12,9 @@ export const CACHE_MAX_SIDE = 16_384;
 /** Most pixels a cached image may have: about 400 MB at 4 bytes per pixel. */
 export const CACHE_MAX_PIXELS = 100_000_000;
 
+/** Copies are halved until the longest side is at most this. */
+export const LEVEL_MIN_SIDE = 1024;
+
 /** Still raster formats. SVG is vector and GIF may animate, so both keep the image element. */
 const CACHEABLE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "webp", "bmp", "avif"]);
 
@@ -55,4 +58,33 @@ function isAnimatedWebp(bytes: Uint8Array): boolean {
  */
 export function isAnimatedImage(bytes: Uint8Array): boolean {
   return isAnimatedPng(bytes) || isAnimatedWebp(bytes);
+}
+
+export interface ImageSize {
+  width: number;
+  height: number;
+}
+
+/**
+ * The sizes of the copies kept for a cached image (design D6): the image
+ * itself, then each half the width and height of the one before, until the
+ * longest side is at most `LEVEL_MIN_SIDE`.
+ */
+export function levelSizes(width: number, height: number): ImageSize[] {
+  const sizes = [{ width, height }];
+  for (let k = 2; Math.max(width, height) / (k / 2) > LEVEL_MIN_SIDE; k *= 2) {
+    sizes.push({ width: Math.ceil(width / k), height: Math.ceil(height / k) });
+  }
+  return sizes;
+}
+
+/**
+ * Which of `count` copies to show when one image pixel covers `scale` device
+ * pixels: the smallest that still has at least one pixel per device pixel,
+ * which is how an `<img>` is sampled.
+ */
+export function levelFor(scale: number, count: number): number {
+  if (!(scale > 0)) return 0;
+  // The epsilon keeps an exact half, quarter, … from rounding to the finer copy.
+  return Math.min(count - 1, Math.max(0, Math.floor(Math.log2(1 / scale) + 1e-9)));
 }

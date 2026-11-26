@@ -4,7 +4,7 @@ Zooming a large map stalls after a pause. On a 6144 by 8192 WebP, the first zoom
 
 ## What Changes
 
-- Large still raster map images are decoded once by the plugin and drawn into a single canvas that is held while the map is open, replacing the `<img>` layer for those images.
+- Large still raster map images are decoded once by the plugin and drawn into canvases that are held while the map is open, replacing the `<img>` layer for those images.
 - The image is decoded in the background; features are drawn and usable before the image appears.
 - SVG, animated, small and oversized images, and any image that fails to prepare, keep today's `<img>` rendering.
 - A fully zoomed-out cached image looks as good as it does today.
