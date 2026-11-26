@@ -299,6 +299,28 @@ describe("base map lifecycle", () => {
     expect(mounts[0]?.options.imageUrl).toBe("app://local/Maps/fixture-4k.png");
   });
 
+  it("supplies the image file's extension and bytes, so a large image can be cached", async () => {
+    const app = new App();
+    const image = new TFile("Maps/fixture-4k.png");
+    const bytes = new ArrayBuffer(4);
+    const read: TFile[] = [];
+    const vault = app.vault as unknown as {
+      getFileByPath(p: string): TFile | null;
+      readBinary(f: TFile): Promise<ArrayBuffer>;
+    };
+    vault.getFileByPath = (p) => (p === image.path ? image : null);
+    vault.readBinary = (f) => {
+      read.push(f);
+      return Promise.resolve(bytes);
+    };
+    const { mounts } = open("Maps/all-types.map", fixture("all-types.map"), app);
+    const source = mounts[0]?.options.imageSource;
+    expect(source?.extension).toBe("png");
+    expect(read).toEqual([]);
+    expect(await source?.read()).toBe(bytes);
+    expect(read).toEqual([image]);
+  });
+
   it("does not mount a map in an error state", () => {
     const { view, mounts } = open("Maps/bad.map", INVALID_SCHEMA);
     expect(mounts).toEqual([]);

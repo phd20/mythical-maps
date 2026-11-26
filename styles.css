@@ -1398,3 +1398,18 @@
 .mythical-map-view.mythical-broken-pins .mythical-broken-pins-empty {
   color: var(--text-muted);
 }
+
+/* A cached map image: halved copies stacked in one overlay, one of them displayed. */
+.mythical-map-view .mythical-map-image-levels > canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  display: none;
+}
+.mythical-map-view .mythical-map-image-levels > canvas.mythical-map-image-shown {
+  display: block;
+}

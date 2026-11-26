@@ -77,6 +77,9 @@ export class Vault extends MockEvents {
   getResourcePath(file: TFile): string {
     return `app://local/${file.path}`;
   }
+  async readBinary(_file: TFile): Promise<ArrayBuffer> {
+    return new ArrayBuffer(0);
+  }
   async process(file: TFile, fn: (data: string) => string): Promise<string> {
     const data = fn("");
     this.modified.push({ file, data });

@@ -103,6 +103,28 @@ describe("mountBaseMap", () => {
     expect(map.layers[0]?.bounds).toEqual(handle.bounds);
   });
 
+  it("leaves the overlay to the image layer when the image may be cached, and frees it on destroy", () => {
+    const { parent } = fakeParent(800, 600);
+    let reads = 0;
+    const imageSource = {
+      extension: "png",
+      // Never resolves: nothing may be shown while the image is being prepared.
+      read: () => (reads++, new Promise<ArrayBuffer>(() => {})),
+    };
+    const handle = mountBaseMap(parent, { imageUrl: "app://img.png", imageSource, width: 8192, height: 6144 });
+    expect(reads).toBe(1);
+    expect(lastMap().layers).toEqual([]);
+    handle.destroy();
+  });
+
+  it("removes the image overlay on destroy", () => {
+    const { parent } = fakeParent(800, 600);
+    const handle = mountBaseMap(parent, { imageUrl: "app://img.png", width: 100, height: 100 });
+    const map = lastMap();
+    handle.destroy();
+    expect(map.layers).toEqual([]);
+  });
+
   it("draws no overlay when the image is missing", () => {
     const { parent } = fakeParent(800, 600);
     mountBaseMap(parent, { imageUrl: null, width: 100, height: 100 });

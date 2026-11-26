@@ -5,6 +5,7 @@ Details of features, settings, the file format and known limits. New to the plug
 ## Features in detail
 
 - **Create a map.** Run **New map from image** from the command palette with an image file active, or right-click an image in the file explorer. It creates `<image name>.map` next to the image (`<name> 1.map`, `<name> 2.map` and so on if the name is taken), sized to the image, and opens it. Supported images: png, jpg, jpeg, webp, gif, bmp, avif, svg.
+- **Large images.** A still image over 8 megapixels is decoded once and kept ready while its map is open, so zooming doesn't stall after a pause. See [Map images](#map-images).
 - **Navigate.** Mouse wheel and trackpad pinch zoom continuously around the pointer; drag pans; double-click and the zoom buttons zoom in animated steps. Zoom runs from the level that fits the whole image up to native zoom `z + 2`. The **Fit map to view** toolbar button refits.
 - **Edit.** The toolbar has Select, Pin, Label, Region and Path modes. Pin and Label click a position. Region and Path draw vertices: a region needs at least 3 and a path at least 2, otherwise nothing is created. Shift-click, or the map context menu, adds a pin at that spot in any mode. New features go into the selected folder (or the root) as the last sibling. In Select mode, drag pins and labels, and drag, add or remove vertices of regions and paths. The feature panel (a tab in the right sidebar that follows the map you used last) shows the folder tree (drag to reorder or reparent, eye toggle to hide) and the selected feature's properties: name, link, style fields, label visibility, hidden flag and visibility range. The Icon field suggests icons as you type, and each colour field has a colour picker. The panel is added the first time you open a map; if you close it, the map tab's panel button or **Show map panel** brings it back. Delete or Backspace removes the selection; deleting a folder with descendants asks first.
 - **Lock.** The lock action in the view header (or **Toggle map lock**) refuses every create, edit, move, reshape, reorder and delete, enforced in the document model rather than only in the UI. Pan, zoom, hover and following links keep working. Lock state belongs to the open view: it is never saved in the file and each view starts unlocked.
@@ -117,11 +118,29 @@ The frame is identical to LegendKeeper's, using Leaflet's `CRS.Simple`. For an i
 
 For example, an 8192 by 6144 image has `z = 5`, and its bottom-right pixel `(8192, 6144)` is `pos = [-192, 256]`. A 4096 by 3072 image has `z = 4` and the same bounds. Zoom runs from the fit-to-view level up to `z + 2`, and zoom is continuous (`zoomSnap: 0`), so `viewport.zoom` can be fractional. The conversion functions (`pixelToPos`, `posToPixel`) are exact inverses; see `src/core/frame.ts`.
 
-The map is a single `imageOverlay` (no tiling). A later tile pyramid would fit the same frame with no data change.
+The map has a single base image (no tiling). A later tile pyramid would fit the same frame with no data change.
+
+## Map images
+
+An ordinary image element can stall the next zoom after a pause, because Obsidian's browser engine discards the decoded image and has to decode it again. To avoid that, the plugin decodes a large image once and draws it into canvases that stay in memory while the map is open.
+
+| An image is kept ready when | Otherwise |
+| --- | --- |
+| it is a png, jpg, jpeg, webp, bmp or avif file | svg and gif are shown as ordinary images |
+| it is not animated | animated PNG and WebP are shown as ordinary images; animated AVIF is not detected and would show one frame |
+| it is over 8 megapixels | smaller images are shown as ordinary images |
+| it is at most 100 megapixels, with neither side over 16384 pixels | larger images are shown as ordinary images and may stall |
+
+If preparing an image fails, it is shown as an ordinary image.
+
+- **While it is prepared**, features are shown and usable on an empty background; the image follows. On a 6144 × 8192 WebP on one Mac this took a little over half a second.
+- **Zoomed out**, the plugin shows one of several half-size copies, so detail looks as smooth as in an ordinary image.
+- **Memory** is about 5.3 bytes per image pixel including the copies: roughly 270 MB for 6144 × 8192, and up to about 530 MB at the 100 megapixel limit. These are calculated from the pixel counts; total process memory also depends on Obsidian. Each open map holds its own, including maps in background tabs that have been shown. Closing the map frees it.
+- There is no setting to turn this off.
 
 ## Known limits
 
-- **No tiling.** The whole image is decoded in memory. Images up to about 8k pixels are the target. A partial check on an 8192 by 6144 image with 200 pins showed about 11 MB heap growth on open, with no problem found; pan, zoom and leak measurements were not taken (see the [design notes](../openspec/changes/archive/2026-11-26-add-map-core-v1/design.md), Risks).
+- **No tiling.** The whole image is held in memory (see [Map images](#map-images)). Images up to about 8k pixels are the target; larger ones have been tested little or not at all. Screens without Retina resolution have not been checked for zoomed-out image quality.
 - **Mobile is untested.** The manifest allows mobile (`isDesktopOnly: false`) but nothing is verified there; touch drawing and editing are best effort.
 - **Pop-out windows.** Pan, zoom and dragging work through a Leaflet shim. Geoman's optional keyboard shortcuts (Esc, Enter) do not work in pop-outs: finish a shape by clicking its first or last vertex, and switch mode to cancel.
 - **Icons are Lucide, not FontAwesome.** `iconGlyph` stores a Lucide icon name from Obsidian's bundled set; an unknown name falls back to a dot. LegendKeeper's FontAwesome names will not match.

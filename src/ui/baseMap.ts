@@ -1,5 +1,5 @@
 /**
- * Leaflet base map: the image as an `imageOverlay` on the frame bounds in
+ * Leaflet base map: the image (`imageLayer.ts`) on the frame bounds in
  * `CRS.Simple` (design D3, D5), kept correctly sized (D6).
  *
  * - The Leaflet container is created through the parent's DOM helpers, so it
@@ -30,6 +30,7 @@ import * as L from "leaflet";
 import { boundsFor, type Bounds } from "../core/frame";
 import type { LatLng, MapDocument, Viewport } from "../core/schema";
 import { createGeometryEditor, type EditState, type GeometryEditor, type GeometryHandlers } from "./geometryEditor";
+import { addImageLayer, type ImageSource } from "./imageLayer";
 import { createFeatureRenderer, type FeatureInteractions, type IconProvider, type RenderView } from "./featureRenderer";
 import { installPopoutShim, type ShimLeaflet } from "./popoutShim";
 import { SizeGate } from "./sizeGate";
@@ -46,6 +47,8 @@ export interface MapPointerHandlers {
 export interface BaseMapOptions {
   /** Resource URL of the map image, or null when the image is missing (no overlay is drawn). */
   imageUrl: string | null;
+  /** The image file's bytes, so a large image can be cached (see `imageLayer.ts`). */
+  imageSource?: ImageSource;
   /** Image size in pixels, from the map file. */
   width: number;
   height: number;
@@ -113,7 +116,15 @@ export const mountBaseMap: MountBaseMap = (parent, options) => {
     trackResize: false,
   });
   const wheelZoom = attachSmoothWheelZoom(map, container);
-  if (options.imageUrl) L.imageOverlay(options.imageUrl, bounds, { interactive: false }).addTo(map);
+  const image = options.imageUrl
+    ? addImageLayer(map, container, {
+        imageUrl: options.imageUrl,
+        bounds,
+        width,
+        height,
+        ...(options.imageSource ? { source: options.imageSource } : {}),
+      })
+    : null;
 
   const renderer = createFeatureRenderer(map, {
     icons: options.icons ?? NO_ICONS,
@@ -216,6 +227,7 @@ export const mountBaseMap: MountBaseMap = (parent, options) => {
       geometry?.destroy();
       renderer.destroy();
       wheelZoom.destroy();
+      image?.destroy();
       map.remove();
       container.remove();
     },

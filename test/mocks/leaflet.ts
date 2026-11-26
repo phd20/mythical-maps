@@ -112,17 +112,39 @@ export class MockMap {
 
 export class MockImageOverlay {
   map: MockMap | null = null;
+  _url: unknown;
+  _image: unknown = null;
+  _zoomAnimated = true;
+  declare _initImage?: () => void;
   constructor(
     public url: string,
     public bounds: unknown,
     public options: Record<string, unknown>,
-  ) {}
+  ) {
+    this._url = url;
+  }
   addTo(map: MockMap): this {
     this.map = map;
     map.layers.push(this);
+    // Like Leaflet's `onAdd`: the element is set up the first time the layer is added.
+    if (!this._image) this._initImage?.();
+    return this;
+  }
+  remove(): this {
+    if (this.map) this.map.layers = this.map.layers.filter((l) => l !== this);
+    this.map = null;
     return this;
   }
 }
+
+/** `L.ImageOverlay`, as far as subclassing it with `extend` goes. */
+export const ImageOverlay = {
+  extend(props: Record<string, unknown>): typeof MockImageOverlay {
+    class Extended extends MockImageOverlay {}
+    Object.assign(Extended.prototype, props);
+    return Extended;
+  },
+};
 
 export const created: { maps: MockMap[]; overlays: MockImageOverlay[] } = { maps: [], overlays: [] };
 

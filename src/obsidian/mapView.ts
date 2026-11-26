@@ -88,6 +88,7 @@ import { linkPatch } from "../core/properties";
 import { FEATURE_TYPES, type Feature, type FeatureType, type LatLng, type MapDocument, type Viewport } from "../core/schema";
 import { stringifyMap } from "../core/serialize";
 import { mountBaseMap, type BaseMapHandle, type MountBaseMap } from "../ui/baseMap";
+import type { ImageSource } from "../ui/imageLayer";
 import { LinkSuggestModal } from "./linkSuggestModal";
 import { obsidianIcons } from "../ui/obsidianIcons";
 import type { RenderView } from "../ui/featureRenderer";
@@ -823,8 +824,15 @@ export class MapView extends TextFileView {
     return file ? this.app.vault.getResourcePath(file) : null;
   }
 
+  /** The image file's bytes, so a large image can be cached; undefined when the file is missing. */
+  private imageSource(map: MapDocument): ImageSource | undefined {
+    const file = this.app.vault.getFileByPath(map.image.path);
+    return file ? { extension: file.extension, read: () => this.app.vault.readBinary(file) } : undefined;
+  }
+
   private renderMap(el: HTMLElement, map: MapDocument, keepView?: Viewport): void {
     const imageUrl = this.imageUrl(map);
+    const imageSource = this.imageSource(map);
     const { width, height } = map.image;
     const viewport = keepView ?? map.viewport;
     // A missing image still mounts the map (no overlay), so features keep their frame.
@@ -866,6 +874,7 @@ export class MapView extends TextFileView {
         },
       },
       ...(viewport ? { viewport } : {}),
+      ...(imageSource ? { imageSource } : {}),
     });
     this.toolbar = createToolbar(el, {
       mode: this.mode,
