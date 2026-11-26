@@ -1043,6 +1043,18 @@
   visibility: hidden;
 }
 
+/* Icon suggestions: rendered in Obsidian's popup, outside the map view. */
+.mythical-map-view.mythical-map-icon-suggestion {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4-2);
+}
+
+.mythical-map-view.mythical-map-icon-suggestion .mythical-map-icon-suggestion-icon {
+  display: inline-flex;
+  flex: none;
+}
+
 /* Properties form (bead 5.5): below the feature tree inside the panel. */
 .mythical-map-view .mythical-map-props {
   flex: none;

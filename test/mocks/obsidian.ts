@@ -434,6 +434,28 @@ export abstract class TextFileView extends View {
   abstract clear(): void;
 }
 
+/** Suggestions under an input; tests call `getSuggestions` / `selectSuggestion` directly. */
+export abstract class AbstractInputSuggest<T> {
+  closed = false;
+  constructor(
+    public app: App,
+    public inputEl: HTMLInputElement,
+  ) {}
+  setValue(value: string): void {
+    this.inputEl.value = value;
+  }
+  close(): void {
+    this.closed = true;
+  }
+  abstract getSuggestions(query: string): T[] | Promise<T[]>;
+  abstract renderSuggestion(value: T, el: HTMLElement): void;
+  abstract selectSuggestion(value: T, evt: MouseEvent | KeyboardEvent): void;
+}
+
+export function getIconIds(): string[] {
+  return ["lucide-castle", "lucide-map-pin"];
+}
+
 export abstract class PluginSettingTab {
   containerEl = new MockElement() as unknown as HTMLElement;
   constructor(

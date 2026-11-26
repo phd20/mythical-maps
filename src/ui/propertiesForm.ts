@@ -40,6 +40,11 @@ export interface PropertiesFormHost {
    * linktext, or null to clear the link. Omitted: no "Choose…" button.
    */
   chooseLink?(current: string, done: (linktext: string | null) => void): void;
+  /**
+   * Attach icon suggestions to the pin's icon box; `pick` gets the chosen icon
+   * name. Returns a function that closes the suggestions. Omitted: plain text.
+   */
+  suggestIcons?(input: HTMLInputElement, pick: (name: string) => void): () => void;
 }
 
 export const PROPERTIES_TITLE = "Properties";
@@ -69,6 +74,8 @@ export class PropertiesForm {
   private controls: Control[] = [];
   private focusedInput: unknown = null;
   private destroyed = false;
+  /** Closes the icon suggestions of the controls now built. */
+  private disposers: Array<() => void> = [];
 
   constructor(
     parent: HTMLElement,
@@ -95,6 +102,7 @@ export class PropertiesForm {
 
   destroy(): void {
     this.destroyed = true;
+    this.dispose();
     this.el.remove();
   }
 
@@ -108,6 +116,7 @@ export class PropertiesForm {
     if (!feature) {
       this.builtFor = null;
       this.controls = [];
+      this.dispose();
       this.bodyEl.empty();
       this.el.toggleClass("is-empty", true);
       return;
@@ -121,10 +130,15 @@ export class PropertiesForm {
     this.builtFor = { id: feature.id, type: feature.type };
     this.controls = [];
     this.focusedInput = null;
+    this.dispose();
     this.bodyEl.empty();
     for (const spec of fieldsFor(feature.type)) this.buildField(spec, feature);
     this.buildRange();
     this.syncAll(feature);
+  }
+
+  private dispose(): void {
+    for (const close of this.disposers.splice(0)) close();
   }
 
   /** Refresh every control from the model, leaving the one being typed in alone. */
@@ -192,6 +206,15 @@ export class PropertiesForm {
       else this.showError(control, result.error);
     });
     input.addEventListener("change", () => this.commitField(spec, control, read()));
+    if (spec.key === "iconGlyph" && this.host.suggestIcons) {
+      this.disposers.push(
+        this.host.suggestIcons(input as HTMLInputElement, (name) => {
+          input.value = name;
+          this.clearError(control);
+          this.commitField(spec, control, name);
+        }),
+      );
+    }
     chooseButton?.setAttribute("data-field-choose", spec.key);
     chooseButton?.addEventListener("click", () => {
       chooseLink?.(input.value, (linktext) => {

@@ -25,6 +25,7 @@ function setup(
   features: Feature[],
   selected: string | null = "pinaaaaa",
   chooseLink?: PropertiesFormHost["chooseLink"],
+  suggestIcons?: PropertiesFormHost["suggestIcons"],
 ) {
   const store = new MapStore(doc(features));
   const ops: EditOp[] = [];
@@ -35,6 +36,7 @@ function setup(
       return store.apply(op);
     },
     chooseLink,
+    suggestIcons,
   });
   store.subscribe((map) => form.update(map));
   form.update(store.map);
@@ -125,6 +127,23 @@ describe("PropertiesForm naming from the chosen note", () => {
     expect(named(t).name).toBe("Westmarch");
     choose(t);
     expect(t.ops).toHaveLength(1);
+  });
+});
+
+describe("PropertiesForm icon suggestions", () => {
+  it("saves the picked icon as one edit, and closes the suggestions when the selection goes", () => {
+    let pick: (name: string) => void = () => {};
+    let closed = 0;
+    const t = setup([pin("pinaaaaa")], "pinaaaaa", undefined, (_input, done) => {
+      pick = done;
+      return () => closed++;
+    });
+    pick("castle");
+    expect(t.ops).toHaveLength(1);
+    expect((t.stored() as { style?: { iconGlyph?: string } }).style?.iconGlyph).toBe("castle");
+    expect(t.input("iconGlyph").value).toBe("castle");
+    t.form.setSelected(null);
+    expect(closed).toBe(1);
   });
 });
 

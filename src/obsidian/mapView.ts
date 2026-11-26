@@ -96,6 +96,7 @@ import type { RenderView } from "../ui/featureRenderer";
 import { createToolbar, creationKindFor, EDIT_MODES, type EditMode, type ToolbarHandle } from "../ui/toolbar";
 import { VIEW_TYPE_MAP } from "./constants";
 import { confirmDelete } from "./deleteConfirmModal";
+import { IconSuggest } from "./iconSuggest";
 import { ImageSuggestModal, vaultImageFiles } from "./imageSuggestModal";
 import { createLinkInteractions, linkOf, linkResolves } from "./linkActions";
 import type { NoteMapsLookup } from "./noteMaps";
@@ -878,6 +879,10 @@ export class MapView extends TextFileView {
       },
     });
     this.propsForm = new PropertiesForm(this.panel.el, {
+      suggestIcons: (input, pick) => {
+        const suggest = new IconSuggest(this.app, input, pick);
+        return () => suggest.close();
+      },
       edit: (op) => this.edit(op),
       chooseLink: (current, done) => {
         if (!this.file) return;
