@@ -47,6 +47,23 @@ SVG and GIF always keep the `<img>`. AVIF animation is not detected. The thresho
 
 **D6. Zoomed-out quality.** When the drawn scale is well below one, the compositor's downscaling of a single large canvas aliases. The intended fix is a second, half-size canvas resampled with `resizeQuality: "high"`, shown while the displayed scale is below one half (about 50 MB more at 50 megapixels). It is untried, so it is its own task after the main one. If it does not match today's look, stop and report rather than widen the design.
 
+## Measured in the plugin (task 1.3)
+
+Same image and machine, with a region added over the map, synthetic wheel events and a development build.
+
+| Measure | Result |
+| --- | --- |
+| Features shown | before the image |
+| Image shown after opening | 523 ms |
+| Longest frame while opening | 40 ms |
+| Worst frame zooming at once | 9 ms |
+| Worst frame after 2 minutes idle | 14 ms |
+| Worst frame after 60 s minimized | 13 ms |
+| Worst frame, zoom buttons | 12 ms |
+| Canvas after closing the tab | 0 × 0, detached |
+
+D2's expectation holds: decoding from a `Blob` removed the freeze at open (about 480 ms in the prototype). No CSS rule was needed, and regions stay above the canvas. Also checked in the app: small, SVG, GIF, flagged-animated and undecodable images use `<img>`; a replaced image file shows after the next reload; `contextrestored` (dispatched by hand) redraws; closing before ready leaves no canvas and no error; pop-out open and move show the image. Not covered: a real trackpad, and an animated image visibly animating (the test files were minimal).
+
 ## Risks / Trade-offs
 
 - [About 4 bytes per pixel held per open map, roughly 200 MB at 50 megapixels] → size limits, release on close, documented. Several large maps add up.
