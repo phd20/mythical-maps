@@ -21,7 +21,12 @@ const pin = (id: string, extra: Partial<Feature> = {}): Feature =>
 const doc = (features: Feature[]): MapDocument =>
   ({ type: "mythical-map", version: 1, image: { path: "a.png", width: 10, height: 10 }, features }) as unknown as MapDocument;
 
-function setup(features: Feature[], selected: string | null = "pinaaaaa", chooseLink?: PropertiesFormHost["chooseLink"]) {
+function setup(
+  features: Feature[],
+  selected: string | null = "pinaaaaa",
+  chooseLink?: PropertiesFormHost["chooseLink"],
+  suggestIcons?: PropertiesFormHost["suggestIcons"],
+) {
   const store = new MapStore(doc(features));
   const ops: EditOp[] = [];
   const parent = new MockElement() as unknown as HTMLElement;
@@ -31,6 +36,7 @@ function setup(features: Feature[], selected: string | null = "pinaaaaa", choose
       return store.apply(op);
     },
     chooseLink,
+    suggestIcons,
   });
   store.subscribe((map) => form.update(map));
   form.update(store.map);
@@ -91,6 +97,87 @@ describe("PropertiesForm link picker", () => {
     choose(t);
     expect(seen).toBe("Inn");
     expect((t.stored() as { link?: string }).link).toBeUndefined();
+  });
+});
+
+describe("PropertiesForm naming from the chosen note", () => {
+  const choose = (t: ReturnType<typeof setup>) => t.fire(t.root.findAll((e) => e.attributes["data-field-choose"] === "link")[0]!, "click");
+  const named = (t: ReturnType<typeof setup>) => t.stored() as { name?: string; link?: string };
+
+  it("names an unnamed pin in the same edit, so one undo removes both", () => {
+    const t = setup([pin("pinaaaaa", { name: undefined } as Partial<Feature>)], "pinaaaaa", (_c, done) => done("Places/Westmarch"));
+    choose(t);
+    expect(t.ops).toHaveLength(1);
+    expect(named(t)).toMatchObject({ link: "Places/Westmarch", name: "Westmarch" });
+    expect(t.input("name").value).toBe("Westmarch");
+    t.store.undo();
+    expect(named(t).link).toBeUndefined();
+    expect(named(t).name).toBeUndefined();
+  });
+
+  it("keeps an existing name", () => {
+    const t = setup([pin("pinaaaaa")], "pinaaaaa", (_c, done) => done("Places/Westmarch"));
+    choose(t);
+    expect(named(t)).toMatchObject({ link: "Places/Westmarch", name: "Inn" });
+  });
+
+  it("names an unnamed pin when its current note is chosen again, and does nothing once named", () => {
+    const t = setup([pin("pinaaaaa", { name: undefined, link: "Westmarch" } as Partial<Feature>)], "pinaaaaa", (_c, done) => done("Westmarch"));
+    choose(t);
+    expect(named(t).name).toBe("Westmarch");
+    choose(t);
+    expect(t.ops).toHaveLength(1);
+  });
+});
+
+describe("PropertiesForm colour picker", () => {
+  const stored = (t: ReturnType<typeof setup>) => (t.stored() as { style?: { iconColor?: string } }).style?.iconColor;
+
+  it("shows the stored colour, and the default when none is stored", () => {
+    expect(setup([pin("pinaaaaa")]).input("iconColor.picker").value).toBe("#112233");
+    expect(setup([pin("pinaaaaa", { style: undefined } as Partial<Feature>)]).input("iconColor.picker").value).toBe("#a7a7a7");
+  });
+
+  it("follows the picker in the text box and commits once on change", () => {
+    const t = setup([pin("pinaaaaa")]);
+    const swatch = t.input("iconColor.picker");
+    swatch.value = "#aa0000";
+    t.fire(swatch, "input");
+    swatch.value = "#ff0000";
+    t.fire(swatch, "input");
+    expect(t.input("iconColor").value).toBe("#FF0000");
+    expect(t.ops).toHaveLength(0);
+    t.fire(swatch, "change");
+    expect(t.ops).toHaveLength(1);
+    expect(stored(t)).toBe("#FF0000");
+  });
+
+  it("follows typed colours and falls back to the default when emptied", () => {
+    const t = setup([pin("pinaaaaa")]);
+    t.enter("iconColor", "#00FF00");
+    expect(t.input("iconColor.picker").value).toBe("#00ff00");
+    t.enter("iconColor", "nope");
+    expect(t.input("iconColor.picker").value).toBe("#00ff00");
+    t.enter("iconColor", "");
+    expect(stored(t)).toBeUndefined();
+    expect(t.input("iconColor.picker").value).toBe("#a7a7a7");
+  });
+});
+
+describe("PropertiesForm icon suggestions", () => {
+  it("saves the picked icon as one edit, and closes the suggestions when the selection goes", () => {
+    let pick: (name: string) => void = () => {};
+    let closed = 0;
+    const t = setup([pin("pinaaaaa")], "pinaaaaa", undefined, (_input, done) => {
+      pick = done;
+      return () => closed++;
+    });
+    pick("castle");
+    expect(t.ops).toHaveLength(1);
+    expect((t.stored() as { style?: { iconGlyph?: string } }).style?.iconGlyph).toBe("castle");
+    expect(t.input("iconGlyph").value).toBe("castle");
+    t.form.setSelected(null);
+    expect(closed).toBe(1);
   });
 });
 

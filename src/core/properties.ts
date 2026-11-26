@@ -8,7 +8,9 @@
  * `buildPatch` through the view's `edit()` when validation passes, so an
  * invalid entry never reaches the stored map.
  */
+import { DEFAULT_NAMES } from "./create";
 import type { FeaturePatch } from "./features";
+import { splitLinktext } from "./links";
 import {
   BORDER_STYLES,
   FILL_STYLES,
@@ -192,6 +194,25 @@ export function buildPatch(feature: Feature, spec: FieldSpec, value: unknown): F
   const remaining = Object.entries(feature.style ?? {}).filter(([k, v]) => k !== spec.key && v !== undefined);
   if (value === undefined && remaining.length === 0) return { style: undefined };
   return { style: { [spec.key]: value } };
+}
+
+/** The note's name from a linktext: no folders, no `#subpath`, no `.md`. */
+export function noteNameFromLinktext(linktext: string): string {
+  const { path } = splitLinktext(linktext);
+  return (path.split("/").pop() ?? "").replace(/\.md$/i, "").trim();
+}
+
+/**
+ * The `update` patch for a note chosen from a picker (`null` clears the link).
+ * A pin with no name (blank, or still the one it was created with) also takes
+ * the note's name, so both change in one edit; a chosen name is never replaced.
+ */
+export function linkPatch(feature: Feature, linktext: string | null): FeaturePatch {
+  if (linktext === null) return { link: undefined };
+  const name = noteNameFromLinktext(linktext);
+  const current = (feature.name ?? "").trim();
+  const unnamed = current === "" || current === DEFAULT_NAMES.pin;
+  return unnamed && name !== "" ? { link: linktext, name } : { link: linktext };
 }
 
 /** The `update` patch for a validated `visibilityRange`. */

@@ -8,6 +8,7 @@
  * never appear. Nothing here changes a `link`: broken pins are only reported.
  */
 import { parseMap } from "./parse";
+import { linkPatch } from "./properties";
 import { stringifyMap } from "./serialize";
 import { resolveLink, type LinkResolver } from "./links";
 
@@ -42,7 +43,7 @@ export function scanBrokenPins(source: BrokenPinSource, resolver: LinkResolver):
  * Set one pin's `link` in a map file's text, in canonical form. Returns the
  * input text unchanged when the file does not parse or has no such pin, so a
  * file that failed to parse is never rewritten. An empty `link` is refused
- * (links are never cleared).
+ * (links are never cleared). An unnamed pin also takes the note's name.
  */
 export function relinkInText(text: string, featureId: string, link: string): string {
   if (link === "") return text;
@@ -52,7 +53,7 @@ export function relinkInText(text: string, featureId: string, link: string): str
   const features = parsed.map.features.map((f) => {
     if (f.id !== featureId || f.type !== "pin") return f;
     found = true;
-    return { ...f, link };
+    return { ...f, ...linkPatch(f, link) } as typeof f;
   });
   if (!found) return text;
   return stringifyMap({ ...parsed.map, features });

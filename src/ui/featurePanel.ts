@@ -58,7 +58,6 @@ export class FeaturePanel {
   private readonly listEl: HTMLElement;
   private map: MapDocument | null = null;
   private selectedId: string | null = null;
-  private readonly collapsed = new Set<string>();
   private dragId: string | null = null;
   /** The folder whose name is being edited; the list is not rebuilt meanwhile. */
   private renamingId: string | null = null;
@@ -72,6 +71,8 @@ export class FeaturePanel {
   constructor(
     parent: HTMLElement,
     private readonly host: FeaturePanelHost,
+    /** Collapsed folder ids; pass the same set to keep them across panels for one map. */
+    private readonly collapsed = new Set<string>(),
   ) {
     this.el = parent.createDiv({ cls: "mythical-map-panel" });
     const header = this.el.createDiv({ cls: "mythical-map-panel-header" });

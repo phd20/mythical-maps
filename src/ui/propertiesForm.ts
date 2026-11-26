@@ -21,6 +21,7 @@ import {
   buildRangePatch,
   fieldsFor,
   fieldValue,
+  linkPatch,
   rangeValue,
   validateField,
   validateRange,
@@ -28,7 +29,7 @@ import {
   type RawValue,
 } from "../core/properties";
 import type { Feature, MapDocument } from "../core/schema";
-import { DEFAULT_STYLES } from "../core/style";
+import { DEFAULT_STYLES, isValidHexColor } from "../core/style";
 import type { EditOp } from "../obsidian/mapView";
 
 export interface PropertiesFormHost {
@@ -39,6 +40,11 @@ export interface PropertiesFormHost {
    * linktext, or null to clear the link. Omitted: no "Choose…" button.
    */
   chooseLink?(current: string, done: (linktext: string | null) => void): void;
+  /**
+   * Attach icon suggestions to the pin's icon box; `pick` gets the chosen icon
+   * name. Returns a function that closes the suggestions. Omitted: plain text.
+   */
+  suggestIcons?(input: HTMLInputElement, pick: (name: string) => void): () => void;
 }
 
 export const PROPERTIES_TITLE = "Properties";
@@ -68,6 +74,8 @@ export class PropertiesForm {
   private controls: Control[] = [];
   private focusedInput: unknown = null;
   private destroyed = false;
+  /** Closes the icon suggestions of the controls now built. */
+  private disposers: Array<() => void> = [];
 
   constructor(
     parent: HTMLElement,
@@ -94,6 +102,7 @@ export class PropertiesForm {
 
   destroy(): void {
     this.destroyed = true;
+    this.dispose();
     this.el.remove();
   }
 
@@ -107,6 +116,7 @@ export class PropertiesForm {
     if (!feature) {
       this.builtFor = null;
       this.controls = [];
+      this.dispose();
       this.bodyEl.empty();
       this.el.toggleClass("is-empty", true);
       return;
@@ -120,10 +130,15 @@ export class PropertiesForm {
     this.builtFor = { id: feature.id, type: feature.type };
     this.controls = [];
     this.focusedInput = null;
+    this.dispose();
     this.bodyEl.empty();
     for (const spec of fieldsFor(feature.type)) this.buildField(spec, feature);
     this.buildRange();
     this.syncAll(feature);
+  }
+
+  private dispose(): void {
+    for (const close of this.disposers.splice(0)) close();
   }
 
   /** Refresh every control from the model, leaving the one being typed in alone. */
@@ -168,15 +183,24 @@ export class PropertiesForm {
     const chooseLink = spec.key === "link" ? this.host.chooseLink?.bind(this.host) : undefined;
     const chooseButton = chooseLink ? field.createEl("button", { cls: "mythical-map-props-choose", text: CHOOSE_LINK_LABEL }) : null;
 
+    const swatch = spec.kind === "color" ? this.buildSwatch(field, spec) : null;
+    /** Show the colour `text` stands for; blank is the default, anything invalid leaves the swatch alone. */
+    const paint = (text: string) => {
+      if (!swatch) return;
+      const color = text.trim() === "" ? this.defaultPlaceholder(spec, feature) : text.trim();
+      if (isValidHexColor(color)) swatch.value = color.toLowerCase();
+    };
+
     const control: Control = {
       key: spec.key,
-      inputs: [input],
+      inputs: swatch ? [input, swatch] : [input],
       errorEl,
       hasError: false,
       sync: (f) => {
         const value = fieldValue(f, spec);
         if (spec.kind === "boolean") (input as HTMLInputElement).checked = value === true;
         else input.value = String(value);
+        paint(String(value));
       },
     };
     this.controls.push(control);
@@ -186,22 +210,55 @@ export class PropertiesForm {
     // Live feedback while typing: show the error, or clear it once the value is valid again.
     input.addEventListener("input", () => {
       if (spec.kind === "boolean" || spec.kind === "enum") return;
+      paint(input.value);
       const result = validateField(spec, read());
       if (result.ok) this.clearError(control);
       else this.showError(control, result.error);
     });
     input.addEventListener("change", () => this.commitField(spec, control, read()));
+    if (swatch) {
+      // While the picker is open the text box follows it; closing it commits, as one edit.
+      const copy = () => {
+        input.value = swatch.value.toUpperCase();
+        this.clearError(control);
+      };
+      swatch.addEventListener("input", copy);
+      swatch.addEventListener("change", () => {
+        copy();
+        this.commitField(spec, control, input.value);
+        // Give focus back, so undo and later model changes reach this control.
+        swatch.blur?.();
+      });
+    }
+    if (spec.key === "iconGlyph" && this.host.suggestIcons) {
+      this.disposers.push(
+        this.host.suggestIcons(input as HTMLInputElement, (name) => {
+          input.value = name;
+          this.clearError(control);
+          this.commitField(spec, control, name);
+        }),
+      );
+    }
     chooseButton?.setAttribute("data-field-choose", spec.key);
     chooseButton?.addEventListener("click", () => {
       chooseLink?.(input.value, (linktext) => {
         input.value = linktext ?? "";
         this.clearError(control);
-        this.commitField(spec, control, input.value);
+        this.commitLink(control, linktext);
       });
     });
     input.addEventListener("keydown", (evt) => {
       if ((evt as KeyboardEvent).key === "Escape" && spec.kind !== "boolean" && spec.kind !== "enum") this.revert(control);
     });
+  }
+
+  private buildSwatch(field: HTMLElement, spec: FieldSpec): HTMLInputElement {
+    const swatch = field.createEl("input", { cls: "mythical-map-props-swatch" });
+    swatch.type = "color";
+    swatch.setAttribute("data-field-input", `${spec.key}.picker`);
+    swatch.setAttribute("aria-label", `Pick ${spec.label.toLowerCase()}`);
+    this.trackFocus(swatch);
+    return swatch;
   }
 
   private buildRange(): void {
@@ -289,6 +346,19 @@ export class PropertiesForm {
       return;
     }
     this.applyEdit(feature.id, buildPatch(feature, spec, result.value), control);
+  }
+
+  /** A note chosen (or cleared) in the picker; may also name an unnamed pin. */
+  private commitLink(control: Control, linktext: string | null): void {
+    const feature = this.current();
+    if (!feature) return;
+    const patch = linkPatch(feature, linktext);
+    const stored = (feature as { link?: string }).link ?? null;
+    if (linktext === stored && patch.name === undefined) {
+      control.sync(feature);
+      return;
+    }
+    this.applyEdit(feature.id, patch, control);
   }
 
   private commitRange(control: Control, minRaw: string, maxRaw: string): void {

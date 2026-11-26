@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { App, Menu, MockElement, Modal, Scope, TFile, WorkspaceLeaf } from "./mocks/obsidian";
 import { MapView, DELETE_FEATURE, LOCKED_NOTICE } from "../src/obsidian/mapView";
+import { MapPanelView } from "../src/obsidian/panelView";
 import {
   CANCEL_BUTTON_TEXT,
   confirmDelete,
@@ -171,7 +172,12 @@ describe("context menus", () => {
 
   it("panel rows offer Delete on right-click", async () => {
     const t = setup();
-    const content = t.view.contentEl as unknown as MockElement;
+    const leaf = new WorkspaceLeaf(t.app);
+    leaf.view = t.view as never;
+    t.app.workspace.mostRecentLeaf = leaf;
+    const panel = new MapPanelView(new WorkspaceLeaf(t.app) as never);
+    await panel.onOpen();
+    const content = panel.contentEl as unknown as MockElement;
     const row = content.findAll((e) => e.attributes["data-feature-id"] === "pinn0001")[0];
     const shown = captureMenu(() => {
       for (const cb of row?.listeners.contextmenu ?? []) cb({ preventDefault() {} });

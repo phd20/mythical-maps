@@ -122,9 +122,22 @@ export class Workspace extends MockEvents {
   getActiveViewOfType<T>(type: abstract new (...args: never[]) => T): T | null {
     return this.activeView instanceof type ? this.activeView : null;
   }
+  /** The most recently used main-area leaf; tests set it directly. */
+  mostRecentLeaf: WorkspaceLeaf | null = null;
+  getMostRecentLeaf(): WorkspaceLeaf | null {
+    return this.mostRecentLeaf;
+  }
+  /** Sidebar leaves are ordinary leaves here. */
+  getRightLeaf(_split: boolean): WorkspaceLeaf {
+    return this.getLeaf();
+  }
+  revealed: WorkspaceLeaf[] = [];
+  async revealLeaf(leaf: WorkspaceLeaf): Promise<void> {
+    this.revealed.push(leaf);
+  }
   /** Leaves (from `leaves`) whose `view` has the given type. */
   getLeavesOfType(type: string): WorkspaceLeaf[] {
-    return this.leaves.filter((leaf) => leaf.view?.getViewType() === type);
+    return this.leaves.filter((leaf) => (leaf.view?.getViewType() ?? leaf.viewState?.type) === type);
   }
   /** Bead 6.2: every `openLinkText` call, in order. */
   openedLinks: Array<{ linktext: string; sourcePath: string; newLeaf: unknown }> = [];
@@ -247,6 +260,11 @@ export class WorkspaceLeaf {
   }
   /** The view shown in this leaf; tests set it directly. */
   view: View | null = null;
+  /** The last `setViewState` argument. */
+  viewState: { type: string; active?: boolean } | null = null;
+  async setViewState(state: { type: string; active?: boolean }): Promise<void> {
+    this.viewState = state;
+  }
 }
 
 export interface Command {
@@ -397,6 +415,8 @@ export abstract class View extends Component {
   }
 }
 
+export abstract class ItemView extends View {}
+
 /**
  * Minimal TextFileView: `requestSave` saves immediately (no debounce), and
  * `save()` writes `getViewData()` through `vault.modify`, as Obsidian does.
@@ -432,6 +452,28 @@ export abstract class TextFileView extends View {
   abstract getViewData(): string;
   abstract setViewData(data: string, clear: boolean): void;
   abstract clear(): void;
+}
+
+/** Suggestions under an input; tests call `getSuggestions` / `selectSuggestion` directly. */
+export abstract class AbstractInputSuggest<T> {
+  closed = false;
+  constructor(
+    public app: App,
+    public inputEl: HTMLInputElement,
+  ) {}
+  setValue(value: string): void {
+    this.inputEl.value = value;
+  }
+  close(): void {
+    this.closed = true;
+  }
+  abstract getSuggestions(query: string): T[] | Promise<T[]>;
+  abstract renderSuggestion(value: T, el: HTMLElement): void;
+  abstract selectSuggestion(value: T, evt: MouseEvent | KeyboardEvent): void;
+}
+
+export function getIconIds(): string[] {
+  return ["lucide-castle", "lucide-map-pin"];
 }
 
 export abstract class PluginSettingTab {

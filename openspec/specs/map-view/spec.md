@@ -91,3 +91,10 @@ The system SHALL re-render an open map when its `.map` file is changed on disk b
 - **WHEN** an open map's file is modified externally to add a pin
 - **THEN** the pin appears in the open view without reopening it, and the view keeps its pan and zoom
 
+### Requirement: Centred pin icon
+A pin's icon SHALL appear centred in the main body of its icon shape.
+
+#### Scenario: Pin shape
+- **WHEN** a pin uses the "pin" icon shape
+- **THEN** its icon is centred in the round part of the teardrop
+

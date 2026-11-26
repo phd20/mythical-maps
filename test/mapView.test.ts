@@ -867,7 +867,7 @@ describe("document store wiring (bead 5.1)", () => {
     view.load();
     const actions = (view as unknown as { actions: Array<{ callback: (e: unknown) => unknown; el: MockElement }> })
       .actions;
-    expect(actions).toHaveLength(1);
+    expect(actions).toHaveLength(2); // lock, then "Show map panel"
     const action = actions[0];
     if (!action) throw new Error("expected a lock action");
     expect(view.isLocked).toBe(false);

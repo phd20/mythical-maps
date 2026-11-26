@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { App, MockElement, TFile, WorkspaceLeaf } from "./mocks/obsidian";
 import { MapView } from "../src/obsidian/mapView";
+import { MapPanelView } from "../src/obsidian/panelView";
 import type { BaseMapHandle } from "../src/ui/baseMap";
 import { featureCenter } from "../src/core/features";
 
@@ -12,7 +13,9 @@ const proto = MockElement.prototype as unknown as Record<string, unknown>;
 for (const name of ["focus", "select", "remove", "removeClass"]) proto[name] ??= function () {};
 
 function open() {
-  const view = new MapView(new WorkspaceLeaf(new App()) as never);
+  const app = new App();
+  const leaf = new WorkspaceLeaf(app);
+  const view = new MapView(leaf as never);
   const centred: unknown[] = [];
   view.mountMap = () =>
     ({
@@ -23,7 +26,11 @@ function open() {
       centerOn: (pos: unknown) => centred.push(pos),
     }) as unknown as BaseMapHandle;
   (view as unknown as { loadFile(f: TFile, d: string): void }).loadFile(new TFile("Maps/all-types.map"), MAP);
-  const content = view.contentEl as unknown as MockElement;
+  leaf.view = view as never;
+  app.workspace.mostRecentLeaf = leaf;
+  const sidebar = new MapPanelView(new WorkspaceLeaf(app) as never);
+  void sidebar.onOpen();
+  const content = sidebar.contentEl as unknown as MockElement;
   const rows = () => content.findAll((e) => e.classes.has("mythical-map-panel-row"));
   const features = view.mapStore!.map.features;
   /** Click the row showing the first feature of `type`. */

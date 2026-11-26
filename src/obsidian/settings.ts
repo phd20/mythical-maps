@@ -22,6 +22,8 @@ export interface MythicalMapsSettings {
   overrides: OverrideSettings;
   /** Style used for any pin field the `.map` file does not store. */
   defaultPinStyle: ResolvedPinStyle;
+  /** Set once the sidebar panel has been added, so a closed panel stays closed. */
+  panelAdded: boolean;
   settingsVersion: 1;
 }
 
@@ -29,6 +31,7 @@ export const DEFAULT_SETTINGS: MythicalMapsSettings = {
   mapsProperty: "maps",
   overrides: { enabled: false, iconProperty: "", colorProperty: "", shapeProperty: "" },
   defaultPinStyle: { ...DEFAULT_STYLES.pin },
+  panelAdded: false,
   settingsVersion: 1,
 };
 
@@ -74,6 +77,7 @@ export function mergeSettings(loaded: unknown): MythicalMapsSettings {
       iconShape: isIconShape(pin.iconShape) ? pin.iconShape : d.defaultPinStyle.iconShape,
       iconSize: isIconSize(pin.iconSize) ? pin.iconSize : d.defaultPinStyle.iconSize,
     },
+    panelAdded: src.panelAdded === true,
     settingsVersion: 1,
   };
 }

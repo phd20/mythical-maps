@@ -18,6 +18,7 @@ import { registerNoteMaps, type NoteMaps } from "./obsidian/noteMaps";
 import { registerStyleOverrides, type StyleOverrides } from "./obsidian/styleOverrides";
 import { registerLinkHoverSource } from "./obsidian/linkActions";
 import { registerFindBrokenPins } from "./obsidian/findBrokenPins";
+import { MapPanelView, registerMapPanel } from "./obsidian/panelView";
 
 /** Mythical Maps plugin entry point. Features are registered by later beads. */
 export default class MythicalMapsPlugin extends Plugin {
@@ -37,9 +38,17 @@ export default class MythicalMapsPlugin extends Plugin {
     this.noteMaps = registerNoteMaps(this, this.app, () => this.settings, () => this.openMapViews());
     // Bead 6.6: the broken badge follows note create/rename/delete; after layout ready so startup indexing does not fire it per file.
     this.app.workspace.onLayoutReady(() => registerBrokenLinks(this, this.app, () => this.openMapViews()));
+    const panel = registerMapPanel(this, this.app, {
+      added: () => this.settings.panelAdded,
+      markAdded: async () => {
+        this.settings.panelAdded = true;
+        await this.saveData(this.settings);
+      },
+    });
     this.registerView(VIEW_TYPE_MAP, (leaf) => {
       const view = new MapView(leaf);
       view.noteMaps = this.noteMaps.lookup;
+      view.panelHost = panel;
       view.styleSource = (mapPath) => this.styleOverrides.viewFor(mapPath);
       return view;
     });
@@ -64,7 +73,11 @@ export default class MythicalMapsPlugin extends Plugin {
   /** Undo, redo and lock as commands on the active map view (the view also binds Mod+Z / Mod+Shift+Z). */
   private registerMapEditCommands(): void {
     const activeMapView = (): MapView | null => {
-      const view = this.app.workspace.getActiveViewOfType(MapView);
+      // With the sidebar panel focused, commands act on the map it shows.
+      const view =
+        this.app.workspace.getActiveViewOfType(MapView) ??
+        this.app.workspace.getActiveViewOfType(MapPanelView)?.target ??
+        null;
       return view?.mapStore ? view : null;
     };
     this.addCommand({

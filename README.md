@@ -3,7 +3,7 @@
 Interactive tabletop RPG maps inside [Obsidian](https://obsidian.md). Drop pins, labels, regions and paths on a map image, link pins to your notes, and open city maps from a world map.
 
 > [!WARNING]
-> **Beta software (version 0.1.0).** Expect bugs and rough edges, and expect things to change, possibly including the `.map` file format. **Back up your vault before using it**, or try it in a test vault first. It is provided as is, without warranty. Please [report problems](https://github.com/PhD20/mythical-maps/issues).
+> **Beta software (version 0.1.1).** Expect bugs and rough edges, and expect things to change, possibly including the `.map` file format. **Back up your vault before using it**, or try it in a test vault first. It is provided as is, without warranty. Please [report problems](https://github.com/PhD20/mythical-maps/issues).
 
 ## Why
 
@@ -32,7 +32,7 @@ To update, replace the three files and reload Obsidian.
 2. **Create the map.** Right-click the image in the file explorer and choose **New map from image**. A `.map` file appears next to the image and opens.
 3. **Look around.** Drag to pan; scroll or pinch to zoom.
 4. **Add a pin.** Choose **Pin** in the toolbar and click the map. **Label**, **Region** and **Path** work the same way; for a region or path, click each corner, then click the first or last point to finish.
-5. **Name and link it.** Choose **Select** and click the pin. In the **Properties** panel, set its name, then use **Choose…** to pick a note.
+5. **Name and link it.** Choose **Select** and click the pin. The **Map features** tab in the right sidebar shows its **Properties**; use **Choose…** to pick a note; an unnamed pin takes the note's name. Type in **Icon** to search icons, and use the swatch beside a colour to pick it.
 6. **Use the map.** Click the lock icon at the top of the tab. A locked map can't be changed by accident, and **clicking a pin now opens its note**.
 
 > [!TIP]
@@ -49,6 +49,7 @@ To update, replace the three files and reload Obsidian.
 | Undo / redo | Cmd/Ctrl+Z / Cmd/Ctrl+Shift+Z |
 | Organise items | In the **Features** panel, create folders, drag items into them, and use the eye icon to hide them |
 | Find an item | Click it in the **Features** panel to centre the map on it |
+| Reopen the map panel | The panel icon at the top of the map tab, or run **Show map panel** |
 | Save the opening view | Run **Set current view as default** |
 | Show the whole map | **Fit map to view** in the toolbar |
 

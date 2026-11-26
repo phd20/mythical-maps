@@ -1,6 +1,6 @@
 {
   "name": "mythical-maps",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "TTRPG map management for Obsidian: maps as first-class .map files, no code blocks in notes.",
   "main": "main.js",
   "private": true,
@@ -18,7 +18,10 @@
   },
   "license": "MIT",
   "author": "PhD20",
-  "repository": { "type": "git", "url": "git+https://github.com/PhD20/mythical-maps.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PhD20/mythical-maps.git"
+  },
   "dependencies": {
     "@geoman-io/leaflet-geoman-free": "2.20.8",
     "fractional-indexing": "4.0.0",

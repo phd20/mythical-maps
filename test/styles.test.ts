@@ -102,3 +102,11 @@ describe("scope-leaflet-css", () => {
     expect(() => parseCss("}")).toThrow();
   });
 });
+
+describe("styles.css pin glyph", () => {
+  it("raises the icon only on shapes whose body sits high; the pin shape is centred", () => {
+    const rule = /([^{}]*)\{\s*bottom: 22%;\s*\}/.exec(styles)?.[1] ?? "";
+    expect(rule).toContain(".mythical-map-pin-shield .mythical-map-pin-glyph");
+    expect(rule).not.toContain(".mythical-map-pin-pin .mythical-map-pin-glyph");
+  });
+});
