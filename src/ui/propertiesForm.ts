@@ -29,7 +29,7 @@ import {
   type RawValue,
 } from "../core/properties";
 import type { Feature, MapDocument } from "../core/schema";
-import { DEFAULT_STYLES } from "../core/style";
+import { DEFAULT_STYLES, isValidHexColor } from "../core/style";
 import type { EditOp } from "../obsidian/mapView";
 
 export interface PropertiesFormHost {
@@ -183,15 +183,24 @@ export class PropertiesForm {
     const chooseLink = spec.key === "link" ? this.host.chooseLink?.bind(this.host) : undefined;
     const chooseButton = chooseLink ? field.createEl("button", { cls: "mythical-map-props-choose", text: CHOOSE_LINK_LABEL }) : null;
 
+    const swatch = spec.kind === "color" ? this.buildSwatch(field, spec) : null;
+    /** Show the colour `text` stands for; blank is the default, anything invalid leaves the swatch alone. */
+    const paint = (text: string) => {
+      if (!swatch) return;
+      const color = text.trim() === "" ? this.defaultPlaceholder(spec, feature) : text.trim();
+      if (isValidHexColor(color)) swatch.value = color.toLowerCase();
+    };
+
     const control: Control = {
       key: spec.key,
-      inputs: [input],
+      inputs: swatch ? [input, swatch] : [input],
       errorEl,
       hasError: false,
       sync: (f) => {
         const value = fieldValue(f, spec);
         if (spec.kind === "boolean") (input as HTMLInputElement).checked = value === true;
         else input.value = String(value);
+        paint(String(value));
       },
     };
     this.controls.push(control);
@@ -201,11 +210,26 @@ export class PropertiesForm {
     // Live feedback while typing: show the error, or clear it once the value is valid again.
     input.addEventListener("input", () => {
       if (spec.kind === "boolean" || spec.kind === "enum") return;
+      paint(input.value);
       const result = validateField(spec, read());
       if (result.ok) this.clearError(control);
       else this.showError(control, result.error);
     });
     input.addEventListener("change", () => this.commitField(spec, control, read()));
+    if (swatch) {
+      // While the picker is open the text box follows it; closing it commits, as one edit.
+      const copy = () => {
+        input.value = swatch.value.toUpperCase();
+        this.clearError(control);
+      };
+      swatch.addEventListener("input", copy);
+      swatch.addEventListener("change", () => {
+        copy();
+        this.commitField(spec, control, input.value);
+        // Give focus back, so undo and later model changes reach this control.
+        swatch.blur?.();
+      });
+    }
     if (spec.key === "iconGlyph" && this.host.suggestIcons) {
       this.disposers.push(
         this.host.suggestIcons(input as HTMLInputElement, (name) => {
@@ -226,6 +250,15 @@ export class PropertiesForm {
     input.addEventListener("keydown", (evt) => {
       if ((evt as KeyboardEvent).key === "Escape" && spec.kind !== "boolean" && spec.kind !== "enum") this.revert(control);
     });
+  }
+
+  private buildSwatch(field: HTMLElement, spec: FieldSpec): HTMLInputElement {
+    const swatch = field.createEl("input", { cls: "mythical-map-props-swatch" });
+    swatch.type = "color";
+    swatch.setAttribute("data-field-input", `${spec.key}.picker`);
+    swatch.setAttribute("aria-label", `Pick ${spec.label.toLowerCase()}`);
+    this.trackFocus(swatch);
+    return swatch;
   }
 
   private buildRange(): void {

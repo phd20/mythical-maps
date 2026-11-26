@@ -1108,6 +1108,12 @@
   flex: none;
 }
 
+.mythical-map-view .mythical-map-props-swatch {
+  flex: none;
+  align-self: center;
+  cursor: pointer;
+}
+
 .mythical-map-view .mythical-map-props-input.is-invalid {
   border-color: var(--text-error);
 }

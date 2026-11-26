@@ -130,6 +130,40 @@ describe("PropertiesForm naming from the chosen note", () => {
   });
 });
 
+describe("PropertiesForm colour picker", () => {
+  const stored = (t: ReturnType<typeof setup>) => (t.stored() as { style?: { iconColor?: string } }).style?.iconColor;
+
+  it("shows the stored colour, and the default when none is stored", () => {
+    expect(setup([pin("pinaaaaa")]).input("iconColor.picker").value).toBe("#112233");
+    expect(setup([pin("pinaaaaa", { style: undefined } as Partial<Feature>)]).input("iconColor.picker").value).toBe("#a7a7a7");
+  });
+
+  it("follows the picker in the text box and commits once on change", () => {
+    const t = setup([pin("pinaaaaa")]);
+    const swatch = t.input("iconColor.picker");
+    swatch.value = "#aa0000";
+    t.fire(swatch, "input");
+    swatch.value = "#ff0000";
+    t.fire(swatch, "input");
+    expect(t.input("iconColor").value).toBe("#FF0000");
+    expect(t.ops).toHaveLength(0);
+    t.fire(swatch, "change");
+    expect(t.ops).toHaveLength(1);
+    expect(stored(t)).toBe("#FF0000");
+  });
+
+  it("follows typed colours and falls back to the default when emptied", () => {
+    const t = setup([pin("pinaaaaa")]);
+    t.enter("iconColor", "#00FF00");
+    expect(t.input("iconColor.picker").value).toBe("#00ff00");
+    t.enter("iconColor", "nope");
+    expect(t.input("iconColor.picker").value).toBe("#00ff00");
+    t.enter("iconColor", "");
+    expect(stored(t)).toBeUndefined();
+    expect(t.input("iconColor.picker").value).toBe("#a7a7a7");
+  });
+});
+
 describe("PropertiesForm icon suggestions", () => {
   it("saves the picked icon as one edit, and closes the suggestions when the selection goes", () => {
     let pick: (name: string) => void = () => {};
